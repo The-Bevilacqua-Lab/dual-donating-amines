@@ -12,7 +12,7 @@ setup(
     description='A computational pipeline to identify and analyze nucleobases that donate two H-bonds via their exocyclic amines.',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
-    install_requires=requirements
+    install_requires=requirements,
     classifiers=[
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3',
