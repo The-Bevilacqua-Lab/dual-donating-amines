@@ -31,6 +31,7 @@ if num_nrlist > 1:
     print("Error: There is more than one representative set file in the current working directory.")
     sys.exit(1)
 
+nrlist_info = []
 with open(nrlist_file, mode='r') as file:
     for line in csv.reader(file):
         PDB_ID_list = []
@@ -62,10 +63,7 @@ with open(nrlist_file, mode='r') as file:
         for pdb in PDB_ID_list:
             if pdb != PDB_ID_list[0]:
                 print("Error: The PDB IDs for the representative structure of a equivalence class do not match.")
-        eq_class_info['equivalence_class'].append(line[0])
-        eq_class_info['nrlist_PDB_ID'].append(PDB_ID_list)
-        eq_class_info['model'].append(model_list)
-        eq_class_info['chain'].append(chain_list)
+        nrlist_info.append([line[0], PDB_ID_list, model_list, chain_list])
 
 # collect list of files in mmCIF_files folder
 mmCIF_files = []
@@ -76,7 +74,11 @@ else:
     sys.exit(1)
 
 # collect information from the mmCIF files
-for i in range(len(eq_class_info['equivalence_class'])):
+for i in range(len(nrlist_info)):
+    eq_class_info['equivalence_class']
+    eq_class_info['nrlist_PDB_ID']
+    eq_class_info['model']
+    eq_class_info['chain']
     mmCIF_name = eq_class_info['nrlist_PDB_ID'][i][0].lower() + ".cif"
     if mmCIF_name not in mmCIF_files:
         print(f"Error: The mmCIF_files folder does not contain {mmCIF_name}.")
@@ -232,3 +234,12 @@ if not (len(eq_class_info['equivalence_class']) == len(eq_class_info['nrlist_PDB
     print("Error: The values in the eq_class_info dictionary should all be equal length.")
     sys.exit(1)
 
+# with open("eq_class_info.csv", mode='w') as file:
+#     for i in range(len(eq_class_info['equivalence_class'])):
+
+print(eq_class_info.values())
+
+
+#         fields = ['equivalence_class', 'nrlist_PDB_ID', 'model', 'chain', 'mmCIF_file_name', 'mmCIF_PDB_ID',
+#                   'initial_release_date', 'method', 'resolution', 'chain_entity_ID', 'chain_organism',
+#                   'chain_src_method', 'chain_description']
