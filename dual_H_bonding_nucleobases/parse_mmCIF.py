@@ -12,7 +12,8 @@ directory = os.getcwd()
 
 # initialize a dictionary that will store information from the representative set file and mmCIF files
 eq_class_info = {'equivalence_class': [], 'nrlist_PDB_ID': [], 'model': [], 'chain': [], 'mmCIF_file_name': [],
-                 'mmCIF_PDB_ID': [], 'initial_release_date': [], 'method': [], 'resolution': [], 'organism': []}
+                 'mmCIF_PDB_ID': [], 'initial_release_date': [], 'method': [], 'resolution': [], 'chain_entity_ID': [],
+                 'chain_organism': [], 'chain_src_method': [], 'chain_description': []}
 
 # identify the representative set file
 nrlist_file = ""
@@ -93,18 +94,21 @@ for i in range(len(eq_class_info['equivalence_class'])):
         eq_class_info['mmCIF_PDB_ID'].append(pdb)
     else:
         eq_class_info['mmCIF_PDB_ID'].append("")
+        print(f"Warning: {mmCIF_name} does not contain _entry.id.")
     # collect the initial release date from the mmCIF file
     if block.find_values('_pdbx_audit_revision_history.revision_date'):
         release = block.find_values('_pdbx_audit_revision_history.revision_date').str(0)
         eq_class_info['initial_release_date'].append(release)
     else:
         eq_class_info['initial_release_date'].append("")
+        print(f"Warning: {mmCIF_name} does not contain _pdbx_audit_revision_history.revision_date.")
     # collect the experimental method from the mmCIF file
     if block.find_values('_exptl.method'):
         method = block.find_values('_exptl.method').str(0)
         eq_class_info['method'].append(method)
     else:
         eq_class_info['method'].append("")
+        print(f"Warning: {mmCIF_name} does not contain _exptl.method.")
     # collect the resolution from the mmCIF file
     # resolution for x-ray diffraction structures
     if method == 'X-RAY DIFFRACTION':
@@ -113,6 +117,7 @@ for i in range(len(eq_class_info['equivalence_class'])):
             eq_class_info['resolution'].append(resolution)
         else:
             eq_class_info['resolution'].append("")
+            print(f"Warning: {mmCIF_name} does not contain _reflns.d_resolution_high.")
     # resolution for electron microscopy structures
     elif method == 'ELECTRON MICROSCOPY':
         if block.find_values('_em_3d_reconstruction.resolution'):
@@ -120,41 +125,110 @@ for i in range(len(eq_class_info['equivalence_class'])):
             eq_class_info['resolution'].append(resolution)
         else:
             eq_class_info['resolution'].append("")
+            print(f"Warning: {mmCIF_name} does not contain _em_3d_reconstruction.resolution.")
     else:
         eq_class_info['resolution'].append("")
-    # collect information related to the individual representative chains of each equivalence class from the mmCIF file
+    # collect information related to all the chains in the representative structure of each equivalence class from the
+    # mmCIF file
+    entity = []
+    entity_poly = []
+    entity_src_gen = []
+    entity_src_nat = []
+    pdbx_entity_src_syn = []
     if block.find(['_entity.id', '_entity.src_method', '_entity.pdbx_description']):
         entity = block.find(['_entity.id', '_entity.src_method', '_entity.pdbx_description'])
+    else:
+        print(f"Error: {mmCIF_name} does not contain _entity.id, _entity.src_method, and/or "
+              f"_entity.pdbx_description.")
+        sys.exit(1)
     if block.find(['_entity_poly.entity_id', '_entity_poly.pdbx_strand_id']):
         entity_poly = block.find(['_entity_poly.entity_id', '_entity_poly.pdbx_strand_id'])
+    else:
+        print(f"Error: {mmCIF_name} does not contain _entity_poly.entity_id and/or _entity_poly.pdbx_strand_id.")
+        sys.exit(1)
+    entity_src_exists = False
     if block.find(['_entity_src_gen.entity_id', '_entity_src_gen.pdbx_gene_src_scientific_name']):
-        entity_src_gen
+        entity_src_gen = block.find(['_entity_src_gen.entity_id', '_entity_src_gen.pdbx_gene_src_scientific_name'])
+        entity_src_exists = True
     if block.find(['_entity_src_nat.entity_id', '_entity_src_nat.pdbx_organism_scientific']):
-        entity_src_nat
+        entity_src_nat = block.find(['_entity_src_nat.entity_id', '_entity_src_nat.pdbx_organism_scientific'])
+        entity_src_exists = True
     if block.find(['_pdbx_entity_src_syn.entity_id', '_pdbx_entity_src_syn.organism_scientific']):
-        pdbx_entity_src_syn
+        pdbx_entity_src_syn = block.find(['_pdbx_entity_src_syn.entity_id', '_pdbx_entity_src_syn.organism_scientific'])
+        entity_src_exists = True
+    if entity_src_exists == False:
+        print(f"Warning: {mmCIF_name} does not contain the designated keywords in any of the categories "
+              f"_entity_src_gen, _entity_src_nat, or _pdbx_entity_src_syn.")
+    # determine the entity IDs of the representative chains
+    chain_entity_id_list = []
+    # iterate through the chains identified in the representative set file
+    for eq_class_chain in eq_class_info['chain'][i]:
+        # iterate through the chains in the mmCIF file
+        for row in range(len(entity_poly)):
+            for mmCIF_chain in entity_poly[row][1].split(','):
+                # save the entity ID of the chain in the mmCIF file that matches the chain in the representative set
+                # file
+                if eq_class_chain == mmCIF_chain:
+                    chain_entity_id_list.append(entity_poly[row][0])
+    eq_class_info['chain_entity_ID'].append(chain_entity_id_list)
+    # use the chain entity IDs to collect the source and description of each representative chain, then use the chain
+    # entity IDs with the source information to collect the organism information for each chain
+    chain_src_method_list = []
+    chain_description_list = []
+    chain_organism_list = []
+    for chain_entity_id in chain_entity_id_list:
+        # iterate through each row of the entity table which contains an entity ID, source information, and a
+        # description
+        for row in range(len(entity)):
+            # if the entity ID of the chain matches that listed in the row, collect the source and description
+            if chain_entity_id == entity[row][0]:
+                chain_src_method_list.append(entity[row].str(1))
+                chain_description_list.append(entity[row].str(2))
+        # collect the organism based on the chain entity ID and the source information
+        if chain_src_method_list[-1] == 'man':
+            # check to ensure entity_src_gen contains information
+            if entity_src_gen:
+                for row in range(len(entity_src_gen)):
+                    # if the entity ID of the chain matches that listed in the row, collect the organism
+                    if chain_entity_id == entity_src_gen[row][0]:
+                        chain_organism_list.append(entity_src_gen[row].str(1))
+            else:
+                chain_organism_list.append("")
+                print(f"Warning: {mmCIF_name} does not contain _entity_src_gen.entity_id and/or "
+                      f"_entity_src_gen.pdbx_gene_src_scientific_name.")
+        elif chain_src_method_list[-1] == 'nat':
+            # check to ensure entity_src_nat contains information
+            if entity_src_nat:
+                for row in range(len(entity_src_nat)):
+                    # if the entity ID of the chain matches that listed in the row, collect the organism
+                    if chain_entity_id == entity_src_nat[row][0]:
+                        chain_organism_list.append(entity_src_nat[row].str(1))
+            else:
+                chain_organism_list.append("")
+                print(f"Warning: {mmCIF_name} does not contain _entity_src_nat.entity_id and/or "
+                      f"_entity_src_nat.pdbx_organism_scientific.")
+        elif chain_src_method_list[-1] == 'syn':
+            # check to ensure pdbx_entity_src_syn contains information
+            if pdbx_entity_src_syn:
+                for row in range(len(pdbx_entity_src_syn)):
+                    # if the entity ID of the chain matches that listed in the row, collect the organism
+                    if chain_entity_id == pdbx_entity_src_syn[row][0]:
+                        chain_organism_list.append(pdbx_entity_src_syn[row].str(1))
+            else:
+                chain_organism_list.append("")
+                print(f"Warning: {mmCIF_name} does not contain _pdbx_entity_src_syn.entity_id and/or "
+                      f"_pdbx_entity_src_syn.organism_scientific.")
+    eq_class_info['chain_src_method'].append(chain_src_method_list)
+    eq_class_info['chain_description'].append(chain_description_list)
+    eq_class_info['chain_organism'].append(chain_organism_list)
 
+# check to ensure that all the values in the eq_class_info dictionary are all equal length
+if not (len(eq_class_info['equivalence_class']) == len(eq_class_info['nrlist_PDB_ID']) == len(eq_class_info['model']) ==
+        len(eq_class_info['chain']) == len(eq_class_info['mmCIF_file_name']) == len(eq_class_info['mmCIF_PDB_ID']) ==
+        len(eq_class_info['initial_release_date']) == len(eq_class_info['method']) ==
+        len(eq_class_info['resolution']) == len(eq_class_info['chain_entity_ID']) ==
+        len(eq_class_info['chain_organism']) == len(eq_class_info['chain_src_method']) ==
+        len(eq_class_info['chain_description'])):
+    print("Error: The values in the eq_class_info dictionary should all be equal length.")
+    sys.exit(1)
 
-
-#     # collect the organism from the mmCIF file
-#     # organism for x-ray diffraction structures
-#     if method == 'X-RAY DIFFRACTION':
-#         if block.find_values('_pdbx_entity_src_syn.organism_scientific'):
-#             organism = block.find_values('_pdbx_entity_src_syn.organism_scientific').str(0)
-#             eq_class_info['organism'].append(organism)
-#         else:
-#             eq_class_info['organism'].append("")
-#     # organism for electron microscopy structures
-#     elif method == 'ELECTRON MICROSCOPY':
-#         if block.find_values('_em_entity_assembly_naturalsource.organism'):
-#             organism = block.find_values('_em_entity_assembly_naturalsource.organism').str(0)
-#             eq_class_info['organism'].append(organism)
-#         else:
-#             eq_class_info['organism'].append("")
-#     else:
-#         eq_class_info['organism'].append("")
-#
-# print(eq_class_info['organism'])
-# for f in mmCIF_files:
-#     if f[-4:] == ".cif":
-#         print(f)
