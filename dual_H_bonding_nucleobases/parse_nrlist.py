@@ -56,10 +56,15 @@ def get_info(nrlist_file):
                         chain.append(char)
                     elif char == '|':
                         index += 1
+                # check to ensure this part of the representative structure contains the expected amount of information
+                if index != 2:
+                    print(f"Error: The representative structure for equivalence class {line[0]} is missing "
+                          f"information.")
+                    sys.exit(1)
                 # check if the PDB ID contains the expected number of characters
                 if len("".join(PDB_ID)) != 4:
-                    print("Error: At least one of the PDB IDs from the representative set file does not contain the "
-                          "expected number of characters.")
+                    print(f"Error: At least one of the PDB IDs for the representative structure of equivalence class "
+                          f"{line[0]} does not contain the expected number of characters.")
                     sys.exit(1)
                 PDB_ID_list.append("".join(PDB_ID))
                 model_list.append("".join(model))
@@ -67,7 +72,8 @@ def get_info(nrlist_file):
             # check to make sure the PDB IDs match
             for pdb in PDB_ID_list:
                 if pdb != PDB_ID_list[0]:
-                    print("Error: The PDB IDs for the representative structure of a equivalence class do not match.")
+                    print(f"Error: The PDB IDs for the representative structure of equivalence class {line[0]} do not "
+                          f"match.")
                     sys.exit(1)
             nrlist_info.append([line[0], PDB_ID_list, model_list, chain_list])
     return nrlist_info
