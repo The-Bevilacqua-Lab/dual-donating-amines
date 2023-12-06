@@ -38,11 +38,12 @@ for eq_class in nrlist_info:
         rep_struct_list.append(f"(state {eq_class[2][i]} and chain {eq_class[3][i]})")
     rep_struct = " ".join(rep_struct_list)
     cmd.fetch(eq_class[1][0])
-    cmd.select('rep_struct', selection=f'bychain all within 5 of {rep_struct}')
+    cmd.remove(f'not bychain all within 5 of {rep_struct}')
+    stored.alt_conf = []
+    cmd.iterate('not alt "" and q<1.0', 'print(ID)')
 
 
 
 
 
-
-    cmd.delete('all')
+    # cmd.delete('all')
