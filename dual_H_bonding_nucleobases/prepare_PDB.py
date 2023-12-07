@@ -39,9 +39,48 @@ for eq_class in nrlist_info:
     rep_struct = " ".join(rep_struct_list)
     cmd.fetch(eq_class[1][0])
     cmd.remove(f'not bychain all within 5 of {rep_struct}')
-    stored.alt_conf = []
-    cmd.iterate('not alt "" and q<1.0', 'print(ID)')
-
+    stored.alt_atoms = []
+    cmd.iterate_state(0, 'not alt ""', 'stored.alt_atoms.append([ID,q,b,state,chain,resi,name])')
+    alt_atoms_grouped = []
+    for atom in stored.alt_atoms:
+        match = False
+        for group in alt_atoms_grouped:
+            if atom[3] == group[0][3] and atom[4] == group[0][4] and atom[5] == group[0][5] and atom[6] == group[0][6]:
+                group.append(atom)
+                match = True
+        if not match:
+            alt_atoms_grouped.append([atom])
+    # determine which atoms to keep, prioritizing highest occupancy factor, lowest b-factor, and lowest atom ID, in
+    # that order
+    atom_to_remove = []
+    for group in alt_atoms_grouped:
+        keep = []
+        remove = []
+        for atom in group:
+            if len(keep) == 0:
+                keep = atom
+            elif atom[1] > keep[1]:
+                remove.append(keep)
+                keep = atom
+            elif atom[1] == keep[1]:
+                if atom[2] < keep[2]:
+                    remove.append(keep)
+                    keep = atom
+                elif atom[2] == keep[2]:
+                    if atom[0] < keep[0]:
+                        remove.append(keep)
+                        keep = atom
+                    elif atom[0] == keep[0]:
+                        print(f"Error: There are multiple atoms with the same ID in PDB ID {eq_class[1][0]}.")
+                        sys.exit(1)
+                    elif atom[0] > keep[0]:
+                        remove.append(atom)
+                elif atom[2] > keep[2]:
+                    remove.append(atom)
+            elif atom[1] < keep[1]:
+                remove.append(atom)
+        for atom in remove:
+            atom_to_remove.append(atom[0])
 
 
 
