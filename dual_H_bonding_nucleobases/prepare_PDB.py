@@ -11,6 +11,7 @@ import parse_nrlist
 
 directory = os.getcwd()
 mmCIF_directory = directory + "/mmCIF_files"
+PDB_directory = directory + "/PDB_files"
 
 # identify the representative set file
 nrlist_file = parse_nrlist.identify()
@@ -32,15 +33,34 @@ else:
 
 os.chdir(mmCIF_directory)
 
+# check whether a PDB_files folder exists
+# if it exists and contains files, exit with an error message
+# if it does not exist, create the folder
+if os.path.isdir(PDB_directory):
+    if len(os.listdir(PDB_directory)) != 0:
+        print("Error: There are already files in the PDB_files folder. This folder should be empty prior to running "
+              "the prepare_PDB module.")
+        sys.exit(1)
+else:
+    os.mkdir(PDB_directory)
+
 for eq_class in nrlist_info:
     rep_struct_list = []
     for i in range(len(eq_class[2])):
+        model = eq_class[2][i]
         rep_struct_list.append(f"(state {eq_class[2][i]} and chain {eq_class[3][i]})")
+        # the remove function below assumes that the different representative RNA chains belong to the same model
+        # if this is not the case, print an error message and exit
+        if eq_class[2][i] != eq_class[2][0]:
+            print(f"Error: There are representative RNA chains that belong to different models for equivalence class "
+                  f"{eq_class[0]}.")
+            sys.exit(1)
     rep_struct = " ".join(rep_struct_list)
     cmd.fetch(eq_class[1][0])
-    cmd.remove(f'not bychain all within 5 of {rep_struct}')
+    # the following remove function assumes that the different representative RNA chains belong to the same model
+    cmd.remove(f'not bychain state {eq_class[2][0]} within 5 of ({rep_struct})')
     stored.alt_atoms = []
-    cmd.iterate_state(0, 'not alt ""', 'stored.alt_atoms.append([ID,q,b,state,chain,resi,name])')
+    cmd.iterate_state(0, 'not alt ""', 'stored.alt_atoms.append([ID,q,alt,state,chain,resi,name])')
     alt_atoms_grouped = []
     for atom in stored.alt_atoms:
         match = False
@@ -50,9 +70,8 @@ for eq_class in nrlist_info:
                 match = True
         if not match:
             alt_atoms_grouped.append([atom])
-    # determine which atoms to keep, prioritizing highest occupancy factor, lowest b-factor, and lowest atom ID, in
-    # that order
-    atom_to_remove = []
+    # determine which atoms to keep, prioritizing highest occupancy factor and lowest alt ID, in that order
+    atoms_to_remove = []
     for group in alt_atoms_grouped:
         keep = []
         remove = []
@@ -63,26 +82,24 @@ for eq_class in nrlist_info:
                 remove.append(keep)
                 keep = atom
             elif atom[1] == keep[1]:
-                if atom[2] < keep[2]:
+                if len(atom[2]) != 1 or len(keep[2]) != 1:
+                    print(f"Error: There is at least one atom in PDB ID {eq_class[1][0]} with an alt ID that consists "
+                          f"of more than one character.")
+                    sys.exit(1)
+                elif atom[2] < keep[2]:
                     remove.append(keep)
                     keep = atom
                 elif atom[2] == keep[2]:
-                    if atom[0] < keep[0]:
-                        remove.append(keep)
-                        keep = atom
-                    elif atom[0] == keep[0]:
-                        print(f"Error: There are multiple atoms with the same ID in PDB ID {eq_class[1][0]}.")
-                        sys.exit(1)
-                    elif atom[0] > keep[0]:
-                        remove.append(atom)
+                    print(f"Error: There are multiple atoms with the same alt ID that should have different alt IDs in "
+                          f"PDB ID {eq_class[1][0]}.")
+                    sys.exit(1)
                 elif atom[2] > keep[2]:
                     remove.append(atom)
             elif atom[1] < keep[1]:
                 remove.append(atom)
         for atom in remove:
-            atom_to_remove.append(atom[0])
-
-
-
-
+            atoms_to_remove.append(atom[0])
+    for atom_ID in atoms_to_remove:
+        cmd.remove(f'ID {atom_ID}')
+    # cmd.save(f'{PDB_directory}/{eq_class[0]}.pdb', state=eq_class[2][0])
     # cmd.delete('all')
