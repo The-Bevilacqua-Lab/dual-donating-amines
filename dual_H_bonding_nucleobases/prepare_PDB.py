@@ -47,18 +47,18 @@ else:
 for eq_class in nrlist_info:
     rep_struct_list = []
     for i in range(len(eq_class[2])):
-        model = eq_class[2][i]
-        rep_struct_list.append(f"(state {eq_class[2][i]} and chain {eq_class[3][i]})")
-        # the remove function below assumes that the different representative RNA chains belong to the same model
+        # the create function below assumes that the different representative RNA chains belong to the same model
         # if this is not the case, print an error message and exit
         if eq_class[2][i] != eq_class[2][0]:
             print(f"Error: There are representative RNA chains that belong to different models for equivalence class "
                   f"{eq_class[0]}.")
             sys.exit(1)
+        rep_struct_list.append(f"chain {eq_class[3][i]}")
     rep_struct = " ".join(rep_struct_list)
     cmd.fetch(eq_class[1][0])
-    # the following remove function assumes that the different representative RNA chains belong to the same model
-    cmd.remove(f'not bychain state {eq_class[2][0]} within 5 of ({rep_struct})')
+    # create a copy of the structure of just the model (state in PyMOL) indicated in the representative set file
+    cmd.create('copy', selection=eq_class[1][0], source_state=eq_class[2][0], target_state=1)
+    cmd.delete(eq_class[1][0])
     stored.alt_atoms = []
     cmd.iterate_state(0, 'not alt ""', 'stored.alt_atoms.append([ID,q,alt,state,chain,resi,name])')
     alt_atoms_grouped = []
