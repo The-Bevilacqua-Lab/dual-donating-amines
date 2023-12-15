@@ -114,4 +114,4 @@ for eq_class in nrlist_info:
     for atom_ID in atoms_to_remove:
         cmd.remove(f'ID {atom_ID}')
     cmd.save(f'{PDB_directory}/{eq_class[0]}.pdb')
-    # cmd.delete('all')
+    cmd.delete('all')
