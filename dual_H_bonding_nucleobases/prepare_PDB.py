@@ -17,6 +17,7 @@ directory = os.getcwd()
 mmCIF_directory = directory + "/mmCIF_files"
 PDB_directory = directory + "/PDB_files"
 
+# TODO atom IDs may not be unique, modify the code to insure the atom selections are specific enough
 # identify the representative set file
 nrlist_file = parse_nrlist.identify()
 

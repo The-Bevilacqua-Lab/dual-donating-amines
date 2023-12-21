@@ -2,8 +2,32 @@
 This module will eventaully do something.
 """
 
+import sys
 from pymol import cmd
 from pymol import stored
+
+
+def eval_H_bonding(donor_index, acceptor_index, pdb):
+    # ensure that the indices for the donor and acceptor atoms account for exactly two atoms
+    if cmd.count_atoms(f'index {donor_index} index {acceptor_index}') != 2:
+        print(f"Error: The indices provide for a potential H-bonding donor and acceptor atom pair does not account for "
+              f"exactly two atoms in PDB ID {pdb}.")
+        sys.exit(1)
+    # collect information on the donor and acceptor atoms
+    stored.donor_atom = ()
+    stored.acceptor_atom = ()
+    cmd.iterate(f'index {donor_index}', 'stored.donor_atom = (index, name, resn, resi, chain)')
+    cmd.iterate(f'index {acceptor_index}', 'stored.acceptor_atom = (index, name, resn, resi, chain)')
+    # determine whether the donor atom is at the end of a chain and is capable of donating an H-bond
+    terminal_donating_atom = False
+    if cmd.count_atoms(f'neighbor index {donor_index}') == 1 and (
+            stored.donor_atom == "N" or
+            stored.donor_atom == "O5'" or
+            stored.donor_atom == "O3'"):
+        if stored.donor_atom == "N":
+            terminal_donating_atom = True
+        elif
+
 
 # define a list of dictionaries that provides information on the canonical amino acid and RNA/DNA residues
 # the indices of each donor or acceptor atom list specifies the following:
@@ -30,7 +54,8 @@ residues = [
     },
     {
         "res": "ARG",
-        "don": [["N", "N", False, 0, "CA"], ["NE", "N", False, 0, "CD"], ["NH1", "N", False, 1, "CZ"], ["NH2", "N", False, 0, "CZ"]],
+        "don": [["N", "N", False, 0, "CA"], ["NE", "N", False, 0, "CD"], ["NH1", "N", False, 1, "CZ"],
+                ["NH2", "N", False, 0, "CZ"]],
         "acc": [["O", "O", False, 0, "C"]]
     },
     {
