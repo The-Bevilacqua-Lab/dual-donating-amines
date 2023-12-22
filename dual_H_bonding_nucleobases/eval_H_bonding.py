@@ -8,35 +8,111 @@ from pymol import stored
 
 
 def eval_H_bonding(donor_index, acceptor_index, pdb):
+    # initially assume that the evaluation will complete successfully
+    successful_completion = True
+    # initialize an empty list that can be used to document why an evaluation was not completed successfully
+    notes = []
     # ensure that the indices for the donor and acceptor atoms account for exactly two atoms
     if cmd.count_atoms(f'index {donor_index} index {acceptor_index}') != 2:
-        print(f"Error: The indices provide for a potential H-bonding donor and acceptor atom pair does not account for "
-              f"exactly two atoms in PDB ID {pdb}.")
-        sys.exit(1)
+        successful_completion = False
+        print(f"Error: The indices provided for a potential H-bonding donor and acceptor atom pair does not account "
+              f"for exactly two atoms in PDB ID {pdb}.")
+        notes.append(f"Error: The indices provided for a potential H-bonding donor and acceptor atom pair does not "
+                     f"account for exactly two atoms in PDB ID {pdb}.")
+        return [successful_completion, notes]
     # collect information on the donor and acceptor atoms
     stored.donor_atom = ()
-    stored.acceptor_atom = ()
     cmd.iterate(f'index {donor_index}', 'stored.donor_atom = (index, name, resn, resi, chain)')
+    stored.acceptor_atom = ()
     cmd.iterate(f'index {acceptor_index}', 'stored.acceptor_atom = (index, name, resn, resi, chain)')
+    # construct lists containing the names of the canonical protein and nucleic residues
+    protein_residues = ['ALA', 'ASP', 'ASN', 'ARG', 'CYS', 'GLU', 'GLN', 'GLY', 'HIS', 'ILE', 'LEU', 'LYS', 'MET',
+                        'PHE', 'PRO', 'SER', 'THR', 'TRP', 'TYR', 'VAL']
+    nucleic_residues = ['A', 'C', 'G', 'U', 'DA', 'DC', 'DG', 'DT']
     # determine whether the donor atom is at the end of a chain and is capable of donating an H-bond
-    terminal_donating_atom = False
+    terminal_donating_atom = []
     if cmd.count_atoms(f'neighbor index {donor_index}') == 1 and (
-            stored.donor_atom == "N" or
-            stored.donor_atom == "O5'" or
-            stored.donor_atom == "O3'"):
-        if stored.donor_atom == "N":
-            terminal_donating_atom = True
-        elif
+            stored.donor_atom[1] == "N" or
+            stored.donor_atom[1] == "O5'" or
+            stored.donor_atom[1] == "O3'"):
+        # an amino acid N atom at the end of the chain is capable of donating an H-bond
+        if stored.donor_atom[1] == "N" and stored.donor_atom[2] in protein_residues:
+            terminal_donating_atom = ["N", "N", True, 0, "CA"]
+        else:
+            stored.bonded_atom = ''
+            cmd.iterate(f'neighbor index {donor_index}','stored.bonded_atom = name')
+            # only an RNA O5' atom at the 5' end of the chain is capable of donating an H-bond
+            if (stored.donor_atom[1] == "O5'" and stored.bonded_atom == "C5'" and stored.donor_atom[2] in
+                    nucleic_residues):
+                terminal_donating_atom = ["O5'", "O", True, 0, "C5'"]
+            # only an RNA O3' atom at the 3' end of the chain is capable of donating an H-bond
+            if (stored.donor_atom[1] == "O3'" and stored.bonded_atom == "C3'" and stored.donor_atom[2] in
+                    nucleic_residues):
+                terminal_donating_atom = ["O3'", "O", True, 0, "C3'"]
+    # determine whether the donor atom is listed in the residue library
+    # if found, collect other information about that atom
+    donor_info = []
+    donor_res_found = False
+    donor_atom_found = False
+    for residue in residue_library:
+        if stored.donor_atom[2] == residue['res']:
+            donor_res_found = True
+            for atom in residue['don']:
+                if stored.donor_atom[1] == atom[0]:
+                    donor_atom_found = True
+                    donor_info = atom
+            if (terminal_donating_atom and (stored.donor_atom[1] == "N" and stored.donor_atom[2] in protein_residues) or
+                    ((stored.donor_atom[1] == "O5'" or stored.donor_atom[1] == "O3'") and stored.donor_atom[2] in
+                     nucleic_residues)):
+                donor_atom_found = True
+                donor_info = terminal_donating_atom
+    if not donor_res_found:
+        successful_completion = False
+        notes.append(f"Residue {stored.donor_atom[2]} of the donor atom was not found in the residue library when "
+                     f"evaluating a potential H-bond in PDB ID {pdb}.")
+    if not donor_atom_found:
+        successful_completion = False
+        notes.append(f"The donor atom {stored.donor_atom[1]} of residue {stored.donor_atom[2]} was not found in the "
+                     f"residue library when evaluating a potential H-bond in PDB ID {pdb}.")
+    # determine whether the acceptor atom is listed in the residue library
+    # if found, collect other information about that atom
+    acceptor_info = []
+    acceptor_res_found = False
+    acceptor_atom_found = False
+    for residue in residue_library:
+        if stored.acceptor_atom[2] == residue['res']:
+            acceptor_res_found = True
+            for atom in residue['acc']:
+                if stored.acceptor_atom[1] == atom[0]:
+                    acceptor_atom_found = True
+                    acceptor_info = atom
+    if not acceptor_res_found:
+        successful_completion = False
+        notes.append(f"Residue {stored.acceptor_atom[2]} of the acceptor atom was not found in the residue library "
+                     f"when evaluating a potential H-bond in PDB ID {pdb}.")
+    if not acceptor_atom_found:
+        successful_completion = False
+        notes.append(f"The acceptor atom {stored.acceptor_atom[1]} of residue {stored.acceptor_atom[2]} was not found "
+                     f"in the residue library when evaluating a potential H-bond in PDB ID {pdb}.")
+    # if any of the residues of the donor or acceptor atoms or the atoms themselves were not found in the residue
+    # library, return a non-successful completion with the relevant notes
+    if not successful_completion:
+        return [False, notes]
+    # add a hydrogen to non-rotatable donors
+    # if not donor_info[2] and not terminal_donating_atom:
+    if not donor_info[2]:
+        cmd.h_add(f'index {donor_index}')
 
-
-# define a list of dictionaries that provides information on the canonical amino acid and RNA/DNA residues
+    print(donor_info)
+# region library
+# define a list of dictionaries that provides information on the canonical protein and RNA/DNA residues
 # the indices of each donor or acceptor atom list specifies the following:
 #     0: donor/acceptor atom name
 #     1: donor/acceptor element
 #     2: is the donor/acceptor rotatable?
 #     3: donor/acceptor formal charge
 #     4: antecedent atom of donor/acceptor
-residues = [
+residue_library = [
     {
         "res": "ALA",
         "don": [["N", "N", False, 0, "CA"]],
@@ -195,3 +271,9 @@ residues = [
                 ["O2", "O", False, 0, "C2"], ["O4", "O", False, 0, "C4"]]
     }
 ]
+# endregion
+
+# print(eval_H_bonding(51045, 53543, '6XU8'))
+# print(eval_H_bonding(51037, 53543, '6XU8'))
+# TODO look into the error message after running the following call to eval_H_bonding
+print(eval_H_bonding(51059, 53543, '6XU8'))
