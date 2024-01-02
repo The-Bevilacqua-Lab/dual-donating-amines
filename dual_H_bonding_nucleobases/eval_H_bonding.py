@@ -12,13 +12,22 @@ def eval_H_bonding(donor_index, acceptor_index, pdb):
     successful_completion = True
     # initialize an empty list that can be used to document why an evaluation was not completed successfully
     notes = []
-    # ensure that the indices for the donor and acceptor atoms account for exactly two atoms
-    if cmd.count_atoms(f'index {donor_index} index {acceptor_index}') != 2:
+    # TODO test the two following if statements
+    # ensure that the index for the donor atom accounts for exactly one atom
+    if cmd.count_atoms(f'index {donor_index}') != 1:
         successful_completion = False
-        print(f"Error: The indices provided for a potential H-bonding donor and acceptor atom pair does not account "
-              f"for exactly two atoms in PDB ID {pdb}.")
-        notes.append(f"Error: The indices provided for a potential H-bonding donor and acceptor atom pair does not "
-                     f"account for exactly two atoms in PDB ID {pdb}.")
+        print(f"Error: The index provided for a potential H-bonding donor atom does not account for exactly one atom "
+              f"in PDB ID {pdb}.")
+        notes.append(f"Error: The index provided for a potential H-bonding donor atom does not account for exactly one "
+                     f"atom in PDB ID {pdb}.")
+        return [successful_completion, notes]
+    # ensure that the index for the acceptor atom accounts for exactly one atom
+    if cmd.count_atoms(f'index {acceptor_index}') != 1:
+        successful_completion = False
+        print(f"Error: The index provided for a potential H-bonding acceptor atom does not account for exactly one "
+              f"atom in PDB ID {pdb}.")
+        notes.append(f"Error: The index provided for a potential H-bonding acceptor atom does not account for exactly "
+                     f"one atom in PDB ID {pdb}.")
         return [successful_completion, notes]
     # collect information on the donor and acceptor atoms
     stored.donor_atom = ()
@@ -31,7 +40,7 @@ def eval_H_bonding(donor_index, acceptor_index, pdb):
     nucleic_residues = ['A', 'C', 'G', 'U', 'DA', 'DC', 'DG', 'DT']
     # determine whether the donor atom is at the end of a chain and is capable of donating an H-bond
     terminal_donating_atom = []
-    if cmd.count_atoms(f'neighbor index {donor_index}') == 1 and (
+    if cmd.count_atoms(f'not elem H and neighbor index {donor_index}') == 1 and (
             stored.donor_atom[1] == "N" or
             stored.donor_atom[1] == "O5'" or
             stored.donor_atom[1] == "O3'"):
@@ -40,7 +49,7 @@ def eval_H_bonding(donor_index, acceptor_index, pdb):
             terminal_donating_atom = ["N", "N", True, 0, "CA"]
         else:
             stored.bonded_atom = ''
-            cmd.iterate(f'neighbor index {donor_index}','stored.bonded_atom = name')
+            cmd.iterate(f'not elem H and neighbor index {donor_index}', 'stored.bonded_atom = name')
             # only an RNA O5' atom at the 5' end of the chain is capable of donating an H-bond
             if (stored.donor_atom[1] == "O5'" and stored.bonded_atom == "C5'" and stored.donor_atom[2] in
                     nucleic_residues):
@@ -61,11 +70,15 @@ def eval_H_bonding(donor_index, acceptor_index, pdb):
                 if stored.donor_atom[1] == atom[0]:
                     donor_atom_found = True
                     donor_info = atom
+                    # break the loop since the atom was found
+                    break
             if (terminal_donating_atom and (stored.donor_atom[1] == "N" and stored.donor_atom[2] in protein_residues) or
                     ((stored.donor_atom[1] == "O5'" or stored.donor_atom[1] == "O3'") and stored.donor_atom[2] in
                      nucleic_residues)):
                 donor_atom_found = True
                 donor_info = terminal_donating_atom
+            # break the loop since the residue was found
+            break
     if not donor_res_found:
         successful_completion = False
         notes.append(f"Residue {stored.donor_atom[2]} of the donor atom was not found in the residue library when "
@@ -86,6 +99,10 @@ def eval_H_bonding(donor_index, acceptor_index, pdb):
                 if stored.acceptor_atom[1] == atom[0]:
                     acceptor_atom_found = True
                     acceptor_info = atom
+                    # break the loop since the atom was found
+                    break
+            # break the loop since the residue was found
+            break
     if not acceptor_res_found:
         successful_completion = False
         notes.append(f"Residue {stored.acceptor_atom[2]} of the acceptor atom was not found in the residue library "
@@ -97,12 +114,77 @@ def eval_H_bonding(donor_index, acceptor_index, pdb):
     # if any of the residues of the donor or acceptor atoms or the atoms themselves were not found in the residue
     # library, return a non-successful completion with the relevant notes
     if not successful_completion:
-        return [False, notes]
-    # add a hydrogen to non-rotatable donors
-    # if not donor_info[2] and not terminal_donating_atom:
+        return [successful_completion, notes]
+    # if the donor is non-rotatable, use the locations of the donor, hydrogen, and acceptor atoms to get the distance
+    # and angle measurements, then return the values
     if not donor_info[2]:
-        cmd.h_add(f'index {donor_index}')
+        # collect the indices of the hydrogens
+        stored.hydrogen = []
+        cmd.iterate(f'elem H and neighbor index {donor_index}', 'stored.hydrogen.append(index)')
+        # issue an error message if there are no hydrogens
+        if len(stored.hydrogen) == 0:
+            successful_completion = False
+            print(f"Error: A non-rotatable donor atom has zero hydrogens in PDB ID {pdb}.")
+            notes.append(f"Error: A non-rotatable donor atom has zero hydrogens in PDB ID {pdb}.")
+            return [successful_completion, notes]
+        # get the measurements for donors that have one hydrogen
+        elif len(stored.hydrogen) == 1:
+            distance = cmd.get_distance(f'index {stored.hydrogen[0]}', f'index {acceptor_index}')
+            angle = cmd.get_angle(f'index {donor_index}', f'index {stored.hydrogen[0]}', f'index {acceptor_index}')
+        # get the measurements for donors that have two hydrogens
+        elif len(stored.hydrogen) == 2:
+            distance_list = []
+            angle_list = []
+            for H_index in stored.hydrogen:
+                distance_list.append(cmd.get_distance(f'index {H_index}', f'index {acceptor_index}'))
+                angle_list.append(cmd.get_angle(f'index {donor_index}', f'index {H_index}', f'index {acceptor_index}'))
+            if distance_list[0] < distance_list[1]:
+                distance = distance_list[0]
+                angle = angle_list[0]
+            elif distance_list[0] > distance_list[1]:
+                distance = distance_list[1]
+                angle = angle_list[1]
+            else:
+                successful_completion = False
+                print(f"Error: The two hydrogens on a non-rotatable donor atom are the same distance from the acceptor "
+                      f"atom in PDB ID {pdb}.")
+                notes.append(f"Error: The two hydrogens on a non-rotatable donor atom are the same distance from the "
+                             f"acceptor atom in PDB ID {pdb}.")
+                return [successful_completion, notes]
+        # issue an error message if there are more than two hydrogens
+        elif len(stored.hydrogen) > 2:
+            successful_completion = False
+            print(f"Error: A non-rotatable donor atom has more than two hydrogens in PDB ID {pdb}.")
+            notes.append(f"Error: A non-rotatable donor atom has more than two hydrogens in PDB ID {pdb}.")
+            return [successful_completion, notes]
+        # TODO keep working on this section that returns the values
+        if distance <= 2.5 and angle >= 120:
+            return [successful_completion, [True, distance, angle, 'hydrogen']]
+    # if the donor is rotatable, use the locations of the donor antecedent, donor, and acceptor atoms to get the
+    # distance and angle measurements, then return the values
+    elif donor_info[2]:
+        # collect the index of the donor antecedent atom
+        stored.antecedent = []
+        cmd.iterate(f'name {donor_info[4]} and neighbor index {donor_index}', 'stored.antecedent.append(index)')
+        # issue an error message if no donor antecedent atom was identified
+        if len(stored.antecedent) == 0:
+            successful_completion = False
+            print(f"Error: No antecedent atoms were identified for a donor atom in PDB ID {pdb}.")
+            notes.append(f"Error: No antecedent atoms were identified for a donor atom in PDB ID {pdb}.")
+            return [successful_completion, notes]
+        # get the measurements when one donor antecedent atom was identified
+        elif len(stored.antecedent) == 1:
+            distance = cmd.get_distance(f'index {donor_index}', f'index {acceptor_index}')
+            angle = cmd.get_angle(f'index {stored.antecedent[0]}', f'index {donor_index}', f'index {acceptor_index}')
+        # issue an error message if more than one donor antecedent atom was identified
+        if len(stored.antecedent) > 1:
+            successful_completion = False
+            print(f"Error: More than one antecedent atom was identified for a donor atom in PDB ID {pdb}.")
+            notes.append(f"Error: More than one antecedent atom was identified for a donor atom in PDB ID {pdb}.")
+            return [successful_completion, notes]
 
+    print(distance)
+    print(angle)
     print(donor_info)
 # region library
 # define a list of dictionaries that provides information on the canonical protein and RNA/DNA residues
@@ -273,7 +355,4 @@ residue_library = [
 ]
 # endregion
 
-# print(eval_H_bonding(51045, 53543, '6XU8'))
-# print(eval_H_bonding(51037, 53543, '6XU8'))
-# TODO look into the error message after running the following call to eval_H_bonding
-print(eval_H_bonding(51059, 53543, '6XU8'))
+print(eval_H_bonding(64624, 64639, '6XU8'))
