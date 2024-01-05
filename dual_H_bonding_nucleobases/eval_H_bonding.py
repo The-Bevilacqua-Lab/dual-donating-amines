@@ -7,7 +7,7 @@ from pymol import cmd
 from pymol import stored
 
 
-def eval_H_bonding(donor_index, acceptor_index, pdb):
+def eval_h_bonding(donor_index, acceptor_index, pdb, h_ang_tol=30, don_ang_tol=60):
     # initially assume that the evaluation will complete successfully
     successful_completion = True
     # initialize an empty list that can be used to document why an evaluation was not completed successfully
@@ -115,6 +115,37 @@ def eval_H_bonding(donor_index, acceptor_index, pdb):
     # library, return a non-successful completion with the relevant notes
     if not successful_completion:
         return [successful_completion, notes]
+    # get the distance and angle values for the donor/acceptor pair
+    # TODO keep working on the below call to calc_geom to pass necessary info to run calculation
+    geometry = calc_geom(donor_info, acceptor_index, pdb)
+    # if the geometry calculation was not successful, return an explanation of what went wrong
+    successful_completion = geometry[0]
+    if not successful_completion:
+        return geometry
+    # proceed if the geometry calculation was successful
+    else:
+        distance = geometry[1][0]
+        angle = geometry[1][1]
+        pivot = geometry[1][2]
+        # return whether an H-bond is identified
+        if pivot == 'hydrogen':
+            # noinspection PyTypeChecker
+            if distance <= 2.5 and angle >= (180 - don_ang_tol):
+                return [successful_completion, [True, distance, angle, 'hydrogen']]
+            else:
+                return [successful_completion, [False, distance, angle, 'hydrogen']]
+        elif pivot == 'donor':
+            # noinspection PyTypeChecker
+            if distance <= 3.5 and (109.5 - h_ang_tol) <= angle <= (109.5 + h_ang_tol):
+                return [successful_completion, [True, distance, angle, 'donor']]
+            else:
+                return [successful_completion, [False, distance, angle, 'donor']]
+
+def calc_geom(donor_index, acceptor_index, pdb):
+    # initially assume that the evaluation will complete successfully
+    successful_completion = True
+    # initialize an empty list that can be used to document why an evaluation was not completed successfully
+    notes = []
     # if the donor is non-rotatable, use the locations of the donor, hydrogen, and acceptor atoms to get the distance
     # and angle measurements, then return the values
     if not donor_info[2]:
@@ -135,9 +166,9 @@ def eval_H_bonding(donor_index, acceptor_index, pdb):
         elif len(stored.hydrogen) == 2:
             distance_list = []
             angle_list = []
-            for H_index in stored.hydrogen:
-                distance_list.append(cmd.get_distance(f'index {H_index}', f'index {acceptor_index}'))
-                angle_list.append(cmd.get_angle(f'index {donor_index}', f'index {H_index}', f'index {acceptor_index}'))
+            for h_index in stored.hydrogen:
+                distance_list.append(cmd.get_distance(f'index {h_index}', f'index {acceptor_index}'))
+                angle_list.append(cmd.get_angle(f'index {donor_index}', f'index {h_index}', f'index {acceptor_index}'))
             if distance_list[0] < distance_list[1]:
                 distance = distance_list[0]
                 angle = angle_list[0]
@@ -157,9 +188,8 @@ def eval_H_bonding(donor_index, acceptor_index, pdb):
             print(f"Error: A non-rotatable donor atom has more than two hydrogens in PDB ID {pdb}.")
             notes.append(f"Error: A non-rotatable donor atom has more than two hydrogens in PDB ID {pdb}.")
             return [successful_completion, notes]
-        # TODO keep working on this section that returns the values
-        if distance <= 2.5 and angle >= 120:
-            return [successful_completion, [True, distance, angle, 'hydrogen']]
+        # return geometry values
+        return [successful_completion, [distance, angle, 'hydrogen']]
     # if the donor is rotatable, use the locations of the donor antecedent, donor, and acceptor atoms to get the
     # distance and angle measurements, then return the values
     elif donor_info[2]:
@@ -177,15 +207,14 @@ def eval_H_bonding(donor_index, acceptor_index, pdb):
             distance = cmd.get_distance(f'index {donor_index}', f'index {acceptor_index}')
             angle = cmd.get_angle(f'index {stored.antecedent[0]}', f'index {donor_index}', f'index {acceptor_index}')
         # issue an error message if more than one donor antecedent atom was identified
-        if len(stored.antecedent) > 1:
+        elif len(stored.antecedent) > 1:
             successful_completion = False
             print(f"Error: More than one antecedent atom was identified for a donor atom in PDB ID {pdb}.")
             notes.append(f"Error: More than one antecedent atom was identified for a donor atom in PDB ID {pdb}.")
             return [successful_completion, notes]
+        # return geometry values
+        return [successful_completion, [distance, angle, 'donor']]
 
-    print(distance)
-    print(angle)
-    print(donor_info)
 # region library
 # define a list of dictionaries that provides information on the canonical protein and RNA/DNA residues
 # the indices of each donor or acceptor atom list specifies the following:
@@ -355,4 +384,4 @@ residue_library = [
 ]
 # endregion
 
-print(eval_H_bonding(64624, 64639, '6XU8'))
+print(eval_h_bonding(64631, 67541, '6XU8'))
