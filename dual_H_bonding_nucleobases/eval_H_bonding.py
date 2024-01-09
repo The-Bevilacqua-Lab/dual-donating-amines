@@ -159,9 +159,89 @@ def eval_h_bonding(donor_index, acceptor_index, pdb, h_ang_tol=30, don_ang_tol=6
                     return [successful_completion, [True, distance, angle, 'donor']]
                 else:
                     return [successful_completion, [False, distance, angle, 'donor']]
+    # if there is ambiguity in the side chain conformation of either the donor residue or the acceptor residue (but not
+    # both), the geometry calculation needs to be performed twice
+    elif (ambiguous_donor and not ambiguous_acceptor) or (not ambiguous_donor and ambiguous_acceptor):
+        # get the first set of distance and angle values for the donor/acceptor pair
+        first_geometry = calc_geom(donor_index, acceptor_index, donor_info, pdb)
+        # if the geometry calculation was not successful, return an explanation of what went wrong
+        successful_completion = first_geometry[0]
+        if not successful_completion:
+            return first_geometry
+        # proceed if the geometry calculation was successful
+        else:
+            distance = first_geometry[1][0]
+            angle = first_geometry[1][1]
+            first_eval = []
+            # determine whether an H-bond is identified
+            if vertex == 'hydrogen':
+                # noinspection PyTypeChecker
+                if distance <= 2.5 and angle >= (180 - don_ang_tol):
+                    first_eval = [successful_completion, [True, distance, angle, 'hydrogen']]
+                else:
+                    first_eval = [successful_completion, [False, distance, angle, 'hydrogen']]
+            elif vertex == 'donor':
+                # noinspection PyTypeChecker
+                if distance <= 3.5 and (109.5 - h_ang_tol) <= angle <= (109.5 + h_ang_tol):
+                    first_eval = [successful_completion, [True, distance, angle, 'donor']]
+                else:
+                    first_eval = [successful_completion, [False, distance, angle, 'donor']]
+        # rotate the ambiguous side chain atoms of the donor residue
+        rotation = rotate_side_chain(stored.donor_atom, pdb)
+        # if the rotation was not successful, return an explanation of what went wrong
+        successful_completion = rotation[0]
+        if not successful_completion:
+            return rotation
+        # get the second set of distance and angle values for the donor/acceptor pair
+        second_geometry = calc_geom(donor_index, acceptor_index, donor_info, pdb)
+        # if the geometry calculation was not successful, return an explanation of what went wrong
+        successful_completion = second_geometry[0]
+        if not successful_completion:
+            return second_geometry
+        # proceed if the geometry calculation was successful
+        else:
+            distance = second_geometry[1][0]
+            angle = second_geometry[1][1]
+            second_eval = []
+            # determine whether an H-bond is identified
+            if vertex == 'hydrogen':
+                # noinspection PyTypeChecker
+                if distance <= 2.5 and angle >= (180 - don_ang_tol):
+                    second_eval = [successful_completion, [True, distance, angle, 'hydrogen']]
+                else:
+                    second_eval = [successful_completion, [False, distance, angle, 'hydrogen']]
+            elif vertex == 'donor':
+                # noinspection PyTypeChecker
+                if distance <= 3.5 and (109.5 - h_ang_tol) <= angle <= (109.5 + h_ang_tol):
+                    second_eval = [successful_completion, [True, distance, angle, 'donor']]
+                else:
+                    second_eval = [successful_completion, [False, distance, angle, 'donor']]
+        # determine which evaluation to return, giving preference to the first evaluation since that is based on how
+        # the structure was originally modeled
+        if first_eval[1][0] and second_eval[1][0]:
+            return first_eval
+        elif first_eval[1][0] and not second_eval[1][0]:
+            return first_eval
+        elif not first_eval[1][0] and second_eval[1][0]:
+            return second_eval
+        elif not first_eval[1][0] and not second_eval[1][0]:
+            return first_eval
+    # if there is ambiguity in the side chain conformations of both donor and acceptor residues, do not calculate any
+    # geometries and return False for successful_completion
+    # this situation should never be encountered in the current study since, at a minimum, an RNA/DNA residue should
+    # always be either the donor or acceptor
+    # the code could be expanded to evaluate whether an H-bond is identified in this situation
+    elif ambiguous_donor and ambiguous_acceptor:
+        successful_completion = False
+        print(f"Error: Both the potential H-bonding donor and acceptor atoms belong to the side chains of ASN, GLN, or "
+              f"HIS in PDB ID {pdb}. The code is not capable of evaluating whether an H-bond is identified in this "
+              f"situation.")
+        notes.append(f"Error: Both the potential H-bonding donor and acceptor atoms belong to the side chains of ASN, "
+                     f"GLN, or HIS in PDB ID {pdb}. The code is not capable of evaluating whether an H-bond is "
+                     f"identified in this situation.")
+        return [successful_completion, notes]
 
 
-# stored.acceptor_atom = (index, name, resn, resi, chain)
 def rotate_side_chain(atom, pdb):
     # initially assume that the evaluation will complete successfully
     successful_completion = True
