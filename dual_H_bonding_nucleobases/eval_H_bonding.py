@@ -10,39 +10,35 @@ from pymol import stored
 
 
 # TODO consider replacing the use of index with chain/resi/name
-def eval_h_bonding(donor_index, acceptor_index, pdb, h_ang_tol=30, don_ang_tol=60):
+def eval_h_bonding(donor_atom, acceptor_atom, pdb, h_ang_tol=30, don_ang_tol=60):
     # initially assume that the evaluation will complete successfully
     successful_completion = True
     # initialize an empty list that can be used to document why an evaluation was not completed successfully
     notes = []
     # ensure that the index for the donor atom accounts for exactly one atom
-    if cmd.count_atoms(f'index {donor_index}') != 1:
+    if cmd.count_atoms(f'name {donor_atom[0]} and resn {donor_atom[1]} and resi {donor_atom[2]} and chain {donor_atom[3]}') != 1:
         successful_completion = False
-        print(f"Error: The index provided for a potential H-bonding donor atom does not account for exactly one atom "
+        print(f"Error: The info provided for a potential H-bonding donor atom does not account for exactly one atom "
               f"in PDB ID {pdb}.")
-        notes.append(f"Error: The index provided for a potential H-bonding donor atom does not account for exactly one "
+        notes.append(f"Error: The info provided for a potential H-bonding donor atom does not account for exactly one "
                      f"atom in PDB ID {pdb}.")
         return [successful_completion, notes]
     # ensure that the index for the acceptor atom accounts for exactly one atom
-    if cmd.count_atoms(f'index {acceptor_index}') != 1:
+    if cmd.count_atoms(f'name {acceptor_atom[0]} and resn {acceptor_atom[1]} and resi {acceptor_atom[2]} and chain '
+                       f'{acceptor_atom[3]}') != 1:
         successful_completion = False
-        print(f"Error: The index provided for a potential H-bonding acceptor atom does not account for exactly one "
+        print(f"Error: The info provided for a potential H-bonding acceptor atom does not account for exactly one "
               f"atom in PDB ID {pdb}.")
-        notes.append(f"Error: The index provided for a potential H-bonding acceptor atom does not account for exactly "
+        notes.append(f"Error: The info provided for a potential H-bonding acceptor atom does not account for exactly "
                      f"one atom in PDB ID {pdb}.")
         return [successful_completion, notes]
-    # collect information on the donor and acceptor atoms
-    stored.donor_atom = ()
-    cmd.iterate(f'index {donor_index}', 'stored.donor_atom = (index, name, resn, resi, chain)')
-    stored.acceptor_atom = ()
-    cmd.iterate(f'index {acceptor_index}', 'stored.acceptor_atom = (index, name, resn, resi, chain)')
     # construct lists containing the names of the canonical protein and nucleic residues
     protein_residues = ['ALA', 'ASP', 'ASN', 'ARG', 'CYS', 'GLU', 'GLN', 'GLY', 'HIS', 'ILE', 'LEU', 'LYS', 'MET',
                         'PHE', 'PRO', 'SER', 'THR', 'TRP', 'TYR', 'VAL']
     nucleic_residues = ['A', 'C', 'G', 'U', 'DA', 'DC', 'DG', 'DT']
     # determine whether the donor atom is at the end of a chain and is capable of donating an H-bond
     terminal_donating_atom = []
-    if cmd.count_atoms(f'not elem H and neighbor index {donor_index}') == 1 and (
+    if cmd.count_atoms(f'not elem H and neighbor (name {donor_atom[0]} and resn {donor_atom[1]} and resi {donor_atom[2]} and chain {donor_atom[3]})') == 1 and (
             stored.donor_atom[1] == "N" or
             stored.donor_atom[1] == "O5'" or
             stored.donor_atom[1] == "O3'"):
@@ -51,7 +47,8 @@ def eval_h_bonding(donor_index, acceptor_index, pdb, h_ang_tol=30, don_ang_tol=6
             terminal_donating_atom = ["N", "N", True, 0, "CA"]
         else:
             stored.bonded_atom = ''
-            cmd.iterate(f'not elem H and neighbor index {donor_index}', 'stored.bonded_atom = name')
+            cmd.iterate(f'not elem H and neighbor (name {donor_atom[0]} and resn {donor_atom[1]} and resi '
+                        f'{donor_atom[2]} and chain {donor_atom[3]})', 'stored.bonded_atom = name')
             # only an RNA O5' atom at the 5' end of the chain is capable of donating an H-bond
             if (stored.donor_atom[1] == "O5'" and stored.bonded_atom == "C5'" and stored.donor_atom[2] in
                     nucleic_residues):
@@ -62,22 +59,19 @@ def eval_h_bonding(donor_index, acceptor_index, pdb, h_ang_tol=30, don_ang_tol=6
                 terminal_donating_atom = ["O3'", "O", True, 0, "C3'"]
     # determine whether the donor atom is listed in the residue library
     # if found, collect other information about that atom
-    donor_info = []
     donor_res = ''
-    donor_atom = ''
+    donor_info = []
     for residue in residue_library:
         if stored.donor_atom[2] == residue['res']:
             donor_res = residue['res']
             for atom in residue['don']:
                 if stored.donor_atom[1] == atom[0]:
-                    donor_atom = atom[0]
                     donor_info = atom
                     # break the loop since the atom was found
                     break
             if (terminal_donating_atom and (stored.donor_atom[1] == "N" and stored.donor_atom[2] in protein_residues) or
                     ((stored.donor_atom[1] == "O5'" or stored.donor_atom[1] == "O3'") and stored.donor_atom[2] in
                      nucleic_residues)):
-                donor_atom = True
                 donor_info = terminal_donating_atom
             # break the loop since the residue was found
             break
@@ -85,21 +79,19 @@ def eval_h_bonding(donor_index, acceptor_index, pdb, h_ang_tol=30, don_ang_tol=6
         successful_completion = False
         notes.append(f"Residue {stored.donor_atom[2]} of the donor atom was not found in the residue library when "
                      f"evaluating a potential H-bond in PDB ID {pdb}.")
-    if not donor_atom:
+    if not donor_info:
         successful_completion = False
         notes.append(f"The donor atom {stored.donor_atom[1]} of residue {stored.donor_atom[2]} was not found in the "
                      f"residue library when evaluating a potential H-bond in PDB ID {pdb}.")
     # determine whether the acceptor atom is listed in the residue library
     # if found, collect other information about that atom
-    acceptor_info = []
     acceptor_res = ''
-    acceptor_atom = ''
+    acceptor_info = []
     for residue in residue_library:
         if stored.acceptor_atom[2] == residue['res']:
             acceptor_res = residue['res']
             for atom in residue['acc']:
                 if stored.acceptor_atom[1] == atom[0]:
-                    acceptor_atom = atom[0]
                     acceptor_info = atom
                     # break the loop since the atom was found
                     break
@@ -109,7 +101,7 @@ def eval_h_bonding(donor_index, acceptor_index, pdb, h_ang_tol=30, don_ang_tol=6
         successful_completion = False
         notes.append(f"Residue {stored.acceptor_atom[2]} of the acceptor atom was not found in the residue library "
                      f"when evaluating a potential H-bond in PDB ID {pdb}.")
-    if not acceptor_atom:
+    if not acceptor_info:
         successful_completion = False
         notes.append(f"The acceptor atom {stored.acceptor_atom[1]} of residue {stored.acceptor_atom[2]} was not found "
                      f"in the residue library when evaluating a potential H-bond in PDB ID {pdb}.")
@@ -125,11 +117,11 @@ def eval_h_bonding(donor_index, acceptor_index, pdb, h_ang_tol=30, don_ang_tol=6
         vertex = 'donor'
     # check if the donor and/or acceptor residues have side chains that have conformations that may have been
     # ambiguously assigned
-    if donor_res in ["ASN", "GLN", "HIS"] and donor_atom != "N":
+    if donor_res in ["ASN", "GLN", "HIS"] and donor_atom[0] != "N":
         ambiguous_donor = True
     else:
         ambiguous_donor = False
-    if acceptor_res in ["ASN", "GLN", "HIS"] and acceptor_atom != "O":
+    if acceptor_res in ["ASN", "GLN", "HIS"] and acceptor_atom[0] != "O":
         ambiguous_acceptor = True
     else:
         ambiguous_acceptor = False
@@ -137,7 +129,7 @@ def eval_h_bonding(donor_index, acceptor_index, pdb, h_ang_tol=30, don_ang_tol=6
     # calculation only needs to be performed once
     if not ambiguous_donor and not ambiguous_acceptor:
         # get the distance and angle values for the donor/acceptor pair
-        geometry = calc_geom(donor_index, acceptor_index, donor_info, pdb)
+        geometry = calc_geom(donor_atom, acceptor_atom, donor_info, pdb)
         # if the geometry calculation was not successful, return an explanation of what went wrong
         successful_completion = geometry[0]
         if not successful_completion:
@@ -186,8 +178,11 @@ def eval_h_bonding(donor_index, acceptor_index, pdb, h_ang_tol=30, don_ang_tol=6
                     first_eval = [successful_completion, [True, distance, angle, 'donor']]
                 else:
                     first_eval = [successful_completion, [False, distance, angle, 'donor']]
-        # rotate the ambiguous side chain atoms of the donor residue
-        rotation = rotate_side_chain(stored.donor_atom, pdb)
+        # rotate the ambiguous side chain atoms of the donor or acceptor residue
+        if ambiguous_donor:
+            rotation = rotate_side_chain(stored.donor_atom, pdb)
+        elif ambiguous_acceptor:
+            rotation = rotate_side_chain(stored.acceptor_atom, pdb)
         # if the rotation was not successful, return an explanation of what went wrong
         successful_completion = rotation[0]
         if not successful_completion:
@@ -216,6 +211,16 @@ def eval_h_bonding(donor_index, acceptor_index, pdb, h_ang_tol=30, don_ang_tol=6
                     second_eval = [successful_completion, [True, distance, angle, 'donor']]
                 else:
                     second_eval = [successful_completion, [False, distance, angle, 'donor']]
+        # rotate the ambiguous side chain atoms of the donor or acceptor residue to get them back to their original
+        # conformation
+        if ambiguous_donor:
+            rotation = rotate_side_chain(stored.donor_atom, pdb)
+        elif ambiguous_acceptor:
+            rotation = rotate_side_chain(stored.acceptor_atom, pdb)
+        # if the rotation was not successful, return an explanation of what went wrong
+        successful_completion = rotation[0]
+        if not successful_completion:
+            return rotation
         # determine which evaluation to return, giving preference to the first evaluation since that is based on how
         # the structure was originally modeled
         if first_eval[1][0] and second_eval[1][0]:
@@ -549,5 +554,5 @@ residue_library = [
 ]
 # endregion
 
-# print(eval_h_bonding(200457, 22940, '6XU8'))
-# rotate_side_chain((61155, 'OD1', 'ASN', '56', 'AG'), '6XU8')
+print(eval_h_bonding(183410, 61155, '6XU8'))
+# rotate_side_chain((22511, 'NE2', 'HIS', '9', 'Ab'), '6XU8')
