@@ -168,10 +168,12 @@ def rotate_side_chain(atom, pdb):
     # initialize an empty list that can be used to document why an evaluation was not completed successfully
     notes = []
     # collect information specific to the residue
-    axis = []
-    atoms_to_rotate = ''
-    origin = []
     if atom[2] == "ASN":
+        origin = cmd.get_coords(f'(byres (name {atom[1]} and resn {atom[2]} and resi {atom[3]} and chain {atom[4]})) '
+                                f'and name CG', state=0)[0]
+        origin_antecedent = cmd.get_coords(f'(byres (name {atom[1]} and resn {atom[2]} and resi {atom[3]} and chain '
+                                           f'{atom[4]})) and name CB', state=0)[0]
+        axis = [origin[0] - origin_antecedent[0], origin[1] - origin_antecedent[1], origin[2] - origin_antecedent[2]]
         atoms_to_rotate = (f'(byres (name {atom[1]} and resn {atom[2]} and resi {atom[3]} and chain {atom[4]})) and '
                            f'(name ND2 ((neighbor name ND2) and elem H) name OD1)')
         # ensure that atoms_to_rotate accounts for exactly four atoms
@@ -183,6 +185,11 @@ def rotate_side_chain(atom, pdb):
                          f"PDB ID {pdb}.")
             return [successful_completion, notes]
     elif atom[2] == "GLN":
+        origin = cmd.get_coords(f'(byres (name {atom[1]} and resn {atom[2]} and resi {atom[3]} and chain {atom[4]})) '
+                                f'and name CD', state=0)[0]
+        origin_antecedent = cmd.get_coords(f'(byres (name {atom[1]} and resn {atom[2]} and resi {atom[3]} and chain '
+                                           f'{atom[4]})) and name CG', state=0)[0]
+        axis = [origin[0] - origin_antecedent[0], origin[1] - origin_antecedent[1], origin[2] - origin_antecedent[2]]
         atoms_to_rotate = (f'(byres (name {atom[1]} and resn {atom[2]} and resi {atom[3]} and chain {atom[4]})) and '
                            f'(name NE2 ((neighbor name NE2) and elem H) name OE1)')
         # ensure that atoms_to_rotate accounts for exactly four atoms
@@ -194,6 +201,11 @@ def rotate_side_chain(atom, pdb):
                          f"PDB ID {pdb}.")
             return [successful_completion, notes]
     elif atom[2] == "HIS":
+        origin = cmd.get_coords(f'(byres (name {atom[1]} and resn {atom[2]} and resi {atom[3]} and chain {atom[4]})) '
+                                f'and name CG', state=0)[0]
+        origin_antecedent = cmd.get_coords(f'(byres (name {atom[1]} and resn {atom[2]} and resi {atom[3]} and chain '
+                                           f'{atom[4]})) and name CB', state=0)[0]
+        axis = [origin[0] - origin_antecedent[0], origin[1] - origin_antecedent[1], origin[2] - origin_antecedent[2]]
         atoms_to_rotate = (f'(byres (name {atom[1]} and resn {atom[2]} and resi {atom[3]} and chain {atom[4]})) and '
                            f'(name ND1 ((neighbor name ND1) and elem H) name CE1 name CD2 name NE2 '
                            f'((neighbor name NE2) and elem H))')
@@ -211,6 +223,7 @@ def rotate_side_chain(atom, pdb):
         notes.append(f"Error: The code attempted to rotate a residue in PDB ID {pdb} that is not ASN, GLN, or HIS.")
         return [successful_completion, notes]
     cmd.rotate(axis, 180, selection=atoms_to_rotate, state=0, camera=0, origin=origin)
+    return [successful_completion, notes]
 
 
 def calc_geom(donor_index, acceptor_index, donor_info, pdb):
@@ -456,4 +469,5 @@ residue_library = [
 ]
 # endregion
 
-print(eval_h_bonding(200457, 22940, '6XU8'))
+# print(eval_h_bonding(200457, 22940, '6XU8'))
+# rotate_side_chain((61155, 'OD1', 'ASN', '56', 'AG'), '6XU8')
