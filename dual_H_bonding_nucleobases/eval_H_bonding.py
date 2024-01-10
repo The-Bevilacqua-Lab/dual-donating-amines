@@ -1,6 +1,5 @@
 """
 This module will eventaully do something.
-Mention that PyMOL index is sensitive to atom addition and removal
 Mention that histidines should be protonated at both endocyclic nitrogens
 """
 
@@ -9,23 +8,23 @@ from pymol import cmd
 from pymol import stored
 
 
-# TODO consider replacing the use of index with chain/resi/name
-def eval_h_bonding(donor_atom, acceptor_atom, pdb, h_ang_tol=30, don_ang_tol=60):
+def eval_h_bonding(donor_atom, acceptor_atom, pdb, h_ang_tol=60, don_ang_tol=30):
     # initially assume that the evaluation will complete successfully
     successful_completion = True
     # initialize an empty list that can be used to document why an evaluation was not completed successfully
     notes = []
-    # ensure that the index for the donor atom accounts for exactly one atom
-    if cmd.count_atoms(f'name {donor_atom[0]} and resn {donor_atom[1]} and resi {donor_atom[2]} and chain {donor_atom[3]}') != 1:
+    # ensure that the info provided for the donor atom accounts for exactly one atom
+    if cmd.count_atoms(f'name {donor_atom[0]} and resn {donor_atom[1]} and resi {donor_atom[2]} and '
+                       f'chain {donor_atom[3]}') != 1:
         successful_completion = False
         print(f"Error: The info provided for a potential H-bonding donor atom does not account for exactly one atom "
               f"in PDB ID {pdb}.")
         notes.append(f"Error: The info provided for a potential H-bonding donor atom does not account for exactly one "
                      f"atom in PDB ID {pdb}.")
         return [successful_completion, notes]
-    # ensure that the index for the acceptor atom accounts for exactly one atom
-    if cmd.count_atoms(f'name {acceptor_atom[0]} and resn {acceptor_atom[1]} and resi {acceptor_atom[2]} and chain '
-                       f'{acceptor_atom[3]}') != 1:
+    # ensure that the info provided for the acceptor atom accounts for exactly one atom
+    if cmd.count_atoms(f'name {acceptor_atom[0]} and resn {acceptor_atom[1]} and resi {acceptor_atom[2]} and '
+                       f'chain {acceptor_atom[3]}') != 1:
         successful_completion = False
         print(f"Error: The info provided for a potential H-bonding acceptor atom does not account for exactly one "
               f"atom in PDB ID {pdb}.")
@@ -38,7 +37,8 @@ def eval_h_bonding(donor_atom, acceptor_atom, pdb, h_ang_tol=30, don_ang_tol=60)
     nucleic_residues = ['A', 'C', 'G', 'U', 'DA', 'DC', 'DG', 'DT']
     # determine whether the donor atom is at the end of a chain and is capable of donating an H-bond
     terminal_donating_atom = []
-    if cmd.count_atoms(f'not elem H and neighbor (name {donor_atom[0]} and resn {donor_atom[1]} and resi {donor_atom[2]} and chain {donor_atom[3]})') == 1 and (
+    if cmd.count_atoms(f'not elem H and neighbor (name {donor_atom[0]} and resn {donor_atom[1]} and '
+                       f'resi {donor_atom[2]} and chain {donor_atom[3]})') == 1 and (
             stored.donor_atom[1] == "N" or
             stored.donor_atom[1] == "O5'" or
             stored.donor_atom[1] == "O3'"):
@@ -141,13 +141,13 @@ def eval_h_bonding(donor_atom, acceptor_atom, pdb, h_ang_tol=30, don_ang_tol=60)
             # return whether an H-bond is identified
             if vertex == 'hydrogen':
                 # noinspection PyTypeChecker
-                if distance <= 2.5 and angle >= (180 - don_ang_tol):
+                if distance <= 2.5 and angle >= (180 - h_ang_tol):
                     return [successful_completion, [True, distance, angle, 'hydrogen']]
                 else:
                     return [successful_completion, [False, distance, angle, 'hydrogen']]
             elif vertex == 'donor':
                 # noinspection PyTypeChecker
-                if distance <= 3.5 and (109.5 - h_ang_tol) <= angle <= (109.5 + h_ang_tol):
+                if distance <= 3.5 and (109.5 - don_ang_tol) <= angle <= (109.5 + don_ang_tol):
                     return [successful_completion, [True, distance, angle, 'donor']]
                 else:
                     return [successful_completion, [False, distance, angle, 'donor']]
@@ -155,7 +155,7 @@ def eval_h_bonding(donor_atom, acceptor_atom, pdb, h_ang_tol=30, don_ang_tol=60)
     # both), the geometry calculation needs to be performed twice
     elif (ambiguous_donor and not ambiguous_acceptor) or (not ambiguous_donor and ambiguous_acceptor):
         # get the first set of distance and angle values for the donor/acceptor pair
-        first_geometry = calc_geom(donor_index, acceptor_index, donor_info, pdb)
+        first_geometry = calc_geom(donor_atom, acceptor_atom, donor_info, pdb)
         # if the geometry calculation was not successful, return an explanation of what went wrong
         successful_completion = first_geometry[0]
         if not successful_completion:
@@ -188,7 +188,7 @@ def eval_h_bonding(donor_atom, acceptor_atom, pdb, h_ang_tol=30, don_ang_tol=60)
         if not successful_completion:
             return rotation
         # get the second set of distance and angle values for the donor/acceptor pair
-        second_geometry = calc_geom(donor_index, acceptor_index, donor_info, pdb)
+        second_geometry = calc_geom(donor_atom, acceptor_atom, donor_info, pdb)
         # if the geometry calculation was not successful, return an explanation of what went wrong
         successful_completion = second_geometry[0]
         if not successful_completion:
@@ -254,12 +254,12 @@ def rotate_side_chain(atom, pdb):
     notes = []
     # collect information specific to the residue
     if atom[2] == "ASN":
-        origin = cmd.get_coords(f'(byres (name {atom[1]} and resn {atom[2]} and resi {atom[3]} and chain {atom[4]})) '
+        origin = cmd.get_coords(f'(byres (name {atom[0]} and resn {atom[1]} and resi {atom[2]} and chain {atom[3]})) '
                                 f'and name CG', state=0)[0]
-        origin_antecedent = cmd.get_coords(f'(byres (name {atom[1]} and resn {atom[2]} and resi {atom[3]} and chain '
-                                           f'{atom[4]})) and name CB', state=0)[0]
+        origin_antecedent = cmd.get_coords(f'(byres (name {atom[0]} and resn {atom[1]} and resi {atom[2]} and chain '
+                                           f'{atom[3]})) and name CB', state=0)[0]
         axis = [origin[0] - origin_antecedent[0], origin[1] - origin_antecedent[1], origin[2] - origin_antecedent[2]]
-        atoms_to_rotate = (f'(byres (name {atom[1]} and resn {atom[2]} and resi {atom[3]} and chain {atom[4]})) and '
+        atoms_to_rotate = (f'(byres (name {atom[0]} and resn {atom[1]} and resi {atom[2]} and chain {atom[3]})) and '
                            f'(name ND2 ((neighbor name ND2) and elem H) name OD1)')
         # ensure that atoms_to_rotate accounts for exactly four atoms
         if cmd.count_atoms(atoms_to_rotate) != 4:
@@ -270,12 +270,12 @@ def rotate_side_chain(atom, pdb):
                          f"PDB ID {pdb}.")
             return [successful_completion, notes]
     elif atom[2] == "GLN":
-        origin = cmd.get_coords(f'(byres (name {atom[1]} and resn {atom[2]} and resi {atom[3]} and chain {atom[4]})) '
+        origin = cmd.get_coords(f'(byres (name {atom[0]} and resn {atom[1]} and resi {atom[2]} and chain {atom[3]})) '
                                 f'and name CD', state=0)[0]
-        origin_antecedent = cmd.get_coords(f'(byres (name {atom[1]} and resn {atom[2]} and resi {atom[3]} and chain '
-                                           f'{atom[4]})) and name CG', state=0)[0]
+        origin_antecedent = cmd.get_coords(f'(byres (name {atom[0]} and resn {atom[1]} and resi {atom[2]} and chain '
+                                           f'{atom[3]})) and name CG', state=0)[0]
         axis = [origin[0] - origin_antecedent[0], origin[1] - origin_antecedent[1], origin[2] - origin_antecedent[2]]
-        atoms_to_rotate = (f'(byres (name {atom[1]} and resn {atom[2]} and resi {atom[3]} and chain {atom[4]})) and '
+        atoms_to_rotate = (f'(byres (name {atom[0]} and resn {atom[1]} and resi {atom[2]} and chain {atom[3]})) and '
                            f'(name NE2 ((neighbor name NE2) and elem H) name OE1)')
         # ensure that atoms_to_rotate accounts for exactly four atoms
         if cmd.count_atoms(atoms_to_rotate) != 4:
@@ -286,12 +286,12 @@ def rotate_side_chain(atom, pdb):
                          f"PDB ID {pdb}.")
             return [successful_completion, notes]
     elif atom[2] == "HIS":
-        origin = cmd.get_coords(f'(byres (name {atom[1]} and resn {atom[2]} and resi {atom[3]} and chain {atom[4]})) '
+        origin = cmd.get_coords(f'(byres (name {atom[0]} and resn {atom[1]} and resi {atom[2]} and chain {atom[3]})) '
                                 f'and name CG', state=0)[0]
-        origin_antecedent = cmd.get_coords(f'(byres (name {atom[1]} and resn {atom[2]} and resi {atom[3]} and chain '
-                                           f'{atom[4]})) and name CB', state=0)[0]
+        origin_antecedent = cmd.get_coords(f'(byres (name {atom[0]} and resn {atom[1]} and resi {atom[2]} and chain '
+                                           f'{atom[3]})) and name CB', state=0)[0]
         axis = [origin[0] - origin_antecedent[0], origin[1] - origin_antecedent[1], origin[2] - origin_antecedent[2]]
-        atoms_to_rotate = (f'(byres (name {atom[1]} and resn {atom[2]} and resi {atom[3]} and chain {atom[4]})) and '
+        atoms_to_rotate = (f'(byres (name {atom[0]} and resn {atom[1]} and resi {atom[2]} and chain {atom[3]})) and '
                            f'(name ND1 ((neighbor name ND1) and elem H) name CE1 name CD2 name NE2 '
                            f'((neighbor name NE2) and elem H))')
         # ensure that atoms_to_rotate accounts for exactly six atoms
@@ -311,7 +311,7 @@ def rotate_side_chain(atom, pdb):
     return [successful_completion, notes]
 
 
-def calc_geom(donor_index, acceptor_index, donor_info, pdb):
+def calc_geom(donor_atom, acceptor_atom, donor_info, pdb):
     # initially assume that the evaluation will complete successfully
     successful_completion = True
     # initialize an empty list that can be used to document why an evaluation was not completed successfully
@@ -321,7 +321,8 @@ def calc_geom(donor_index, acceptor_index, donor_info, pdb):
     if not donor_info[2]:
         # collect the indices of the hydrogens
         stored.hydrogen = []
-        cmd.iterate(f'elem H and neighbor index {donor_index}', 'stored.hydrogen.append(index)')
+        cmd.iterate(f'elem H and neighbor (name {donor_atom[0]} and resn {donor_atom[1]} and resi {donor_atom[2]} and '
+                    f'chain {donor_atom[3]})', 'stored.hydrogen.append((name, resn, resi, chain))')
         # issue an error message if there are no hydrogens
         if len(stored.hydrogen) == 0:
             successful_completion = False
@@ -330,15 +331,29 @@ def calc_geom(donor_index, acceptor_index, donor_info, pdb):
             return [successful_completion, notes]
         # get the measurements for donors that have one hydrogen
         elif len(stored.hydrogen) == 1:
-            distance = cmd.get_distance(f'index {stored.hydrogen[0]}', f'index {acceptor_index}')
-            angle = cmd.get_angle(f'index {donor_index}', f'index {stored.hydrogen[0]}', f'index {acceptor_index}')
+            distance = cmd.get_distance(f'name {stored.hydrogen[0][0]} and resn {stored.hydrogen[0][1]} and '
+                                        f'resi {stored.hydrogen[0][2]} and chain {stored.hydrogen[0][3]}',
+                                        f'name {acceptor_atom[0]} and resn {acceptor_atom[1]} and '
+                                        f'resi {acceptor_atom[2]} and chain {acceptor_atom[3]}')
+            angle = cmd.get_angle(f'name {donor_atom[0]} and resn {donor_atom[1]} and resi {donor_atom[2]} and '
+                                  f'chain {donor_atom[3]}', f'name {stored.hydrogen[0][0]} and '
+                                  f'resn {stored.hydrogen[0][1]} and resi {stored.hydrogen[0][2]} and '
+                                  f'chain {stored.hydrogen[0][3]}', f'name {acceptor_atom[0]} and '
+                                  f'resn {acceptor_atom[1]} and resi {acceptor_atom[2]} and chain {acceptor_atom[3]}')
         # get the measurements for donors that have two hydrogens
         elif len(stored.hydrogen) == 2:
             distance_list = []
             angle_list = []
-            for h_index in stored.hydrogen:
-                distance_list.append(cmd.get_distance(f'index {h_index}', f'index {acceptor_index}'))
-                angle_list.append(cmd.get_angle(f'index {donor_index}', f'index {h_index}', f'index {acceptor_index}'))
+            for h_atom in stored.hydrogen:
+                distance_list.append(cmd.get_distance(f'name {h_atom[0]} and resn {h_atom[1]} and resi {h_atom[2]} and '
+                                                      f'chain {h_atom[3]}', f'name {acceptor_atom[0]} and '
+                                                      f'resn {acceptor_atom[1]} and resi {acceptor_atom[2]} and '
+                                                      f'chain {acceptor_atom[3]}'))
+                angle_list.append(cmd.get_angle(f'name {donor_atom[0]} and resn {donor_atom[1]} and '
+                                                f'resi {donor_atom[2]} and chain {donor_atom[3]}', f'name {h_atom[0]} '
+                                                f'and resn {h_atom[1]} and resi {h_atom[2]} and chain {h_atom[3]}',
+                                                f'name {acceptor_atom[0]} and resn {acceptor_atom[1]} and '
+                                                f'resi {acceptor_atom[2]} and chain {acceptor_atom[3]}'))
             if distance_list[0] < distance_list[1]:
                 distance = distance_list[0]
                 angle = angle_list[0]
@@ -363,9 +378,11 @@ def calc_geom(donor_index, acceptor_index, donor_info, pdb):
     # if the donor is rotatable, use the locations of the donor antecedent, donor, and acceptor atoms to get the
     # distance and angle measurements, then return the values
     elif donor_info[2]:
-        # collect the index of the donor antecedent atom
+        # collect information about the donor antecedent atom
         stored.antecedent = []
-        cmd.iterate(f'name {donor_info[4]} and neighbor index {donor_index}', 'stored.antecedent.append(index)')
+        cmd.iterate(f'name {donor_info[4]} and neighbor (name {donor_atom[0]} and resn {donor_atom[1]} and '
+                    f'resi {donor_atom[2]} and chain {donor_atom[3]})',
+                    'stored.antecedent.append((name, resn, resi, chain))')
         # issue an error message if no donor antecedent atom was identified
         if len(stored.antecedent) == 0:
             successful_completion = False
@@ -374,8 +391,15 @@ def calc_geom(donor_index, acceptor_index, donor_info, pdb):
             return [successful_completion, notes]
         # get the measurements when one donor antecedent atom was identified
         elif len(stored.antecedent) == 1:
-            distance = cmd.get_distance(f'index {donor_index}', f'index {acceptor_index}')
-            angle = cmd.get_angle(f'index {stored.antecedent[0]}', f'index {donor_index}', f'index {acceptor_index}')
+            distance = cmd.get_distance(f'name {donor_atom[0]} and resn {donor_atom[1]} and resi {donor_atom[2]} and '
+                                        f'chain {donor_atom[3]}', f'name {acceptor_atom[0]} and '
+                                        f'resn {acceptor_atom[1]} and resi {acceptor_atom[2]} and '
+                                        f'chain {acceptor_atom[3]}')
+            angle = cmd.get_angle(f'name {stored.antecedent[0][0]} and resn {stored.antecedent[0][1]} and '
+                                  f'resi {stored.antecedent[0][2]} and chain {stored.antecedent[0][3]}',
+                                  f'name {donor_atom[0]} and resn {donor_atom[1]} and resi {donor_atom[2]} and '
+                                  f'chain {donor_atom[3]}', f'name {acceptor_atom[0]} and resn {acceptor_atom[1]} and '
+                                  f'resi {acceptor_atom[2]} and chain {acceptor_atom[3]}')
         # issue an error message if more than one donor antecedent atom was identified
         elif len(stored.antecedent) > 1:
             successful_completion = False
