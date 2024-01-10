@@ -14,8 +14,8 @@ from pymol import stored
 import parse_nrlist
 
 directory = os.getcwd()
-mmCIF_directory = directory + "/mmCIF_files"
-PDB_directory = directory + "/PDB_files"
+original_mmCIF_directory = directory + "/original_mmCIF_files"
+modified_mmCIF_directory = directory + "/modified_mmCIF_files"
 
 # TODO atom IDs may not be unique, modify the code to insure the atom selections are specific enough
 # identify the representative set file
@@ -25,30 +25,31 @@ nrlist_file = parse_nrlist.identify()
 # info, and chain info for the representative structures
 nrlist_info = parse_nrlist.get_info(nrlist_file)
 
-# check whether a mmCIF_files folder exists
+# check whether an original_mmCIF_files folder exists
 # if it exists and contains files, exit with an error message
 # if it does not exist, create the folder
-if os.path.isdir(mmCIF_directory):
-    if len(os.listdir(mmCIF_directory)) != 0:
-        print("Error: There are already files in the mmCIF_files folder. This folder should be empty prior to running "
-              "the prepare_PDB module.")
+if os.path.isdir(original_mmCIF_directory):
+    if len(os.listdir(original_mmCIF_directory)) != 0:
+        print("Error: There are already files in the original_mmCIF_files folder. This folder should be empty prior to "
+              "running the prepare_PDB module.")
         sys.exit(1)
 else:
-    os.mkdir(mmCIF_directory)
+    os.mkdir(original_mmCIF_directory)
 
-# move into the mmCIF_files folder so that PyMOL drops the mmCIF files into this folder when running fetch
-os.chdir(mmCIF_directory)
+# change fetch_path to the original_mmCIF_files folder in the current working directory so that PyMOL drops the mmCIF
+# files into this folder when running fetch
+cmd.set('fetch_path', cmd.exp_path('./original_mmCIF_files'))
 
-# check whether a PDB_files folder exists
+# check whether a modified_mmCIF_files folder exists
 # if it exists and contains files, exit with an error message
 # if it does not exist, create the folder
-if os.path.isdir(PDB_directory):
-    if len(os.listdir(PDB_directory)) != 0:
-        print("Error: There are already files in the PDB_files folder. This folder should be empty prior to running "
-              "the prepare_PDB module.")
+if os.path.isdir(modified_mmCIF_directory):
+    if len(os.listdir(modified_mmCIF_directory)) != 0:
+        print("Error: There are already files in the modified_mmCIF_files folder. This folder should be empty prior to "
+              "running the prepare_PDB module.")
         sys.exit(1)
 else:
-    os.mkdir(PDB_directory)
+    os.mkdir(modified_mmCIF_directory)
 
 # work with each equivalence class specified in the representative set file
 for eq_class in nrlist_info:
@@ -62,22 +63,25 @@ for eq_class in nrlist_info:
             sys.exit(1)
         rep_struct_list.append(f"chain {eq_class[3][i]}")
     rep_struct = " ".join(rep_struct_list)
+    # delete all objects in the current PyMOL session
+    cmd.delete('all')
+    # retrieve the structure that contains the representative RNA chains
     cmd.fetch(eq_class[1][0])
-    # create a copy of just the model (or "state" in PyMOL) indicated in the representative set file only including the
-    # representative RNA chains and any chains within 5 angstroms of them
-    cmd.create('copy', selection=f'bychain {eq_class[1][0]} within 5 of ({rep_struct})', source_state=eq_class[2][0],
-               target_state=1)
-    cmd.delete(eq_class[1][0])
+    # if the structure contains more than one model (or "state" in PyMOL), create a new PyMOL object of just that model
+    if cmd.count_states(eq_class[1][0]) > 1:
+        cmd.create(f'{eq_class[1][0]}_state_{eq_class[2][0]}', selection=eq_class[1][0], source_state=eq_class[2][0],
+                   target_state=1)
+        cmd.delete(eq_class[1][0])
     # store atoms that have alternate conformations
     stored.alt_atoms = []
-    cmd.iterate_state(0, 'not alt ""', 'stored.alt_atoms.append([ID,q,alt,chain,resi,name])')
+    cmd.iterate_state(0, 'not alt ""', 'stored.alt_atoms.append((name,resn,resi,chain,alt,q))')
     # prepare a list of atom groups
     # each atom group consists of one or more different conformations of the same atom
     alt_atoms_grouped = []
     for atom in stored.alt_atoms:
         match = False
         for group in alt_atoms_grouped:
-            if atom[3] == group[0][3] and atom[4] == group[0][4] and atom[5] == group[0][5]:
+            if atom[0] == group[0][0] and atom[1] == group[0][1] and atom[2] == group[0][2] and atom[3] == group[0][3]:
                 group.append(atom)
                 match = True
         if not match:
@@ -90,29 +94,36 @@ for eq_class in nrlist_info:
         for atom in group:
             if len(keep) == 0:
                 keep = atom
-            elif atom[1] > keep[1]:
+            elif atom[5] > keep[5]:
                 remove.append(keep)
                 keep = atom
-            elif atom[1] == keep[1]:
-                if len(atom[2]) != 1 or len(keep[2]) != 1:
-                    print(f"Error: There is at least one atom in PDB ID {eq_class[1][0]} with an alt ID that consists "
-                          f"of more than one character.")
+            elif atom[5] == keep[5]:
+                if len(atom[4]) != 1 or len(keep[4]) != 1:
+                    print(f"Error: There is at least one atom in PDB ID {eq_class[1][0]} with an alt ID that does not "
+                          f"consist of exactly one character.")
                     sys.exit(1)
-                elif atom[2] < keep[2]:
+                elif atom[4] < keep[4]:
                     remove.append(keep)
                     keep = atom
-                elif atom[2] == keep[2]:
+                elif atom[4] == keep[4]:
                     print(f"Error: There are multiple atoms with the same alt ID that should have different alt IDs in "
                           f"PDB ID {eq_class[1][0]}.")
                     sys.exit(1)
-                elif atom[2] > keep[2]:
+                elif atom[4] > keep[4]:
                     remove.append(atom)
-            elif atom[1] < keep[1]:
+            elif atom[5] < keep[5]:
                 remove.append(atom)
         for atom in remove:
-            atoms_to_remove.append(atom[0])
+            atoms_to_remove.append(atom)
+    # TODO add code to test that bonded atoms either do not have an alt conformation or are of the same alt conformation
     # remove the atom conformations that are not going to be kept
-    for atom_ID in atoms_to_remove:
-        cmd.remove(f'ID {atom_ID}')
-    cmd.save(f'{PDB_directory}/{eq_class[0]}.pdb')
+    for atom in atoms_to_remove:
+        if cmd.count_atoms(f'name {atom[0]} and resn {atom[1]} and resi {atom[2]} and chain {atom[3]} and '
+                           f'alt {atom[4]}') != 1:
+            print(f"Error: The info provided for an atom to remove does not account for exactly one atom in PDB ID "
+                  f"{eq_class[1][0]}.")
+            sys.exit(1)
+        else:
+            cmd.remove(f'name {atom[0]} and resn {atom[1]} and resi {atom[2]} and chain {atom[3]} and alt {atom[4]}')
+    cmd.save(f'{modified_mmCIF_directory}/{eq_class[0]}.cif')
     cmd.delete('all')
