@@ -17,7 +17,6 @@ directory = os.getcwd()
 original_mmCIF_directory = directory + "/original_mmCIF_files"
 modified_mmCIF_directory = directory + "/modified_mmCIF_files"
 
-# TODO atom IDs may not be unique, modify the code to insure the atom selections are specific enough
 # identify the representative set file
 nrlist_file = parse_nrlist.identify()
 
@@ -74,7 +73,7 @@ for eq_class in nrlist_info:
         cmd.delete(eq_class[1][0])
     # store atoms that have alternate conformations
     stored.alt_atoms = []
-    cmd.iterate_state(0, 'not alt ""', 'stored.alt_atoms.append((name,resn,resi,chain,alt,q))')
+    cmd.iterate('not alt ""', 'stored.alt_atoms.append((name,resn,resi,chain,alt,q))')
     # prepare a list of atom groups
     # each atom group consists of one or more different conformations of the same atom
     alt_atoms_grouped = []
@@ -115,15 +114,32 @@ for eq_class in nrlist_info:
                 remove.append(atom)
         for atom in remove:
             atoms_to_remove.append(atom)
-    # TODO add code to test that bonded atoms either do not have an alt conformation or are of the same alt conformation
     # remove the atom conformations that are not going to be kept
     for atom in atoms_to_remove:
+        # ensure that the info for each atom describes exactly one atom
         if cmd.count_atoms(f'name {atom[0]} and resn {atom[1]} and resi {atom[2]} and chain {atom[3]} and '
                            f'alt {atom[4]}') != 1:
             print(f"Error: The info provided for an atom to remove does not account for exactly one atom in PDB ID "
                   f"{eq_class[1][0]}.")
             sys.exit(1)
-        else:
-            cmd.remove(f'name {atom[0]} and resn {atom[1]} and resi {atom[2]} and chain {atom[3]} and alt {atom[4]}')
+        # check for whether there is any indication that removing the atom will disrupt the connectivity of the atoms
+        # that are kept
+        stored.neighboring_atoms = []
+        cmd.iterate(f'neighbor (name {atom[0]} and resn {atom[1]} and resi {atom[2]} and chain {atom[3]} and '
+                    f'alt {atom[4]})', 'stored.neighboring_atoms.append((name,resn,resi,chain,alt,q))')
+        for neighbor in stored.neighboring_atoms:
+            if neighbor[4] != "" and (atom[4] != neighbor[4] or atom[5] != neighbor[5]):
+                neighbor_in_remove_list = False
+                for compare_atom in atoms_to_remove:
+                    if (compare_atom[0] == neighbor[0] and compare_atom[1] == neighbor[1] and
+                            compare_atom[2] == neighbor[2] and compare_atom[3] == neighbor[3] and
+                            compare_atom[4] == neighbor[4]):
+                        neighbor_in_remove_list = True
+                if not neighbor_in_remove_list:
+                    print(f'Error: Removing the atom {atom[0]} with alt ID {atom[4]} from residue {atom[1]}{atom[2]} '
+                          f'within chain {atom[3]} of PDB ID {eq_class[1][0]} may disrupt the connectivity of the '
+                          f'atoms that are kept.')
+                    sys.exit(1)
+        cmd.remove(f'name {atom[0]} and resn {atom[1]} and resi {atom[2]} and chain {atom[3]} and alt {atom[4]}')
     cmd.save(f'{modified_mmCIF_directory}/{eq_class[0]}.cif')
     cmd.delete('all')
