@@ -1,9 +1,10 @@
 """
-The remove function in this module removes atoms that have multiple conformations. Atoms that have the highest occupancy
-factor are kept while the others are removed. If a set of atoms have the same occupancy factor, the atom with the lowest
-alt ID is retained. For instance, if two atoms represent two different conformations, both have an occupancy factor of
-0.5, and have alt IDs A and B, the atom with alt ID A would be retained. When calling this function, only one object
-should be loaded into the PyMOL session.
+The remove function in this module removes alternate conformations such that each atom in the resulting PDB file only
+has a single conformation. Alternate conformations that have the highest occupancy factor are kept while the others are
+removed. If a set of alternate conformations have the same occupancy factor, the conformation with the lowest alt ID is
+retained. For instance, if two conformations both have an occupancy factor of 0.5 and have alt IDs A and B, the
+conformation with alt ID A would be retained. When calling this function, only one object should be loaded into the
+PyMOL session.
 """
 
 from pymol import cmd
@@ -89,5 +90,4 @@ def remove(pdb):
                                  f"connectivity of the atoms that are kept.")
                     return [successful_completion, notes]
         cmd.remove(f'name {atom[0]} and resn {atom[1]} and resi {atom[2]} and chain {atom[3]} and alt {atom[4]}')
-        # cmd.color('cyan', f'name {atom[0]} and resn {atom[1]} and resi {atom[2]} and chain {atom[3]} and alt {atom[4]}')
     return [successful_completion, notes]
