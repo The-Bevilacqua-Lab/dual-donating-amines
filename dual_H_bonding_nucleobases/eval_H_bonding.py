@@ -1,18 +1,18 @@
 """
 This module contains functions and a residue library that are necessary to evaluate whether an H-bond is identified
-between a potential donor atom and a potential acceptor atom. The function that should be called by other scripts to
-evaluate whether an H-bond is identified is eval_h_bonding. The first two arguments should describe the donor and
-acceptor atoms, respectively. For each atom, a tuple containing the atom name, residue name, residue number, and chain
-ID should be provided in that order. The PDB ID should be provided as the third argument. Optionally, angle tolerances
-can be provided for the fourth and fifth arguments. The function assumes that both endocyclic nitrogens in histidine
-residues are protonated.
+between a potential donor atom and a potential acceptor atom. The function named evaluate should be called by other
+scripts to determine whether an H-bond is identified. The first two arguments should describe the donor and acceptor
+atoms, respectively. For each atom, a tuple containing the atom name, residue name, residue number, and chain ID should
+be provided in that order. The PDB ID should be provided as the third argument. Optionally, angle tolerances can be
+provided for the fourth and fifth arguments. The function assumes that both endocyclic nitrogens in histidine residues
+are protonated.
 """
 
 from pymol import cmd
 from pymol import stored
 
 
-def eval_h_bonding(donor_atom, acceptor_atom, pdb, h_ang_tol=60, don_ang_tol=45):
+def evaluate(donor_atom, acceptor_atom, pdb, h_ang_tol=60, don_ang_tol=45):
     # initially assume that the evaluation will complete successfully
     successful_completion = True
     # initialize an empty list that can be used to document why an evaluation was not completed successfully

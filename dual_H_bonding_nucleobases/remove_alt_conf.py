@@ -1,0 +1,93 @@
+"""
+The remove function in this module removes atoms that have multiple conformations. Atoms that have the highest occupancy
+factor are kept while the others are removed. If a set of atoms have the same occupancy factor, the atom with the lowest
+alt ID is retained. For instance, if two atoms represent two different conformations, both have an occupancy factor of
+0.5, and have alt IDs A and B, the atom with alt ID A would be retained. When calling this function, only one object
+should be loaded into the PyMOL session.
+"""
+
+from pymol import cmd
+from pymol import stored
+
+
+def remove(pdb):
+    # initially assume that the evaluation will complete successfully
+    successful_completion = True
+    # initialize an empty list that can be used to document why an evaluation was not completed successfully
+    notes = []
+    # store atoms that have alternate conformations
+    stored.alt_atoms = []
+    cmd.iterate('not alt ""', 'stored.alt_atoms.append((name,resn,resi,chain,alt,q))')
+    # prepare a list of atom groups
+    # each atom group consists of one or more different conformations of the same atom
+    alt_atoms_grouped = []
+    for atom in stored.alt_atoms:
+        match = False
+        for group in alt_atoms_grouped:
+            if atom[0] == group[0][0] and atom[1] == group[0][1] and atom[2] == group[0][2] and atom[3] == group[0][3]:
+                group.append(atom)
+                match = True
+        if not match:
+            alt_atoms_grouped.append([atom])
+    # determine which atom conformations to keep, prioritizing highest occupancy factor and lowest alt ID, in that order
+    atoms_to_remove = []
+    for group in alt_atoms_grouped:
+        keep = []
+        remove = []
+        for atom in group:
+            if len(keep) == 0:
+                keep = atom
+            elif atom[5] > keep[5]:
+                remove.append(keep)
+                keep = atom
+            elif atom[5] == keep[5]:
+                if len(atom[4]) != 1 or len(keep[4]) != 1:
+                    successful_completion = False
+                    notes.append(f"Error: There is at least one atom in PDB ID {pdb} with an alt ID that does not "
+                                 f"consist of exactly one character.")
+                    return [successful_completion, notes]
+                elif atom[4] < keep[4]:
+                    remove.append(keep)
+                    keep = atom
+                elif atom[4] == keep[4]:
+                    successful_completion = False
+                    notes.append(f"Error: There are multiple atoms with the same alt ID that should have different alt "
+                                 f"IDs in PDB ID {pdb}.")
+                    return [successful_completion, notes]
+                elif atom[4] > keep[4]:
+                    remove.append(atom)
+            elif atom[5] < keep[5]:
+                remove.append(atom)
+        for atom in remove:
+            atoms_to_remove.append(atom)
+    # remove the atom conformations that are not going to be kept
+    for atom in atoms_to_remove:
+        # ensure that the info for each atom describes exactly one atom
+        if cmd.count_atoms(f'name {atom[0]} and resn {atom[1]} and resi {atom[2]} and chain {atom[3]} and '
+                           f'alt {atom[4]}') != 1:
+            successful_completion = False
+            notes.append(f"Error: The info provided for an atom to remove does not account for exactly one atom in PDB "
+                         f"ID {pdb}.")
+            return [successful_completion, notes]
+        # check for whether there is any indication that removing the atom will disrupt the connectivity of the atoms
+        # that are kept
+        stored.neighboring_atoms = []
+        cmd.iterate(f'neighbor (name {atom[0]} and resn {atom[1]} and resi {atom[2]} and chain {atom[3]} and '
+                    f'alt {atom[4]})', 'stored.neighboring_atoms.append((name,resn,resi,chain,alt,q))')
+        for neighbor in stored.neighboring_atoms:
+            if neighbor[4] != "" and (atom[4] != neighbor[4] or atom[5] != neighbor[5]):
+                neighbor_in_remove_list = False
+                for compare_atom in atoms_to_remove:
+                    if (compare_atom[0] == neighbor[0] and compare_atom[1] == neighbor[1] and
+                            compare_atom[2] == neighbor[2] and compare_atom[3] == neighbor[3] and
+                            compare_atom[4] == neighbor[4]):
+                        neighbor_in_remove_list = True
+                if not neighbor_in_remove_list:
+                    successful_completion = False
+                    notes.append(f"Error: Removing the atom {atom[0]} with alt ID {atom[4]} from residue "
+                                 f"{atom[1]}{atom[2]} within chain {atom[3]} of PDB ID {pdb} may disrupt the "
+                                 f"connectivity of the atoms that are kept.")
+                    return [successful_completion, notes]
+        cmd.remove(f'name {atom[0]} and resn {atom[1]} and resi {atom[2]} and chain {atom[3]} and alt {atom[4]}')
+        # cmd.color('cyan', f'name {atom[0]} and resn {atom[1]} and resi {atom[2]} and chain {atom[3]} and alt {atom[4]}')
+    return [successful_completion, notes]
