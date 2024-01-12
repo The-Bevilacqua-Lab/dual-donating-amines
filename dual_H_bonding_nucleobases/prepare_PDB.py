@@ -12,17 +12,17 @@ import parse_nrlist
 import eval_H_bonding
 import remove_alt_conf
 
-# directory = os.getcwd()
-# original_mmCIF_directory = directory + "/original_mmCIF_files"
-# modified_mmCIF_directory = directory + "/modified_mmCIF_files"
-#
-# # identify the representative set file
-# nrlist_file = parse_nrlist.identify()
-#
-# # iterate through the lines of the representative set file and collect the equivalence class names and PDB IDs, model
-# # info, and chain info for the representative structures
-# nrlist_info = parse_nrlist.get_info(nrlist_file)
-#
+directory = os.getcwd()
+original_mmCIF_directory = directory + "/original_mmCIF_files"
+modified_mmCIF_directory = directory + "/modified_mmCIF_files"
+
+# identify the representative set file
+nrlist_file = parse_nrlist.identify()
+
+# iterate through the lines of the representative set file and collect the equivalence class names and PDB IDs, model
+# info, and chain info for the representative structures
+nrlist_info = parse_nrlist.get_info(nrlist_file)
+
 # # check whether an original_mmCIF_files folder exists
 # # if it exists and contains files, exit with an error message
 # # if it does not exist, create the folder
@@ -50,40 +50,105 @@ import remove_alt_conf
 #     os.mkdir(modified_mmCIF_directory)
 
 # construct two lists of tuples containing atom and residue names that describe either donor or acceptor atoms
+# additionally, construct a list of tuples containing atom and residue names that describe rotatable donor atoms
 donor_atoms = []
+rotatable_donor_atoms = []
 acceptor_atoms = []
 for residue in eval_H_bonding.residue_library:
     for donor in residue['don']:
         donor_atoms.append((residue['res'], donor[0]))
+        if donor[2]:
+            rotatable_donor_atoms.append((residue['res'], donor[0]))
     for acceptor in residue['acc']:
         acceptor_atoms.append((residue['res'], acceptor[0]))
 
-# construct two strings that can be used with PyMOL to select all possible donor or all possible acceptor atoms
-acceptor_string = ''
-last_atom = acceptor_atoms[-1]
-for atom in acceptor_atoms:
-    acceptor_string += f'(resn {atom[0]} and name {atom[1]})'
-    if atom != last_atom:
-        acceptor_string += ' '
+# construct three strings that can be used with PyMOL to select all possible donor, all possible rotatable donor, or
+# all possible acceptor atoms
 donor_string = ''
 last_atom = donor_atoms[-1]
 for atom in donor_atoms:
     donor_string += f'(resn {atom[0]} and name {atom[1]})'
     if atom != last_atom:
         donor_string += ' '
+rotatable_donor_string = ''
+last_atom = rotatable_donor_atoms[-1]
+for atom in rotatable_donor_atoms:
+    rotatable_donor_string += f'(resn {atom[0]} and name {atom[1]})'
+    if atom != last_atom:
+        rotatable_donor_string += ' '
+acceptor_string = ''
+last_atom = acceptor_atoms[-1]
+for atom in acceptor_atoms:
+    acceptor_string += f'(resn {atom[0]} and name {atom[1]})'
+    if atom != last_atom:
+        acceptor_string += ' '
 
-# # work with each equivalence class specified in the representative set file
-# for eq_class in nrlist_info:
-#     rep_struct_list = []
-#     for i in range(len(eq_class[2])):
-#         # the create function below assumes that the different representative RNA chains belong to the same model
-#         # if this is not the case, print an error message and exit
-#         if eq_class[2][i] != eq_class[2][0]:
-#             print(f"Error: There are representative RNA chains that belong to different models for equivalence class "
-#                   f"{eq_class[0]}.")
-#             sys.exit(1)
-#         rep_struct_list.append(f"chain {eq_class[3][i]}")
-#     rep_struct = " ".join(rep_struct_list)
+# construct two lists of tuples containing atom and residue names that describe either donor or acceptor atoms that
+# belong to side chains that have conformations that may have been ambiguously assigned
+ambiguous_donor_atoms = []
+ambiguous_acceptor_atoms = []
+for residue in eval_H_bonding.residue_library:
+    if residue['res'] in ["ASN", "GLN", "HIS"]:
+        for donor in residue['don']:
+            if donor[0] != "N":
+                ambiguous_donor_atoms.append((residue['res'], donor[0]))
+        for acceptor in residue['acc']:
+            if acceptor[0] != "O":
+                ambiguous_acceptor_atoms.append((residue['res'], acceptor[0]))
+
+# construct two strings that can be used with PyMOL to select all possible donor or all possible acceptor atoms that
+# belong to side chains that have conformations that may have been ambiguously assigned
+ambiguous_donor_string = ''
+last_atom = ambiguous_donor_atoms[-1]
+for atom in ambiguous_donor_atoms:
+    ambiguous_donor_string += f'(resn {atom[0]} and name {atom[1]})'
+    if atom != last_atom:
+        ambiguous_donor_string += ' '
+ambiguous_acceptor_string = ''
+last_atom = ambiguous_acceptor_atoms[-1]
+for atom in ambiguous_acceptor_atoms:
+    ambiguous_acceptor_string += f'(resn {atom[0]} and name {atom[1]})'
+    if atom != last_atom:
+        ambiguous_acceptor_string += ' '
+
+# construct two tuples of tuples containing atom and residue names that describe either donor or acceptor atoms of
+# particular interest
+donors_of_interest = (('A', 'N6'), ('C', 'N4'), ('G', 'N2'))
+acceptors_of_interest = (('A', 'N1'), ('A', 'N3'), ('C', 'O2'), ('C', 'N3'), ('G', 'N3'), ('G', 'O6'))
+
+# construct two strings that can be used with PyMOL to select all possible donor or all possible acceptor atoms of
+# particular interest
+donors_of_interest_str = ''
+last_atom = donors_of_interest[-1]
+for atom in donors_of_interest:
+    donors_of_interest_str += f'(resn {atom[0]} and name {atom[1]})'
+    if atom != last_atom:
+        donors_of_interest_str += ' '
+acceptors_of_interest_str = ''
+last_atom = acceptors_of_interest[-1]
+for atom in acceptors_of_interest:
+    acceptors_of_interest_str += f'(resn {atom[0]} and name {atom[1]})'
+    if atom != last_atom:
+        acceptors_of_interest_str += ' '
+
+# define the distance used to search for nearby donor or acceptor atoms
+search_dist = 3.6
+# define the distance used to search for nearby donor or acceptor atoms that belong to side chains that have
+# conformations that may have been ambiguously assigned
+search_dist_amb = search_dist + 2.5
+
+# work with each equivalence class specified in the representative set file
+for eq_class in nrlist_info:
+    rep_rna_list = []
+    for i in range(len(eq_class[2])):
+        # the create function below assumes that the different representative RNA chains belong to the same model
+        # if this is not the case, print an error message and exit
+        if eq_class[2][i] != eq_class[2][0]:
+            print(f"Error: There are representative RNA chains that belong to different models for equivalence class "
+                  f"{eq_class[0]}.")
+            sys.exit(1)
+        rep_rna_list.append(f"chain {eq_class[3][i]}")
+    rep_rna = " ".join(rep_rna_list)
 #     # delete all objects in the current PyMOL session
 #     cmd.delete('all')
 #     # retrieve the structure that contains the representative RNA chains
@@ -100,5 +165,20 @@ for atom in donor_atoms:
 #         for note in remove_status[1]:
 #             print(note)
 #         sys.exit(1)
+    # TODO consider switching back to using index or a hybrid of both index an atom descriptors to save computational time
+    # store a list of donors of interest from the representative RNA
+    stored.donor_list = []
+    cmd.iterate(f'{rep_rna} and ({donors_of_interest_str})', 'stored.donor_list.append((index, name, resn, resi, chain))')
+    # store a list of acceptors of interest from the representative RNA
+    stored.acceptor_list = []
+    cmd.iterate(f'{rep_rna} and ({acceptors_of_interest_str})',
+                'stored.acceptor_list.append((index, name, resn, resi, chain))')
+    # store a list of nearby atoms that could serve as H-bond acceptors
+    stored.nearby_acceptors = []
+    for donor in stored.donor_list[:100]:
+        # cmd.iterate(f'index {donor[0]} around {search_dist}', 'stored.nearby_acceptors.append((index, name, resn, resi, chain))')
+        cmd.iterate(f'name {donor[1]} and resn {donor[2]} and resi {donor[3]} and chain {donor[4]} around {search_dist}', 'stored.nearby_acceptors.append((name, resn, resi, chain))')
+    # print(len(stored.nearby_acceptors))
+
 #     cmd.save(f'{modified_mmCIF_directory}/{eq_class[0]}.cif')
 #     cmd.delete('all')
