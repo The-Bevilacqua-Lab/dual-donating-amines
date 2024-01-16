@@ -131,6 +131,16 @@ for atom in acceptors_of_interest:
     if atom != last_atom:
         acceptors_of_interest_str += ' '
 
+# define the donor and acceptor atoms of the RNA nucleobases
+adenine_nucleobase_donors = ["N6"]
+adenine_nucleobase_acceptors
+cytosine_nucleobase_donors = []
+cytosine_nucleobase_acceptors
+guanine_nucleobase_donors
+guanine_nucleobase_acceptors
+uracil_nucleobase_donors
+uracil_nucleobase_acceptors
+
 # define the distance used to search for nearby donor or acceptor atoms
 search_dist = 3.6
 # define the distance used to search for nearby donor or acceptor atoms that belong to side chains that have
@@ -165,7 +175,6 @@ for eq_class in nrlist_info:
 #         for note in remove_status[1]:
 #             print(note)
 #         sys.exit(1)
-    # TODO consider switching back to using index or a hybrid of both index an atom descriptors to save computational time
     # store a list of donors of interest from the representative RNA
     stored.donor_list = []
     cmd.iterate(f'{rep_rna} and ({donors_of_interest_str})', 'stored.donor_list.append((index, name, resn, resi, chain))')
@@ -173,12 +182,23 @@ for eq_class in nrlist_info:
     stored.acceptor_list = []
     cmd.iterate(f'{rep_rna} and ({acceptors_of_interest_str})',
                 'stored.acceptor_list.append((index, name, resn, resi, chain))')
-    # store a list of nearby atoms that could serve as H-bond acceptors
-    stored.nearby_acceptors = []
-    for donor in stored.donor_list[:100]:
-        # cmd.iterate(f'index {donor[0]} around {search_dist}', 'stored.nearby_acceptors.append((index, name, resn, resi, chain))')
-        cmd.iterate(f'name {donor[1]} and resn {donor[2]} and resi {donor[3]} and chain {donor[4]} around {search_dist}', 'stored.nearby_acceptors.append((name, resn, resi, chain))')
-    # print(len(stored.nearby_acceptors))
+    # store a list of atoms near the donors of interest
+    atoms_near_donors = []
+    for donor in stored.donor_list:
+        stored.nearby_atoms = []
+        cmd.iterate(f'index {donor[0]} around {search_dist_amb}', 'stored.nearby_atoms.append((index, name, resn, resi, chain))')
+        atoms_near_donors.append(stored.nearby_atoms)
+    # extract the atoms that can act as H-bond acceptors
+    # they should not belong to the nucleobase of the donor
+    acceptors_near_donors = []
+    for atom_group in atoms_near_donors:
+        list_of_acceptors = []
+        for atom in atom_group:
+            for acceptor in acceptor_atoms:
+                if atom[2] == acceptor[0] and atom[1] == acceptor[1]:
+                    list_of_acceptors.append(atom)
+        acceptors_near_donors.append(list_of_acceptors)
 
+    print(acceptors_near_donors[:10])
 #     cmd.save(f'{modified_mmCIF_directory}/{eq_class[0]}.cif')
 #     cmd.delete('all')
