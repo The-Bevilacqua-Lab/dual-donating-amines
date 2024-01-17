@@ -132,14 +132,14 @@ for atom in acceptors_of_interest:
         acceptors_of_interest_str += ' '
 
 # define the donor and acceptor atoms of the RNA nucleobases
-adenine_nucleobase_donors = ["N6"]
-adenine_nucleobase_acceptors
-cytosine_nucleobase_donors = []
-cytosine_nucleobase_acceptors
-guanine_nucleobase_donors
-guanine_nucleobase_acceptors
-uracil_nucleobase_donors
-uracil_nucleobase_acceptors
+adenine_nuc_donors = ["N6"]
+adenine_nuc_acceptors = ["N1", "N3", "N7"]
+cytosine_nuc_donors = ["N4"]
+cytosine_nuc_acceptors = ["O2", "N3"]
+guanine_nuc_donors = ["N1", "N2"]
+guanine_nuc_acceptors = ["N3", "O6", "N7"]
+uracil_nuc_donors = ["N3"]
+uracil_nuc_acceptors = ["O2", "O4"]
 
 # define the distance used to search for nearby donor or acceptor atoms
 search_dist = 3.6
@@ -177,28 +177,56 @@ for eq_class in nrlist_info:
 #         sys.exit(1)
     # store a list of donors of interest from the representative RNA
     stored.donor_list = []
-    cmd.iterate(f'{rep_rna} and ({donors_of_interest_str})', 'stored.donor_list.append((index, name, resn, resi, chain))')
+    cmd.iterate(f'{rep_rna} and ({donors_of_interest_str})',
+                'stored.donor_list.append((index, name, resn, resi, chain))')
     # store a list of acceptors of interest from the representative RNA
     stored.acceptor_list = []
     cmd.iterate(f'{rep_rna} and ({acceptors_of_interest_str})',
                 'stored.acceptor_list.append((index, name, resn, resi, chain))')
     # store a list of atoms near the donors of interest
     atoms_near_donors = []
-    for donor in stored.donor_list:
+    for donor in stored.donor_list[:100]:
         stored.nearby_atoms = []
-        cmd.iterate(f'index {donor[0]} around {search_dist_amb}', 'stored.nearby_atoms.append((index, name, resn, resi, chain))')
+        cmd.iterate(f'index {donor[0]} around {search_dist}',
+                    'stored.nearby_atoms.append((index, name, resn, resi, chain))')
         atoms_near_donors.append(stored.nearby_atoms)
     # extract the atoms that can act as H-bond acceptors
     # they should not belong to the nucleobase of the donor
     acceptors_near_donors = []
-    for atom_group in atoms_near_donors:
+    for atom_group in enumerate(atoms_near_donors):
         list_of_acceptors = []
-        for atom in atom_group:
+        for atom in atom_group[1]:
             for acceptor in acceptor_atoms:
-                if atom[2] == acceptor[0] and atom[1] == acceptor[1]:
+                if ((atom[1] == acceptor[1] and atom[2] == acceptor[0]) and not (
+                        (stored.donor_list[atom_group[0]][2] == atom[2] == "A" and
+                            stored.donor_list[atom_group[0]][3] == atom[3] and
+                            stored.donor_list[atom_group[0]][4] == atom[4] and
+                            atom[1] in adenine_nuc_acceptors) or
+                        (stored.donor_list[atom_group[0]][2] == atom[2] == "C" and
+                            stored.donor_list[atom_group[0]][3] == atom[3] and
+                            stored.donor_list[atom_group[0]][4] == atom[4] and
+                            atom[1] in cytosine_nuc_acceptors) or
+                        (stored.donor_list[atom_group[0]][2] == atom[2] == "G" and
+                            stored.donor_list[atom_group[0]][3] == atom[3] and
+                            stored.donor_list[atom_group[0]][4] == atom[4] and
+                            atom[1] in guanine_nuc_acceptors) or
+                        (stored.donor_list[atom_group[0]][2] == atom[2] == "U" and
+                            stored.donor_list[atom_group[0]][3] == atom[3] and
+                            stored.donor_list[atom_group[0]][4] == atom[4] and
+                            atom[1] in uracil_nuc_acceptors)
+                        )):
                     list_of_acceptors.append(atom)
         acceptors_near_donors.append(list_of_acceptors)
 
-    print(acceptors_near_donors[:10])
+    donor_h_bonds = []
+    for donor in enumerate(stored.donor_list[:100]):
+        h_bonds = []
+        for acceptor in acceptors_near_donors[donor[0]]:
+            h_bonds.append(eval_H_bonding.evaluate((donor[1][1], donor[1][2], donor[1][3], donor[1][4]), (acceptor[1], acceptor[2], acceptor[3], acceptor[4]), '6xu8'))
+        donor_h_bonds.append(h_bonds)
+    #
+    # for x in donor_h_bonds:
+    #     for y in x:
+    #         print(y)
 #     cmd.save(f'{modified_mmCIF_directory}/{eq_class[0]}.cif')
 #     cmd.delete('all')
