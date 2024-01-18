@@ -185,7 +185,8 @@ for eq_class in nrlist_info:
                 'stored.acceptor_list.append((index, name, resn, resi, chain))')
     # store a list of atoms near the donors of interest
     atoms_near_donors = []
-    for donor in stored.donor_list[:100]:
+    stored.donor_list = stored.donor_list[549:580]
+    for donor in stored.donor_list:
         stored.nearby_atoms = []
         cmd.iterate(f'index {donor[0]} around {search_dist}',
                     'stored.nearby_atoms.append((index, name, resn, resi, chain))')
@@ -219,14 +220,14 @@ for eq_class in nrlist_info:
         acceptors_near_donors.append(list_of_acceptors)
 
     donor_h_bonds = []
-    for donor in enumerate(stored.donor_list[:100]):
+    for donor in enumerate(stored.donor_list[:1]):
         h_bonds = []
         for acceptor in acceptors_near_donors[donor[0]]:
-            h_bonds.append(eval_H_bonding.evaluate((donor[1][1], donor[1][2], donor[1][3], donor[1][4]), (acceptor[1], acceptor[2], acceptor[3], acceptor[4]), '6xu8'))
+            h_bonds.append(eval_H_bonding.evaluate(donor[1], acceptor, '6xu8'))
         donor_h_bonds.append(h_bonds)
-    #
-    # for x in donor_h_bonds:
-    #     for y in x:
-    #         print(y)
+
+    # for x in enumerate(acceptors_near_donors):
+    #     for y in x[1]:
+    #         print(str(x[0]) + "\t" + str(y))
 #     cmd.save(f'{modified_mmCIF_directory}/{eq_class[0]}.cif')
 #     cmd.delete('all')

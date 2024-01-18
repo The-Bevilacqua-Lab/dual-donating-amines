@@ -3,16 +3,15 @@ This module contains functions and a residue library that are necessary to evalu
 between a potential donor atom and a potential acceptor atom. The function named evaluate should be called by other
 scripts to determine whether an H-bond is identified. The first two arguments should describe the donor and acceptor
 atoms, respectively. For each atom, a tuple containing the atom index, atom name, residue name, residue number, and
-chain ID should be provided in that order. The PDB ID should be provided as the third argument. Optionally, angle
-tolerances can be provided for the fourth and fifth arguments. The function assumes that both endocyclic nitrogens in
-histidine residues are protonated.
+chain ID should be provided in that order. The PDB ID should be provided as the third argument. The function assumes
+that both endocyclic nitrogens in histidine residues are protonated.
 """
 
 from pymol import cmd
 from pymol import stored
 
 
-def evaluate(donor_atom, acceptor_atom, pdb, h_ang_tol=60, don_ang_tol=45):
+def evaluate(donor_atom, acceptor_atom, pdb):
     # initially assume that the evaluation will complete successfully
     successful_completion = True
     # initialize an empty list that can be used to document why an evaluation was not completed successfully
@@ -109,9 +108,9 @@ def evaluate(donor_atom, acceptor_atom, pdb, h_ang_tol=60, don_ang_tol=45):
         ambiguous_acceptor = True
     else:
         ambiguous_acceptor = False
-    # if there is no ambiguity in the side chain conformations of either donor or acceptor residues, the geometry
-    # calculation only needs to be performed once
-    if not ambiguous_donor and not ambiguous_acceptor:
+    # if there is no ambiguity in the side chain conformations of either donor or acceptor residues and the potential
+    # donor is not a tyrosine OH atom, the geometry calculation only needs to be performed once
+    if not ambiguous_donor and not ambiguous_acceptor and not (donor_atom[1] == "OH" and donor_atom[2] == "TYR"):
         # get the distance and angle values for the donor/acceptor pair
         geometry = calc_geom(donor_atom, acceptor_atom, donor_info, pdb)
         # if the geometry calculation was not successful, return an explanation of what went wrong
@@ -120,24 +119,50 @@ def evaluate(donor_atom, acceptor_atom, pdb, h_ang_tol=60, don_ang_tol=45):
             return geometry
         # proceed if the geometry calculation was successful
         else:
-            distance = geometry[1][0]
-            angle = geometry[1][1]
             # return whether an H-bond is identified
             if vertex == 'hydrogen':
-                # noinspection PyTypeChecker
-                if distance <= 2.5 and angle >= (180 - h_ang_tol):
-                    return [successful_completion, [True, distance, angle, 'hydrogen']]
-                else:
-                    return [successful_completion, [False, distance, angle, 'hydrogen']]
+                if type(geometry[1][0]) is float:
+                    distance = geometry[1][0]
+                    angle = geometry[1][1]
+                    h_name = geometry[1][2]
+                    # noinspection PyTypeChecker
+                    if distance <= 2.5 and angle >= (180 - 60):
+                        return [successful_completion, [[True, distance, angle, 'hydrogen vertex', h_name, 'none']]]
+                    else:
+                        return [successful_completion, [[False, distance, angle, 'hydrogen vertex', h_name, 'none']]]
+                elif type(geometry[1][0]) is list:
+                    first_distance = geometry[1][0][0]
+                    first_angle = geometry[1][0][1]
+                    first_h_name = geometry[1][0][2]
+                    first_set = []
+                    # noinspection PyTypeChecker
+                    if first_distance <= 2.5 and first_angle >= (180 - 60):
+                        first_set = [True, first_distance, first_angle, 'hydrogen vertex', first_h_name, 'none']
+                    else:
+                        first_set = [False, first_distance, first_angle, 'hydrogen vertex', first_h_name, 'none']
+                    second_distance = geometry[1][1][0]
+                    second_angle = geometry[1][1][1]
+                    second_h_name = geometry[1][1][2]
+                    second_set = []
+                    # noinspection PyTypeChecker
+                    if second_distance <= 2.5 and second_angle >= (180 - 60):
+                        second_set = [True, second_distance, second_angle, 'hydrogen vertex', second_h_name, 'none']
+                    else:
+                        second_set = [False, second_distance, second_angle, 'hydrogen vertex', second_h_name, 'none']
+                    return [successful_completion, [first_set, second_set]]
             elif vertex == 'donor':
+                distance = geometry[1][0]
+                angle = geometry[1][1]
+                h_name = geometry[1][2]
                 # noinspection PyTypeChecker
-                if distance <= 3.5 and (109.5 - don_ang_tol) <= angle <= (109.5 + don_ang_tol):
-                    return [successful_completion, [True, distance, angle, 'donor']]
+                if distance <= 3.5 and (109.5 - 45) <= angle <= (109.5 + 45):
+                    return [successful_completion, [[True, distance, angle, 'donor vertex', h_name, 'none']]]
                 else:
-                    return [successful_completion, [False, distance, angle, 'donor']]
+                    return [successful_completion, [[False, distance, angle, 'donor vertex', h_name, 'none']]]
     # if there is ambiguity in the side chain conformation of either the donor residue or the acceptor residue (but not
     # both), the geometry calculation needs to be performed twice
-    elif (ambiguous_donor and not ambiguous_acceptor) or (not ambiguous_donor and ambiguous_acceptor):
+    elif (((ambiguous_donor and not ambiguous_acceptor) or (not ambiguous_donor and ambiguous_acceptor)) and not
+            (donor_atom[1] == "OH" and donor_atom[2] == "TYR")):
         # get the first set of distance and angle values for the donor/acceptor pair
         first_geometry = calc_geom(donor_atom, acceptor_atom, donor_info, pdb)
         # if the geometry calculation was not successful, return an explanation of what went wrong
@@ -146,26 +171,54 @@ def evaluate(donor_atom, acceptor_atom, pdb, h_ang_tol=60, don_ang_tol=45):
             return first_geometry
         # proceed if the geometry calculation was successful
         else:
-            distance = first_geometry[1][0]
-            angle = first_geometry[1][1]
-            first_eval = []
             # determine whether an H-bond is identified
+            first_eval = []
             if vertex == 'hydrogen':
-                # noinspection PyTypeChecker
-                if distance <= 2.5 and angle >= (180 - don_ang_tol):
-                    first_eval = [successful_completion, [True, distance, angle, 'hydrogen']]
-                else:
-                    first_eval = [successful_completion, [False, distance, angle, 'hydrogen']]
+                if type(first_geometry[1][0]) is float:
+                    distance = first_geometry[1][0]
+                    angle = first_geometry[1][1]
+                    h_name = first_geometry[1][2]
+                    # noinspection PyTypeChecker
+                    if distance <= 2.5 and angle >= (180 - 60):
+                        first_eval = [[True, distance, angle, 'hydrogen vertex', h_name, 'none']]
+                    else:
+                        first_eval = [[False, distance, angle, 'hydrogen vertex', h_name, 'none']]
+                elif type(first_geometry[1][0]) is list:
+                    first_distance = first_geometry[1][0][0]
+                    first_angle = first_geometry[1][0][1]
+                    first_h_name = first_geometry[1][0][2]
+                    first_set = []
+                    # noinspection PyTypeChecker
+                    if first_distance <= 2.5 and first_angle >= (180 - 60):
+                        first_set = [True, first_distance, first_angle, 'hydrogen vertex', first_h_name, 'none']
+                    else:
+                        first_set = [False, first_distance, first_angle, 'hydrogen vertex', first_h_name, 'none']
+                    second_distance = first_geometry[1][1][0]
+                    second_angle = first_geometry[1][1][1]
+                    second_h_name = first_geometry[1][1][2]
+                    second_set = []
+                    # noinspection PyTypeChecker
+                    if second_distance <= 2.5 and second_angle >= (180 - 60):
+                        second_set = [True, second_distance, second_angle, 'hydrogen vertex', second_h_name, 'none']
+                    else:
+                        second_set = [False, second_distance, second_angle, 'hydrogen vertex', second_h_name, 'none']
+                    first_eval = [first_set, second_set]
             elif vertex == 'donor':
+                distance = first_geometry[1][0]
+                angle = first_geometry[1][1]
+                h_name = first_geometry[1][2]
                 # noinspection PyTypeChecker
-                if distance <= 3.5 and (109.5 - h_ang_tol) <= angle <= (109.5 + h_ang_tol):
-                    first_eval = [successful_completion, [True, distance, angle, 'donor']]
+                if distance <= 3.5 and (109.5 - 45) <= angle <= (109.5 + 45):
+                    first_eval = [[True, distance, angle, 'donor vertex', h_name, 'none']]
                 else:
-                    first_eval = [successful_completion, [False, distance, angle, 'donor']]
+                    first_eval = [[False, distance, angle, 'donor vertex', h_name, 'none']]
         # rotate the ambiguous side chain atoms of the donor or acceptor residue
+        rotated_res = ''
         if ambiguous_donor:
+            rotated_res = f'rotated {donor_atom[2]}{donor_atom[3]} {donor_atom[4]}'
             rotation = rotate_side_chain(donor_atom, pdb)
         elif ambiguous_acceptor:
+            rotated_res = f'rotated {acceptor_atom[2]}{acceptor_atom[3]} {acceptor_atom[4]}'
             rotation = rotate_side_chain(acceptor_atom, pdb)
         # if the rotation was not successful, return an explanation of what went wrong
         successful_completion = rotation[0]
@@ -179,22 +232,47 @@ def evaluate(donor_atom, acceptor_atom, pdb, h_ang_tol=60, don_ang_tol=45):
             return second_geometry
         # proceed if the geometry calculation was successful
         else:
-            distance = second_geometry[1][0]
-            angle = second_geometry[1][1]
-            second_eval = []
             # determine whether an H-bond is identified
+            second_eval = []
             if vertex == 'hydrogen':
-                # noinspection PyTypeChecker
-                if distance <= 2.5 and angle >= (180 - don_ang_tol):
-                    second_eval = [successful_completion, [True, distance, angle, 'hydrogen']]
-                else:
-                    second_eval = [successful_completion, [False, distance, angle, 'hydrogen']]
+                if type(second_geometry[1][0]) is float:
+                    distance = second_geometry[1][0]
+                    angle = second_geometry[1][1]
+                    h_name = second_geometry[1][2]
+                    # noinspection PyTypeChecker
+                    if distance <= 2.5 and angle >= (180 - 60):
+                        second_eval = [[True, distance, angle, 'hydrogen vertex', h_name, rotated_res]]
+                    else:
+                        second_eval = [[False, distance, angle, 'hydrogen vertex', h_name, rotated_res]]
+                elif type(second_geometry[1][0]) is list:
+                    first_distance = second_geometry[1][0][0]
+                    first_angle = second_geometry[1][0][1]
+                    first_h_name = second_geometry[1][0][2]
+                    first_set = []
+                    # noinspection PyTypeChecker
+                    if first_distance <= 2.5 and first_angle >= (180 - 60):
+                        first_set = [True, first_distance, first_angle, 'hydrogen vertex', first_h_name, rotated_res]
+                    else:
+                        first_set = [False, first_distance, first_angle, 'hydrogen vertex', first_h_name, rotated_res]
+                    second_distance = second_geometry[1][1][0]
+                    second_angle = second_geometry[1][1][1]
+                    second_h_name = second_geometry[1][1][2]
+                    second_set = []
+                    # noinspection PyTypeChecker
+                    if second_distance <= 2.5 and second_angle >= (180 - 60):
+                        second_set = [True, second_distance, second_angle, 'hydrogen vertex', second_h_name, rotated_res]
+                    else:
+                        second_set = [False, second_distance, second_angle, 'hydrogen vertex', second_h_name, rotated_res]
+                    second_eval = [first_set, second_set]
             elif vertex == 'donor':
+                distance = second_geometry[1][0]
+                angle = second_geometry[1][1]
+                h_name = second_geometry[1][2]
                 # noinspection PyTypeChecker
-                if distance <= 3.5 and (109.5 - h_ang_tol) <= angle <= (109.5 + h_ang_tol):
-                    second_eval = [successful_completion, [True, distance, angle, 'donor']]
+                if distance <= 3.5 and (109.5 - 45) <= angle <= (109.5 + 45):
+                    second_eval = [[True, distance, angle, 'donor vertex', h_name, rotated_res]]
                 else:
-                    second_eval = [successful_completion, [False, distance, angle, 'donor']]
+                    second_eval = [[False, distance, angle, 'donor vertex', h_name, rotated_res]]
         # rotate the ambiguous side chain atoms of the donor or acceptor residue to get them back to their original
         # conformation
         if ambiguous_donor:
@@ -205,21 +283,14 @@ def evaluate(donor_atom, acceptor_atom, pdb, h_ang_tol=60, don_ang_tol=45):
         successful_completion = rotation[0]
         if not successful_completion:
             return rotation
-        # determine which evaluation to return, giving preference to the first evaluation since that is based on how
-        # the structure was originally modeled
-        if first_eval[1][0] and second_eval[1][0]:
-            return first_eval
-        elif first_eval[1][0] and not second_eval[1][0]:
-            return first_eval
-        elif not first_eval[1][0] and second_eval[1][0]:
-            return second_eval
-        elif not first_eval[1][0] and not second_eval[1][0]:
-            return first_eval
+        # return all evaluations
+        return [successful_completion, first_eval.extend(second_eval)]
     # if there is ambiguity in the side chain conformations of both donor and acceptor residues, do not calculate any
     # geometries and return False for successful_completion
     # this situation should never be encountered in the current study since, at a minimum, an RNA/DNA residue should
     # always be either the donor or acceptor
     # the code could be expanded to evaluate whether an H-bond is identified in this situation
+    # TODO keep working on incorporating special consideration for tyrosine OH donors
     elif ambiguous_donor and ambiguous_acceptor:
         successful_completion = False
         print(f"Error: Both the potential H-bonding donor and acceptor atoms belong to the side chains of ASN, GLN, or "
@@ -237,7 +308,7 @@ def rotate_side_chain(atom, pdb):
     # initialize an empty list that can be used to document why an evaluation was not completed successfully
     notes = []
     # collect information specific to the residue
-    if atom[1] == "ASN":
+    if atom[2] == "ASN":
         origin = cmd.get_coords(f'(byres index {atom[0]}) and name CG', state=0)[0]
         origin_antecedent = cmd.get_coords(f'(byres index {atom[0]}) and name CB', state=0)[0]
         axis = [origin[0] - origin_antecedent[0], origin[1] - origin_antecedent[1], origin[2] - origin_antecedent[2]]
@@ -250,7 +321,7 @@ def rotate_side_chain(atom, pdb):
             notes.append(f"Error: Atoms selected from an ASN residue to rotate do not number to exactly four atoms in "
                          f"PDB ID {pdb}.")
             return [successful_completion, notes]
-    elif atom[1] == "GLN":
+    elif atom[2] == "GLN":
         origin = cmd.get_coords(f'(byres index {atom[0]}) and name CD', state=0)[0]
         origin_antecedent = cmd.get_coords(f'(byres index {atom[0]}) and name CG', state=0)[0]
         axis = [origin[0] - origin_antecedent[0], origin[1] - origin_antecedent[1], origin[2] - origin_antecedent[2]]
@@ -263,7 +334,7 @@ def rotate_side_chain(atom, pdb):
             notes.append(f"Error: Atoms selected from a GLN residue to rotate do not number to exactly four atoms in "
                          f"PDB ID {pdb}.")
             return [successful_completion, notes]
-    elif atom[1] == "HIS":
+    elif atom[2] == "HIS":
         origin = cmd.get_coords(f'(byres index {atom[0]}) and name CG', state=0)[0]
         origin_antecedent = cmd.get_coords(f'(byres index {atom[0]}) and name CB', state=0)[0]
         axis = [origin[0] - origin_antecedent[0], origin[1] - origin_antecedent[1], origin[2] - origin_antecedent[2]]
@@ -308,35 +379,25 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, pdb):
             distance = cmd.get_distance(f'index {stored.hydrogen[0][0]}', f'index {acceptor_atom[0]}')
             angle = cmd.get_angle(f'index {donor_atom[0]}', f'index {stored.hydrogen[0][0]}',
                                   f'index {acceptor_atom[0]}')
+            # return geometry values
+            return [successful_completion, [distance, angle, stored.hydrogen[0][1]]]
         # get the measurements for donors that have two hydrogens
         elif len(stored.hydrogen) == 2:
-            distance_list = []
-            angle_list = []
-            for h_atom in stored.hydrogen:
-                distance_list.append(cmd.get_distance(f'index {h_atom[0]}', f'index {acceptor_atom[0]}'))
-                angle_list.append(cmd.get_angle(f'index {donor_atom[0]}', f'index {h_atom[0]}',
-                                                f'index {acceptor_atom[0]}'))
-            if distance_list[0] < distance_list[1]:
-                distance = distance_list[0]
-                angle = angle_list[0]
-            elif distance_list[0] > distance_list[1]:
-                distance = distance_list[1]
-                angle = angle_list[1]
-            else:
-                successful_completion = False
-                print(f"Error: The two hydrogens on a non-rotatable donor atom are the same distance from the acceptor "
-                      f"atom in PDB ID {pdb}.")
-                notes.append(f"Error: The two hydrogens on a non-rotatable donor atom are the same distance from the "
-                             f"acceptor atom in PDB ID {pdb}.")
-                return [successful_completion, notes]
+            first_distance = cmd.get_distance(f'index {stored.hydrogen[0][0]}', f'index {acceptor_atom[0]}')
+            first_angle = cmd.get_angle(f'index {donor_atom[0]}', f'index {stored.hydrogen[0][0]}',
+                                        f'index {acceptor_atom[0]}')
+            second_distance = cmd.get_distance(f'index {stored.hydrogen[1][0]}', f'index {acceptor_atom[0]}')
+            second_angle = cmd.get_angle(f'index {donor_atom[0]}', f'index {stored.hydrogen[1][0]}',
+                                         f'index {acceptor_atom[0]}')
+            # return both sets of geometry values
+            return [successful_completion, [[first_distance, first_angle, stored.hydrogen[0][1]],
+                                            [second_distance, second_angle, stored.hydrogen[1][1]]]]
         # issue an error message if there are more than two hydrogens
         elif len(stored.hydrogen) > 2:
             successful_completion = False
             print(f"Error: A non-rotatable donor atom has more than two hydrogens in PDB ID {pdb}.")
             notes.append(f"Error: A non-rotatable donor atom has more than two hydrogens in PDB ID {pdb}.")
             return [successful_completion, notes]
-        # return geometry values
-        return [successful_completion, [distance, angle]]
     # if the donor is rotatable, use the locations of the donor antecedent, donor, and acceptor atoms to get the
     # distance and angle measurements, then return the values
     elif donor_info[2]:
@@ -362,7 +423,7 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, pdb):
             notes.append(f"Error: More than one antecedent atom was identified for a donor atom in PDB ID {pdb}.")
             return [successful_completion, notes]
         # return geometry values
-        return [successful_completion, [distance, angle]]
+        return [successful_completion, [distance, angle, "none"]]
 
 # region residue_library
 # define a list of dictionaries that provides information on the canonical protein and RNA/DNA residues
