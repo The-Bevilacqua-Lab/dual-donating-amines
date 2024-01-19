@@ -220,7 +220,7 @@ for eq_class in nrlist_info:
         acceptors_near_donors.append(list_of_acceptors)
 
     donor_h_bonds = []
-    for donor in enumerate(stored.donor_list[:1]):
+    for donor in enumerate(stored.donor_list):
         h_bonds = []
         for acceptor in acceptors_near_donors[donor[0]]:
             h_bonds.append(eval_H_bonding.evaluate(donor[1], acceptor, '6xu8'))

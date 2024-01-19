@@ -4,7 +4,8 @@ between a potential donor atom and a potential acceptor atom. The function named
 scripts to determine whether an H-bond is identified. The first two arguments should describe the donor and acceptor
 atoms, respectively. For each atom, a tuple containing the atom index, atom name, residue name, residue number, and
 chain ID should be provided in that order. The PDB ID should be provided as the third argument. The function assumes
-that both endocyclic nitrogens in histidine residues are protonated.
+1) that hydrogens have been added to non-rotatable donor atoms, including both endocyclic nitrogens in histidine
+residues and 2) that tyrosine hydroxyl hydrogens are approximately planar with the tyrosine side chain rings.
 """
 
 from pymol import cmd
@@ -284,14 +285,15 @@ def evaluate(donor_atom, acceptor_atom, pdb):
         if not successful_completion:
             return rotation
         # return all evaluations
-        return [successful_completion, first_eval.extend(second_eval)]
+        all_eval = first_eval
+        all_eval.extend(second_eval)
+        return [successful_completion, all_eval]
     # if there is ambiguity in the side chain conformations of both donor and acceptor residues, do not calculate any
     # geometries and return False for successful_completion
     # this situation should never be encountered in the current study since, at a minimum, an RNA/DNA residue should
     # always be either the donor or acceptor
     # the code could be expanded to evaluate whether an H-bond is identified in this situation
-    # TODO keep working on incorporating special consideration for tyrosine OH donors
-    elif ambiguous_donor and ambiguous_acceptor:
+    elif ambiguous_donor and ambiguous_acceptor and not (donor_atom[1] == "OH" and donor_atom[2] == "TYR"):
         successful_completion = False
         print(f"Error: Both the potential H-bonding donor and acceptor atoms belong to the side chains of ASN, GLN, or "
               f"HIS in PDB ID {pdb}. The code is not capable of evaluating whether an H-bond is identified in this "
@@ -299,6 +301,63 @@ def evaluate(donor_atom, acceptor_atom, pdb):
         notes.append(f"Error: Both the potential H-bonding donor and acceptor atoms belong to the side chains of ASN, "
                      f"GLN, or HIS in PDB ID {pdb}. The code is not capable of evaluating whether an H-bond is "
                      f"identified in this situation.")
+        return [successful_completion, notes]
+    elif donor_atom[1] == "OH" and donor_atom[2] == "TYR":
+        # get the distance and angle values for the donor/acceptor pair and with the tyrosine OH in the original
+        # conformation
+        geometry = calc_geom(donor_atom, acceptor_atom, donor_info, pdb)
+        # if the geometry calculation was not successful, return an explanation of what went wrong
+        successful_completion = geometry[0]
+        if not successful_completion:
+            return geometry
+        # determine whether an H-bond is identified
+        distance = geometry[1][0]
+        angle = geometry[1][1]
+        h_name = geometry[1][2]
+        # noinspection PyTypeChecker
+        if distance <= 2.5 and angle >= (180 - 60):
+            original_conformation = [True, distance, angle, 'hydrogen vertex', h_name, 'none']
+        else:
+            original_conformation = [False, distance, angle, 'hydrogen vertex', h_name, 'none']
+        # rotate the tyrosine hydroxyl
+        rotated_res = f'rotated {donor_atom[2]}{donor_atom[3]} {donor_atom[4]}'
+        rotation = rotate_side_chain(donor_atom, pdb)
+        # if the rotation was not successful, return an explanation of what went wrong
+        successful_completion = rotation[0]
+        if not successful_completion:
+            return rotation
+        # get the distance and angle values for the donor/acceptor pair and with the tyrosine OH in the rotated
+        # conformation
+        geometry = calc_geom(donor_atom, acceptor_atom, donor_info, pdb)
+        # if the geometry calculation was not successful, return an explanation of what went wrong
+        successful_completion = geometry[0]
+        if not successful_completion:
+            return geometry
+        # determine whether an H-bond is identified
+        distance = geometry[1][0]
+        angle = geometry[1][1]
+        h_name = geometry[1][2]
+        # noinspection PyTypeChecker
+        if distance <= 2.5 and angle >= (180 - 60):
+            rotated_conformation = [True, distance, angle, 'hydrogen vertex', h_name, rotated_res]
+        else:
+            rotated_conformation = [False, distance, angle, 'hydrogen vertex', h_name, rotated_res]
+        # rotate the tyrosine hydroxyl to get it back to its original conformation
+        rotation = rotate_side_chain(donor_atom, pdb)
+        # if the rotation was not successful, return an explanation of what went wrong
+        successful_completion = rotation[0]
+        if not successful_completion:
+            return rotation
+        # return all evaluations
+        return [successful_completion, [original_conformation, rotated_conformation]]
+    # I don't know why the code would ever get to this point, but this will serve as a catch-all for anything that I may
+    # have missed
+    else:
+        successful_completion = False
+        print(f"Error: The code was unable to classify the donor and/or acceptor as non-ambiguous, ambiguous, or "
+              f"Tyr(OH).")
+        notes.append(f"Error: The code was unable to classify the donor and/or acceptor as non-ambiguous, ambiguous, "
+                     f"or Tyr(OH).")
         return [successful_completion, notes]
 
 
@@ -346,6 +405,19 @@ def rotate_side_chain(atom, pdb):
             print(f"Error: Atoms selected from a HIS residue to rotate do not number to exactly six atoms in PDB ID "
                   f"{pdb}.")
             notes.append(f"Error: Atoms selected from a HIS residue to rotate do not number to exactly six atoms in "
+                         f"PDB ID {pdb}.")
+            return [successful_completion, notes]
+    elif atom[2] == "TYR":
+        origin = cmd.get_coords(f'index {atom[0]}', state=0)[0]
+        origin_antecedent = cmd.get_coords(f'(neighbor index {atom[0]}) and name CZ', state=0)[0]
+        axis = [origin[0] - origin_antecedent[0], origin[1] - origin_antecedent[1], origin[2] - origin_antecedent[2]]
+        atoms_to_rotate = f'index {atom[0]} ((neighbor index {atom[0]}) and elem H)'
+        # ensure that atoms_to_rotate accounts for exactly two atoms
+        if cmd.count_atoms(atoms_to_rotate) != 2:
+            successful_completion = False
+            print(f"Error: Atoms selected from a TYR residue to rotate do not number to exactly two atoms in PDB ID "
+                  f"{pdb}.")
+            notes.append(f"Error: Atoms selected from a TYR residue to rotate do not number to exactly two atoms in "
                          f"PDB ID {pdb}.")
             return [successful_completion, notes]
     else:
