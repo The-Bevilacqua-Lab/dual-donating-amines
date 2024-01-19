@@ -192,42 +192,73 @@ for eq_class in nrlist_info:
                     'stored.nearby_atoms.append((index, name, resn, resi, chain))')
         atoms_near_donors.append(stored.nearby_atoms)
     # extract the atoms that can act as H-bond acceptors
-    # they should not belong to the nucleobase of the donor
     acceptors_near_donors = []
+    temp_acceptors = []
     for atom_group in enumerate(atoms_near_donors):
         list_of_acceptors = []
         for atom in atom_group[1]:
-            for acceptor in acceptor_atoms:
-                if ((atom[1] == acceptor[1] and atom[2] == acceptor[0]) and not (
-                        (stored.donor_list[atom_group[0]][2] == atom[2] == "A" and
-                            stored.donor_list[atom_group[0]][3] == atom[3] and
-                            stored.donor_list[atom_group[0]][4] == atom[4] and
-                            atom[1] in adenine_nuc_acceptors) or
+            # the sidechain acceptor atoms in ASN, GLN, and HIS residues will be collected separately
+            if not (atom[1] != "O" and atom[2] in ["ASN", "GLN", "HIS"]):
+                # the acceptors should not belong to the nucleobase of the donor
+                if not ((stored.donor_list[atom_group[0]][2] == atom[2] == "A" and
+                         stored.donor_list[atom_group[0]][3] == atom[3] and
+                         stored.donor_list[atom_group[0]][4] == atom[4] and
+                         atom[1] in adenine_nuc_acceptors) or
                         (stored.donor_list[atom_group[0]][2] == atom[2] == "C" and
-                            stored.donor_list[atom_group[0]][3] == atom[3] and
-                            stored.donor_list[atom_group[0]][4] == atom[4] and
-                            atom[1] in cytosine_nuc_acceptors) or
+                         stored.donor_list[atom_group[0]][3] == atom[3] and
+                         stored.donor_list[atom_group[0]][4] == atom[4] and
+                         atom[1] in cytosine_nuc_acceptors) or
                         (stored.donor_list[atom_group[0]][2] == atom[2] == "G" and
-                            stored.donor_list[atom_group[0]][3] == atom[3] and
-                            stored.donor_list[atom_group[0]][4] == atom[4] and
-                            atom[1] in guanine_nuc_acceptors) or
+                         stored.donor_list[atom_group[0]][3] == atom[3] and
+                         stored.donor_list[atom_group[0]][4] == atom[4] and
+                         atom[1] in guanine_nuc_acceptors) or
                         (stored.donor_list[atom_group[0]][2] == atom[2] == "U" and
-                            stored.donor_list[atom_group[0]][3] == atom[3] and
-                            stored.donor_list[atom_group[0]][4] == atom[4] and
-                            atom[1] in uracil_nuc_acceptors)
-                        )):
-                    list_of_acceptors.append(atom)
+                         stored.donor_list[atom_group[0]][3] == atom[3] and
+                         stored.donor_list[atom_group[0]][4] == atom[4] and
+                         atom[1] in uracil_nuc_acceptors)):
+                    for acceptor in acceptor_atoms:
+                        if atom[1] == acceptor[1] and atom[2] == acceptor[0]:
+                            list_of_acceptors.append(atom)
         acceptors_near_donors.append(list_of_acceptors)
-
+        temp_acceptors.extend(list_of_acceptors)
+    # acquire the H-bonding geometry measurements for all acceptors near each donor
     donor_h_bonds = []
     for donor in enumerate(stored.donor_list):
         h_bonds = []
         for acceptor in acceptors_near_donors[donor[0]]:
-            h_bonds.append(eval_H_bonding.evaluate(donor[1], acceptor, '6xu8'))
+            h_bonds.append(eval_H_bonding.evaluate(donor[1], acceptor, eq_class[1][0]))
         donor_h_bonds.append(h_bonds)
+    # using a greater search distance for the sidechains of ASN, GLN, and HIS residues, store a list of atoms near the
+    # donors of interest
+    atoms_near_donors_amb = []
+    for donor in stored.donor_list:
+        stored.nearby_atoms = []
+        cmd.iterate(f'index {donor[0]} around {search_dist_amb}',
+                    'stored.nearby_atoms.append((index, name, resn, resi, chain))')
+        atoms_near_donors_amb.append(stored.nearby_atoms)
+    # extract the atoms that can act as H-bond acceptors that belong to the sidechains of ASN, GLN, and HIS residues
+    acceptors_near_donors_amb = []
+    for atom_group in enumerate(atoms_near_donors_amb):
+        list_of_acceptors = []
+        for atom in atom_group[1]:
+            # only extract sidechain acceptor atoms in ASN, GLN, and HIS residues
+            if atom[1] != "O" and atom[2] in ["ASN", "GLN", "HIS"]:
+                for acceptor in acceptor_atoms:
+                    if atom[1] == acceptor[1] and atom[2] == acceptor[0]:
+                        list_of_acceptors.append(atom)
+        acceptors_near_donors_amb.append(list_of_acceptors)
+    # acquire the H-bonding geometry measurements for sidechain acceptor atoms in ASN, GLN, and HIS residues near each
+    # donor
+    donor_h_bonds_amb = []
+    for donor in enumerate(stored.donor_list):
+        h_bonds = []
+        for acceptor in acceptors_near_donors_amb[donor[0]]:
+            h_bonds.append(eval_H_bonding.evaluate(donor[1], acceptor, eq_class[1][0]))
+        donor_h_bonds_amb.append(h_bonds)
 
-    # for x in enumerate(acceptors_near_donors):
-    #     for y in x[1]:
-    #         print(str(x[0]) + "\t" + str(y))
+
+
+
+
 #     cmd.save(f'{modified_mmCIF_directory}/{eq_class[0]}.cif')
 #     cmd.delete('all')
