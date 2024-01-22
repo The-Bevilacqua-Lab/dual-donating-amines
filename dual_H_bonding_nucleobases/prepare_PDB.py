@@ -6,6 +6,7 @@ file with modifications made (alternative conformations removed and hydrogens ad
 
 import sys
 import os
+import csv
 from pymol import cmd
 from pymol import stored
 import parse_nrlist
@@ -147,6 +148,7 @@ search_dist = 3.6
 # conformations that may have been ambiguously assigned
 search_dist_amb = search_dist + 2.5
 
+# TODO build in some sort of check to insure that index values do not change when they are expected to remain constant
 # work with each equivalence class specified in the representative set file
 for eq_class in nrlist_info:
     rep_rna_list = []
@@ -159,30 +161,34 @@ for eq_class in nrlist_info:
             sys.exit(1)
         rep_rna_list.append(f"chain {eq_class[3][i]}")
     rep_rna = " ".join(rep_rna_list)
-#     # delete all objects in the current PyMOL session
-#     cmd.delete('all')
-#     # retrieve the structure that contains the representative RNA chains
-#     cmd.fetch(eq_class[1][0])
-#     # if the structure contains more than one model (or "state" in PyMOL), create a new PyMOL object of just that model
-#     if cmd.count_states(eq_class[1][0]) > 1:
-#         cmd.create(f'{eq_class[1][0]}_state_{eq_class[2][0]}', selection=eq_class[1][0], source_state=eq_class[2][0],
-#                    target_state=1)
-#         cmd.delete(eq_class[1][0])
-#     # remove atoms representing alternative conformations
-#     remove_status = remove_alt_conf.remove(eq_class[1][0])
-#     successful_completion = remove_status[0]
-#     if not successful_completion:
-#         for note in remove_status[1]:
-#             print(note)
-#         sys.exit(1)
+    # # delete all objects in the current PyMOL session
+    # cmd.delete('all')
+    # # retrieve the structure that contains the representative RNA chains
+    # cmd.fetch(eq_class[1][0])
+    # if the structure contains more than one model (or "state" in PyMOL), create a new PyMOL object of just that model
+    if cmd.count_states(eq_class[1][0]) > 1:
+        cmd.create(f'{eq_class[1][0]}_state_{eq_class[2][0]}', selection=eq_class[1][0], source_state=eq_class[2][0],
+                   target_state=1)
+        cmd.delete(eq_class[1][0])
+    # remove atoms representing alternative conformations
+    remove_status = remove_alt_conf.remove(eq_class[1][0])
+    successful_completion = remove_status[0]
+    if not successful_completion:
+        for note in remove_status[1]:
+            print(note)
+        sys.exit(1)
+
+
+    # add hydrogens to non-rotatable donors that are a part of or near the representative RNA
+    cmd.h_add(f'(({donor_string}) and not ({rotatable_donor_string})) within {search_dist_amb} of ({rep_rna})')
+
+
+
+
     # store a list of donors of interest from the representative RNA
     stored.donor_list = []
-    cmd.iterate(f'{rep_rna} and ({donors_of_interest_str})',
+    cmd.iterate(f'({rep_rna}) and ({donors_of_interest_str})',
                 'stored.donor_list.append((index, name, resn, resi, chain))')
-    # store a list of acceptors of interest from the representative RNA
-    stored.acceptor_list = []
-    cmd.iterate(f'{rep_rna} and ({acceptors_of_interest_str})',
-                'stored.acceptor_list.append((index, name, resn, resi, chain))')
     # store a list of atoms near the donors of interest
     atoms_near_donors = []
     stored.donor_list = stored.donor_list[549:580]
@@ -193,7 +199,6 @@ for eq_class in nrlist_info:
         atoms_near_donors.append(stored.nearby_atoms)
     # extract the atoms that can act as H-bond acceptors
     acceptors_near_donors = []
-    temp_acceptors = []
     for atom_group in enumerate(atoms_near_donors):
         list_of_acceptors = []
         for atom in atom_group[1]:
@@ -220,13 +225,18 @@ for eq_class in nrlist_info:
                         if atom[1] == acceptor[1] and atom[2] == acceptor[0]:
                             list_of_acceptors.append(atom)
         acceptors_near_donors.append(list_of_acceptors)
-        temp_acceptors.extend(list_of_acceptors)
     # acquire the H-bonding geometry measurements for all acceptors near each donor
     donor_h_bonds = []
     for donor in enumerate(stored.donor_list):
         h_bonds = []
         for acceptor in acceptors_near_donors[donor[0]]:
             h_bonds.append(eval_H_bonding.evaluate(donor[1], acceptor, eq_class[1][0]))
+            # if the H-bond evaluation is not successful, print the error message and exit
+            successful_completion = h_bonds[-1][0]
+            if not successful_completion:
+                for note in h_bonds[-1][1]:
+                    print(note)
+                sys.exit(1)
         donor_h_bonds.append(h_bonds)
     # using a greater search distance for the sidechains of ASN, GLN, and HIS residues, store a list of atoms near the
     # donors of interest
@@ -254,10 +264,134 @@ for eq_class in nrlist_info:
         h_bonds = []
         for acceptor in acceptors_near_donors_amb[donor[0]]:
             h_bonds.append(eval_H_bonding.evaluate(donor[1], acceptor, eq_class[1][0]))
+            # if the H-bond evaluation is not successful, print the error message and exit
+            successful_completion = h_bonds[-1][0]
+            if not successful_completion:
+                for note in h_bonds[-1][1]:
+                    print(note)
+                sys.exit(1)
         donor_h_bonds_amb.append(h_bonds)
+    # store a list of acceptors of interest from the representative RNA
+    stored.acceptor_list = []
+    cmd.iterate(f'({rep_rna}) and ({acceptors_of_interest_str})',
+                'stored.acceptor_list.append((index, name, resn, resi, chain))')
+    # store a list of atoms near the acceptors of interest
+    atoms_near_acceptors = []
+    stored.acceptor_list = stored.acceptor_list[:100]
+    for acceptor in stored.acceptor_list:
+        stored.nearby_atoms = []
+        cmd.iterate(f'index {acceptor[0]} around {search_dist}',
+                    'stored.nearby_atoms.append((index, name, resn, resi, chain))')
+        atoms_near_acceptors.append(stored.nearby_atoms)
+    # extract the atoms that can act as H-bond donors
+    donors_near_acceptors = []
+    for atom_group in enumerate(atoms_near_acceptors):
+        list_of_donors = []
+        for atom in atom_group[1]:
+            # the sidechain donor atoms in ASN, GLN, and HIS residues will be collected separately
+            if not (atom[1] != "N" and atom[2] in ["ASN", "GLN", "HIS"]):
+                # the donors should not belong to the nucleobase of the acceptor
+                if not ((stored.acceptor_list[atom_group[0]][2] == atom[2] == "A" and
+                         stored.acceptor_list[atom_group[0]][3] == atom[3] and
+                         stored.acceptor_list[atom_group[0]][4] == atom[4] and
+                         atom[1] in adenine_nuc_donors) or
+                        (stored.acceptor_list[atom_group[0]][2] == atom[2] == "C" and
+                         stored.acceptor_list[atom_group[0]][3] == atom[3] and
+                         stored.acceptor_list[atom_group[0]][4] == atom[4] and
+                         atom[1] in cytosine_nuc_donors) or
+                        (stored.acceptor_list[atom_group[0]][2] == atom[2] == "G" and
+                         stored.acceptor_list[atom_group[0]][3] == atom[3] and
+                         stored.acceptor_list[atom_group[0]][4] == atom[4] and
+                         atom[1] in guanine_nuc_donors) or
+                        (stored.acceptor_list[atom_group[0]][2] == atom[2] == "U" and
+                         stored.acceptor_list[atom_group[0]][3] == atom[3] and
+                         stored.acceptor_list[atom_group[0]][4] == atom[4] and
+                         atom[1] in uracil_nuc_donors)):
+                    for donor in donor_atoms:
+                        if atom[1] == donor[1] and atom[2] == donor[0]:
+                            list_of_donors.append(atom)
+        donors_near_acceptors.append(list_of_donors)
+    # acquire the H-bonding geometry measurements for all donors near each acceptor
+    acceptor_h_bonds = []
+    for acceptor in enumerate(stored.acceptor_list):
+        h_bonds = []
+        for donor in donors_near_acceptors[acceptor[0]]:
+            h_bonds.append(eval_H_bonding.evaluate(donor, acceptor[1], eq_class[1][0]))
+            # if the H-bond evaluation is not successful, print the error message and exit
+            successful_completion = h_bonds[-1][0]
+            if not successful_completion:
+                for note in h_bonds[-1][1]:
+                    print(note)
+                sys.exit(1)
+        acceptor_h_bonds.append(h_bonds)
+    # using a greater search distance for the sidechains of ASN, GLN, and HIS residues, store a list of atoms near the
+    # acceptors of interest
+    atoms_near_acceptors_amb = []
+    for acceptor in stored.acceptor_list:
+        stored.nearby_atoms = []
+        cmd.iterate(f'index {acceptor[0]} around {search_dist_amb}',
+                    'stored.nearby_atoms.append((index, name, resn, resi, chain))')
+        atoms_near_acceptors_amb.append(stored.nearby_atoms)
+    # extract the atoms that can act as H-bond donors that belong to the sidechains of ASN, GLN, and HIS residues
+    donors_near_acceptors_amb = []
+    for atom_group in enumerate(atoms_near_acceptors_amb):
+        list_of_donors = []
+        for atom in atom_group[1]:
+            # only extract sidechain donor atoms in ASN, GLN, and HIS residues
+            if atom[1] != "N" and atom[2] in ["ASN", "GLN", "HIS"]:
+                for donor in donor_atoms:
+                    if atom[1] == donor[1] and atom[2] == donor[0]:
+                        list_of_donors.append(atom)
+        donors_near_acceptors_amb.append(list_of_donors)
+    # acquire the H-bonding geometry measurements for sidechain donor atoms in ASN, GLN, and HIS residues near each
+    # acceptor
+    acceptor_h_bonds_amb = []
+    for acceptor in enumerate(stored.acceptor_list):
+        h_bonds = []
+        for donor in donors_near_acceptors_amb[acceptor[0]]:
+            h_bonds.append(eval_H_bonding.evaluate(donor, acceptor[1], eq_class[1][0]))
+            # if the H-bond evaluation is not successful, print the error message and exit
+            successful_completion = h_bonds[-1][0]
+            if not successful_completion:
+                for note in h_bonds[-1][1]:
+                    print(note)
+                sys.exit(1)
+        acceptor_h_bonds_amb.append(h_bonds)
 
-
-
+    # with open(f"{eq_class[0]}_test_data.csv", "w") as csv_file:
+    #     writer = csv.writer(csv_file)
+    #     for x in enumerate(donor_h_bonds):
+    #         for y in enumerate(x[1]):
+    #             for z in y[1][1]:
+    #                 row = [y[1][0]]
+    #                 row.extend(stored.donor_list[x[0]])
+    #                 row.extend(acceptors_near_donors[x[0]][y[0]])
+    #                 row.extend(z)
+    #                 writer.writerow(row)
+    #     for x in enumerate(donor_h_bonds_amb):
+    #         for y in enumerate(x[1]):
+    #             for z in y[1][1]:
+    #                 row = [y[1][0]]
+    #                 row.extend(stored.donor_list[x[0]])
+    #                 row.extend(acceptors_near_donors_amb[x[0]][y[0]])
+    #                 row.extend(z)
+    #                 writer.writerow(row)
+    #     for x in enumerate(acceptor_h_bonds):
+    #         for y in enumerate(x[1]):
+    #             for z in y[1][1]:
+    #                 row = [y[1][0]]
+    #                 row.extend(stored.acceptor_list[x[0]])
+    #                 row.extend(donors_near_acceptors[x[0]][y[0]])
+    #                 row.extend(z)
+    #                 writer.writerow(row)
+    #     for x in enumerate(acceptor_h_bonds_amb):
+    #         for y in enumerate(x[1]):
+    #             for z in y[1][1]:
+    #                 row = [y[1][0]]
+    #                 row.extend(stored.acceptor_list[x[0]])
+    #                 row.extend(donors_near_acceptors_amb[x[0]][y[0]])
+    #                 row.extend(z)
+    #                 writer.writerow(row)
 
 
 #     cmd.save(f'{modified_mmCIF_directory}/{eq_class[0]}.cif')
