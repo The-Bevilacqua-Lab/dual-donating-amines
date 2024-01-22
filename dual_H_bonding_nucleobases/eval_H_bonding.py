@@ -3,16 +3,17 @@ This module contains functions and a residue library that are necessary to evalu
 between a potential donor atom and a potential acceptor atom. The function named evaluate should be called by other
 scripts to determine whether an H-bond is identified. The first two arguments should describe the donor and acceptor
 atoms, respectively. For each atom, a tuple containing the atom index, atom name, residue name, residue number, and
-chain ID should be provided in that order. The PDB ID should be provided as the third argument. The function assumes
-1) that hydrogens have been added to non-rotatable donor atoms, including both endocyclic nitrogens in histidine
-residues and 2) that tyrosine hydroxyl hydrogens are approximately planar with the tyrosine side chain rings.
+chain ID should be provided in that order. The PDB ID and a residue library should be provided as the third and forth
+arguments. The function assumes 1) that hydrogens have been added to non-rotatable donor atoms, including both
+endocyclic nitrogens in histidine residues and 2) that tyrosine hydroxyl hydrogens are approximately planar with the
+tyrosine side chain rings.
 """
 
 from pymol import cmd
 from pymol import stored
 
 
-def evaluate(donor_atom, acceptor_atom, pdb):
+def evaluate(donor_atom, acceptor_atom, pdb, library):
     # initially assume that the evaluation will complete successfully
     successful_completion = True
     # initialize an empty list that can be used to document why an evaluation was not completed successfully
@@ -45,7 +46,7 @@ def evaluate(donor_atom, acceptor_atom, pdb):
     # if found, collect other information about that atom
     donor_res = ''
     donor_info = []
-    for residue in residue_library:
+    for residue in library:
         if donor_atom[2] == residue['res']:
             donor_res = residue['res']
             for atom in residue['don']:
@@ -71,7 +72,7 @@ def evaluate(donor_atom, acceptor_atom, pdb):
     # if found, collect other information about that atom
     acceptor_res = ''
     acceptor_info = []
-    for residue in residue_library:
+    for residue in library:
         if acceptor_atom[2] == residue['res']:
             acceptor_res = residue['res']
             for atom in residue['acc']:
