@@ -112,19 +112,26 @@ for atom in ambiguous_acceptor_atoms:
     if atom != last_atom:
         ambiguous_acceptor_string += ' '
 
-# construct two tuples of tuples containing atom and residue names that describe either donor or acceptor atoms of
-# particular interest
+# construct three tuples of tuples containing atom and residue names that describe either donor, protonated donor
+# (formal charge of +1), or acceptor atoms of particular interest
 donors_of_interest = (('A', 'N6'), ('C', 'N4'), ('G', 'N2'))
+prot_donors_of_interest = (('A', 'N1'), ('A', 'N3'), ('C', 'N3'), ('G', 'N3'))
 acceptors_of_interest = (('A', 'N1'), ('A', 'N3'), ('C', 'O2'), ('C', 'N3'), ('G', 'N3'), ('G', 'O6'))
 
-# construct two strings that can be used with PyMOL to select all possible donor or all possible acceptor atoms of
-# particular interest
+# construct three strings that can be used with PyMOL to select all possible donor, all possible protonated donor
+# (formal charge of +1), or all possible acceptor atoms of particular interest
 donors_of_interest_str = ''
 last_atom = donors_of_interest[-1]
 for atom in donors_of_interest:
     donors_of_interest_str += f'(resn {atom[0]} and name {atom[1]})'
     if atom != last_atom:
         donors_of_interest_str += ' '
+prot_donors_of_interest_str = ''
+last_atom = prot_donors_of_interest[-1]
+for atom in prot_donors_of_interest:
+    prot_donors_of_interest_str += f'(resn {atom[0]} and name {atom[1]})'
+    if atom != last_atom:
+        prot_donors_of_interest_str += ' '
 acceptors_of_interest_str = ''
 last_atom = acceptors_of_interest[-1]
 for atom in acceptors_of_interest:
@@ -141,6 +148,17 @@ guanine_nuc_donors = ["N1", "N2"]
 guanine_nuc_acceptors = ["N3", "O6", "N7"]
 uracil_nuc_donors = ["N3"]
 uracil_nuc_acceptors = ["O2", "O4"]
+
+# using the library provided by the eval_H_bonding module, create a new library with protonated A, C, and G residues
+prot_library = eval_H_bonding.residue_library
+for res in prot_library:
+    if res['res'] == 'A':
+        res['don'].append(["N1", "N", False, 1, "C2"])
+        res['don'].append(["N3", "N", False, 1, "C2"])
+    if res['res'] == 'C':
+        res['don'].append(["N3", "N", False, 1, "C2"])
+    if res['res'] == 'G':
+        res['don'].append(["N3", "N", False, 1, "C2"])
 
 # define the distance used to search for nearby donor or acceptor atoms
 search_dist = 3.6
@@ -178,13 +196,22 @@ for eq_class in nrlist_info:
             print(note)
         sys.exit(1)
 
+    # The h_add command a few lines down will instruct PyMOL to add hydrogens to tyrosine OH atoms (and other atoms
+    # too). The tyrosine OH atoms need to be trigonal planar and the hydrogens added to the tyrosine OH atoms need to be
+    # planar with the tyrosine rings. For this to happen, there needs to be a double bond between the tyrosine OH and CZ
+    # atoms and the tyrosine OH atom needs to have a formal charge of +1.
 
+    # create a double bond between the CZ and OH atoms in tyrosine residues that are near the representative RNA
+    cmd.iterate(f'(resn TYR and name OH) within {search_dist_amb} of ({rep_rna})',
+                'cmd.unbond(f"index {index}", f"(byres index {index}) and name CZ"); '
+                'cmd.bond(f"index {index}", f"(byres index {index}) and name CZ", "2")')
+
+    # change the formal charge on TYR(OH), HIS(ND1), A(N1), A(N3), C(N3), and G(N3) to +1
+    # with a formal charge of +1, PyMOL will add hydrogens to these atoms when the following h_add command is used
+    cmd.alter(f'(resn TYR and name OH) (resn HIS and name ND1) {prot_donors_of_interest_str}', 'formal_charge=1')
     # add hydrogens to non-rotatable donors that are a part of or near the representative RNA
-    cmd.h_add(f'(({donor_string}) and not ({rotatable_donor_string})) within {search_dist_amb} of ({rep_rna})')
-
-
-
-
+    cmd.h_add(f'(({donor_string} {prot_donors_of_interest_str}) and not ({rotatable_donor_string})) within '
+              f'{search_dist_amb} of ({rep_rna})')
     # store a list of donors of interest from the representative RNA
     stored.donor_list = []
     cmd.iterate(f'({rep_rna}) and ({donors_of_interest_str})',
@@ -230,7 +257,7 @@ for eq_class in nrlist_info:
     for donor in enumerate(stored.donor_list):
         h_bonds = []
         for acceptor in acceptors_near_donors[donor[0]]:
-            h_bonds.append(eval_H_bonding.evaluate(donor[1], acceptor, eq_class[1][0]))
+            h_bonds.append(eval_H_bonding.evaluate(donor[1], acceptor, eq_class[1][0], prot_library))
             # if the H-bond evaluation is not successful, print the error message and exit
             successful_completion = h_bonds[-1][0]
             if not successful_completion:
@@ -263,7 +290,7 @@ for eq_class in nrlist_info:
     for donor in enumerate(stored.donor_list):
         h_bonds = []
         for acceptor in acceptors_near_donors_amb[donor[0]]:
-            h_bonds.append(eval_H_bonding.evaluate(donor[1], acceptor, eq_class[1][0]))
+            h_bonds.append(eval_H_bonding.evaluate(donor[1], acceptor, eq_class[1][0], prot_library))
             # if the H-bond evaluation is not successful, print the error message and exit
             successful_completion = h_bonds[-1][0]
             if not successful_completion:
@@ -276,14 +303,21 @@ for eq_class in nrlist_info:
     cmd.iterate(f'({rep_rna}) and ({acceptors_of_interest_str})',
                 'stored.acceptor_list.append((index, name, resn, resi, chain))')
     # store a list of atoms near the acceptors of interest
+    # additionally, use the list of acceptors of interest to construct a list of protonated donors of interest (formal
+    # charge of +1) and a list of atoms near the protonated donors of interest
     atoms_near_acceptors = []
+    prot_donor_list = []
+    atoms_near_prot_donors = []
     stored.acceptor_list = stored.acceptor_list[:100]
     for acceptor in stored.acceptor_list:
         stored.nearby_atoms = []
         cmd.iterate(f'index {acceptor[0]} around {search_dist}',
                     'stored.nearby_atoms.append((index, name, resn, resi, chain))')
         atoms_near_acceptors.append(stored.nearby_atoms)
-    # extract the atoms that can act as H-bond donors
+        if (acceptor[2], acceptor[1]) in prot_donors_of_interest:
+            prot_donor_list.append(acceptor)
+            atoms_near_prot_donors.append(stored.nearby_atoms)
+    # extract the atoms near the acceptors of interest that can act as H-bond donors
     donors_near_acceptors = []
     for atom_group in enumerate(atoms_near_acceptors):
         list_of_donors = []
@@ -316,7 +350,7 @@ for eq_class in nrlist_info:
     for acceptor in enumerate(stored.acceptor_list):
         h_bonds = []
         for donor in donors_near_acceptors[acceptor[0]]:
-            h_bonds.append(eval_H_bonding.evaluate(donor, acceptor[1], eq_class[1][0]))
+            h_bonds.append(eval_H_bonding.evaluate(donor, acceptor[1], eq_class[1][0], prot_library))
             # if the H-bond evaluation is not successful, print the error message and exit
             successful_completion = h_bonds[-1][0]
             if not successful_completion:
@@ -324,14 +358,59 @@ for eq_class in nrlist_info:
                     print(note)
                 sys.exit(1)
         acceptor_h_bonds.append(h_bonds)
+    # extract the atoms near the protonated donors of interest that can act as H-bond acceptors
+    acceptors_near_prot_donors = []
+    for atom_group in enumerate(atoms_near_prot_donors):
+        list_of_acceptors = []
+        for atom in atom_group[1]:
+            # the sidechain acceptor atoms in ASN, GLN, and HIS residues will be collected separately
+            if not (atom[1] != "O" and atom[2] in ["ASN", "GLN", "HIS"]):
+                # the acceptors should not belong to the nucleobase of the donor
+                if not ((prot_donor_list[atom_group[0]][2] == atom[2] == "A" and
+                         prot_donor_list[atom_group[0]][3] == atom[3] and
+                         prot_donor_list[atom_group[0]][4] == atom[4] and
+                         atom[1] in adenine_nuc_acceptors) or
+                        (prot_donor_list[atom_group[0]][2] == atom[2] == "C" and
+                         prot_donor_list[atom_group[0]][3] == atom[3] and
+                         prot_donor_list[atom_group[0]][4] == atom[4] and
+                         atom[1] in cytosine_nuc_acceptors) or
+                        (prot_donor_list[atom_group[0]][2] == atom[2] == "G" and
+                         prot_donor_list[atom_group[0]][3] == atom[3] and
+                         prot_donor_list[atom_group[0]][4] == atom[4] and
+                         atom[1] in guanine_nuc_acceptors) or
+                        (prot_donor_list[atom_group[0]][2] == atom[2] == "U" and
+                         prot_donor_list[atom_group[0]][3] == atom[3] and
+                         prot_donor_list[atom_group[0]][4] == atom[4] and
+                         atom[1] in uracil_nuc_acceptors)):
+                    for acceptor in acceptor_atoms:
+                        if atom[1] == acceptor[1] and atom[2] == acceptor[0]:
+                            list_of_acceptors.append(atom)
+        acceptors_near_prot_donors.append(list_of_acceptors)
+    # acquire the H-bonding geometry measurements for all acceptors near each protonated donor
+    prot_donor_h_bonds = []
+    for donor in enumerate(prot_donor_list):
+        h_bonds = []
+        for acceptor in acceptors_near_prot_donors[donor[0]]:
+            h_bonds.append(eval_H_bonding.evaluate(donor[1], acceptor, eq_class[1][0], prot_library))
+            # if the H-bond evaluation is not successful, print the error message and exit
+            successful_completion = h_bonds[-1][0]
+            if not successful_completion:
+                for note in h_bonds[-1][1]:
+                    print(note)
+                sys.exit(1)
+        prot_donor_h_bonds.append(h_bonds)
     # using a greater search distance for the sidechains of ASN, GLN, and HIS residues, store a list of atoms near the
     # acceptors of interest
+    # additionally, construct a list of atoms near the protonated donors of interest using the greater search distance
     atoms_near_acceptors_amb = []
+    atoms_near_prot_donors_amb = []
     for acceptor in stored.acceptor_list:
         stored.nearby_atoms = []
         cmd.iterate(f'index {acceptor[0]} around {search_dist_amb}',
                     'stored.nearby_atoms.append((index, name, resn, resi, chain))')
         atoms_near_acceptors_amb.append(stored.nearby_atoms)
+        if (acceptor[2], acceptor[1]) in prot_donors_of_interest:
+            atoms_near_prot_donors_amb.append(stored.nearby_atoms)
     # extract the atoms that can act as H-bond donors that belong to the sidechains of ASN, GLN, and HIS residues
     donors_near_acceptors_amb = []
     for atom_group in enumerate(atoms_near_acceptors_amb):
@@ -349,7 +428,7 @@ for eq_class in nrlist_info:
     for acceptor in enumerate(stored.acceptor_list):
         h_bonds = []
         for donor in donors_near_acceptors_amb[acceptor[0]]:
-            h_bonds.append(eval_H_bonding.evaluate(donor, acceptor[1], eq_class[1][0]))
+            h_bonds.append(eval_H_bonding.evaluate(donor, acceptor[1], eq_class[1][0], prot_library))
             # if the H-bond evaluation is not successful, print the error message and exit
             successful_completion = h_bonds[-1][0]
             if not successful_completion:
@@ -357,6 +436,32 @@ for eq_class in nrlist_info:
                     print(note)
                 sys.exit(1)
         acceptor_h_bonds_amb.append(h_bonds)
+    # extract the atoms near the protonated donors of interest that can act as H-bond acceptors that belong to the
+    # sidechains of ASN, GLN, and HIS residues
+    acceptors_near_prot_donors_amb = []
+    for atom_group in enumerate(atoms_near_prot_donors_amb):
+        list_of_acceptors = []
+        for atom in atom_group[1]:
+            # only extract sidechain acceptor atoms in ASN, GLN, and HIS residues
+            if atom[1] != "O" and atom[2] in ["ASN", "GLN", "HIS"]:
+                for acceptor in acceptor_atoms:
+                    if atom[1] == acceptor[1] and atom[2] == acceptor[0]:
+                        list_of_acceptors.append(atom)
+        acceptors_near_prot_donors_amb.append(list_of_acceptors)
+    # acquire the H-bonding geometry measurements for sidechain acceptor atoms in ASN, GLN, and HIS residues near each
+    # protonated donor
+    prot_donor_h_bonds_amb = []
+    for donor in enumerate(prot_donor_list):
+        h_bonds = []
+        for acceptor in acceptors_near_prot_donors_amb[donor[0]]:
+            h_bonds.append(eval_H_bonding.evaluate(donor[1], acceptor, eq_class[1][0], prot_library))
+            # if the H-bond evaluation is not successful, print the error message and exit
+            successful_completion = h_bonds[-1][0]
+            if not successful_completion:
+                for note in h_bonds[-1][1]:
+                    print(note)
+                sys.exit(1)
+        prot_donor_h_bonds_amb.append(h_bonds)
 
     # with open(f"{eq_class[0]}_test_data.csv", "w") as csv_file:
     #     writer = csv.writer(csv_file)
@@ -390,6 +495,22 @@ for eq_class in nrlist_info:
     #                 row = [y[1][0]]
     #                 row.extend(stored.acceptor_list[x[0]])
     #                 row.extend(donors_near_acceptors_amb[x[0]][y[0]])
+    #                 row.extend(z)
+    #                 writer.writerow(row)
+    #     for x in enumerate(prot_donor_h_bonds):
+    #         for y in enumerate(x[1]):
+    #             for z in y[1][1]:
+    #                 row = [y[1][0]]
+    #                 row.extend(prot_donor_list[x[0]])
+    #                 row.extend(acceptors_near_prot_donors[x[0]][y[0]])
+    #                 row.extend(z)
+    #                 writer.writerow(row)
+    #     for x in enumerate(prot_donor_h_bonds_amb):
+    #         for y in enumerate(x[1]):
+    #             for z in y[1][1]:
+    #                 row = [y[1][0]]
+    #                 row.extend(prot_donor_list[x[0]])
+    #                 row.extend(acceptors_near_prot_donors_amb[x[0]][y[0]])
     #                 row.extend(z)
     #                 writer.writerow(row)
 
