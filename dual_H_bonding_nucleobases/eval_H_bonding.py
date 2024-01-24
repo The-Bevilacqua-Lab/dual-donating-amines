@@ -6,7 +6,9 @@ atoms, respectively. For each atom, a tuple containing the atom index, atom name
 chain ID should be provided in that order. The PDB ID and a residue library should be provided as the third and forth
 arguments. The function assumes 1) that hydrogens have been added to non-rotatable donor atoms, including both
 endocyclic nitrogens in histidine residues and 2) that tyrosine hydroxyl hydrogens are approximately planar with the
-tyrosine side chain rings.
+tyrosine side chain rings. When the potential donor or acceptor atom belongs to the side chain of an ASN, GLN, or HIS
+residue, hydrogens must have been added to all the nitrogen atoms on the side chain, even if the potential H-bond does
+not involve these nitrogens.
 """
 
 from pymol import cmd
