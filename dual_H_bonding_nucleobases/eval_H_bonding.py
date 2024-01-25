@@ -131,9 +131,9 @@ def evaluate(donor_atom, acceptor_atom, pdb, library):
                     h_name = geometry[1][2]
                     # noinspection PyTypeChecker
                     if distance <= 2.5 and angle >= (180 - 60):
-                        return [successful_completion, [[True, distance, angle, 'hydrogen vertex', h_name, 'none']]]
+                        return [successful_completion, [[True, distance, angle, 'hydrogen', h_name, 'none']]]
                     else:
-                        return [successful_completion, [[False, distance, angle, 'hydrogen vertex', h_name, 'none']]]
+                        return [successful_completion, [[False, distance, angle, 'hydrogen', h_name, 'none']]]
                 elif type(geometry[1][0]) is list:
                     first_distance = geometry[1][0][0]
                     first_angle = geometry[1][0][1]
@@ -141,18 +141,18 @@ def evaluate(donor_atom, acceptor_atom, pdb, library):
                     first_set = []
                     # noinspection PyTypeChecker
                     if first_distance <= 2.5 and first_angle >= (180 - 60):
-                        first_set = [True, first_distance, first_angle, 'hydrogen vertex', first_h_name, 'none']
+                        first_set = [True, first_distance, first_angle, 'hydrogen', first_h_name, 'none']
                     else:
-                        first_set = [False, first_distance, first_angle, 'hydrogen vertex', first_h_name, 'none']
+                        first_set = [False, first_distance, first_angle, 'hydrogen', first_h_name, 'none']
                     second_distance = geometry[1][1][0]
                     second_angle = geometry[1][1][1]
                     second_h_name = geometry[1][1][2]
                     second_set = []
                     # noinspection PyTypeChecker
                     if second_distance <= 2.5 and second_angle >= (180 - 60):
-                        second_set = [True, second_distance, second_angle, 'hydrogen vertex', second_h_name, 'none']
+                        second_set = [True, second_distance, second_angle, 'hydrogen', second_h_name, 'none']
                     else:
-                        second_set = [False, second_distance, second_angle, 'hydrogen vertex', second_h_name, 'none']
+                        second_set = [False, second_distance, second_angle, 'hydrogen', second_h_name, 'none']
                     return [successful_completion, [first_set, second_set]]
             elif vertex == 'donor':
                 distance = geometry[1][0]
@@ -160,9 +160,9 @@ def evaluate(donor_atom, acceptor_atom, pdb, library):
                 h_name = geometry[1][2]
                 # noinspection PyTypeChecker
                 if distance <= 3.5 and (109.5 - 45) <= angle <= (109.5 + 45):
-                    return [successful_completion, [[True, distance, angle, 'donor vertex', h_name, 'none']]]
+                    return [successful_completion, [[True, distance, angle, 'donor', h_name, 'none']]]
                 else:
-                    return [successful_completion, [[False, distance, angle, 'donor vertex', h_name, 'none']]]
+                    return [successful_completion, [[False, distance, angle, 'donor', h_name, 'none']]]
     # if there is ambiguity in the side chain conformation of either the donor residue or the acceptor residue (but not
     # both), the geometry calculation needs to be performed twice
     elif (((ambiguous_donor and not ambiguous_acceptor) or (not ambiguous_donor and ambiguous_acceptor)) and not
@@ -184,9 +184,9 @@ def evaluate(donor_atom, acceptor_atom, pdb, library):
                     h_name = first_geometry[1][2]
                     # noinspection PyTypeChecker
                     if distance <= 2.5 and angle >= (180 - 60):
-                        first_eval = [[True, distance, angle, 'hydrogen vertex', h_name, 'none']]
+                        first_eval = [[True, distance, angle, 'hydrogen', h_name, 'none']]
                     else:
-                        first_eval = [[False, distance, angle, 'hydrogen vertex', h_name, 'none']]
+                        first_eval = [[False, distance, angle, 'hydrogen', h_name, 'none']]
                 elif type(first_geometry[1][0]) is list:
                     first_distance = first_geometry[1][0][0]
                     first_angle = first_geometry[1][0][1]
@@ -194,18 +194,18 @@ def evaluate(donor_atom, acceptor_atom, pdb, library):
                     first_set = []
                     # noinspection PyTypeChecker
                     if first_distance <= 2.5 and first_angle >= (180 - 60):
-                        first_set = [True, first_distance, first_angle, 'hydrogen vertex', first_h_name, 'none']
+                        first_set = [True, first_distance, first_angle, 'hydrogen', first_h_name, 'none']
                     else:
-                        first_set = [False, first_distance, first_angle, 'hydrogen vertex', first_h_name, 'none']
+                        first_set = [False, first_distance, first_angle, 'hydrogen', first_h_name, 'none']
                     second_distance = first_geometry[1][1][0]
                     second_angle = first_geometry[1][1][1]
                     second_h_name = first_geometry[1][1][2]
                     second_set = []
                     # noinspection PyTypeChecker
                     if second_distance <= 2.5 and second_angle >= (180 - 60):
-                        second_set = [True, second_distance, second_angle, 'hydrogen vertex', second_h_name, 'none']
+                        second_set = [True, second_distance, second_angle, 'hydrogen', second_h_name, 'none']
                     else:
-                        second_set = [False, second_distance, second_angle, 'hydrogen vertex', second_h_name, 'none']
+                        second_set = [False, second_distance, second_angle, 'hydrogen', second_h_name, 'none']
                     first_eval = [first_set, second_set]
             elif vertex == 'donor':
                 distance = first_geometry[1][0]
@@ -213,16 +213,16 @@ def evaluate(donor_atom, acceptor_atom, pdb, library):
                 h_name = first_geometry[1][2]
                 # noinspection PyTypeChecker
                 if distance <= 3.5 and (109.5 - 45) <= angle <= (109.5 + 45):
-                    first_eval = [[True, distance, angle, 'donor vertex', h_name, 'none']]
+                    first_eval = [[True, distance, angle, 'donor', h_name, 'none']]
                 else:
-                    first_eval = [[False, distance, angle, 'donor vertex', h_name, 'none']]
+                    first_eval = [[False, distance, angle, 'donor', h_name, 'none']]
         # rotate the ambiguous side chain atoms of the donor or acceptor residue
         rotated_res = ''
         if ambiguous_donor:
-            rotated_res = f'rotated {donor_atom[2]}{donor_atom[3]} {donor_atom[4]}'
+            rotated_res = f'{donor_atom[2]}{donor_atom[3]} {donor_atom[4]}'
             rotation = rotate_side_chain(donor_atom, pdb)
         elif ambiguous_acceptor:
-            rotated_res = f'rotated {acceptor_atom[2]}{acceptor_atom[3]} {acceptor_atom[4]}'
+            rotated_res = f'{acceptor_atom[2]}{acceptor_atom[3]} {acceptor_atom[4]}'
             rotation = rotate_side_chain(acceptor_atom, pdb)
         # if the rotation was not successful, return an explanation of what went wrong
         successful_completion = rotation[0]
@@ -245,9 +245,9 @@ def evaluate(donor_atom, acceptor_atom, pdb, library):
                     h_name = second_geometry[1][2]
                     # noinspection PyTypeChecker
                     if distance <= 2.5 and angle >= (180 - 60):
-                        second_eval = [[True, distance, angle, 'hydrogen vertex', h_name, rotated_res]]
+                        second_eval = [[True, distance, angle, 'hydrogen', h_name, rotated_res]]
                     else:
-                        second_eval = [[False, distance, angle, 'hydrogen vertex', h_name, rotated_res]]
+                        second_eval = [[False, distance, angle, 'hydrogen', h_name, rotated_res]]
                 elif type(second_geometry[1][0]) is list:
                     first_distance = second_geometry[1][0][0]
                     first_angle = second_geometry[1][0][1]
@@ -255,18 +255,18 @@ def evaluate(donor_atom, acceptor_atom, pdb, library):
                     first_set = []
                     # noinspection PyTypeChecker
                     if first_distance <= 2.5 and first_angle >= (180 - 60):
-                        first_set = [True, first_distance, first_angle, 'hydrogen vertex', first_h_name, rotated_res]
+                        first_set = [True, first_distance, first_angle, 'hydrogen', first_h_name, rotated_res]
                     else:
-                        first_set = [False, first_distance, first_angle, 'hydrogen vertex', first_h_name, rotated_res]
+                        first_set = [False, first_distance, first_angle, 'hydrogen', first_h_name, rotated_res]
                     second_distance = second_geometry[1][1][0]
                     second_angle = second_geometry[1][1][1]
                     second_h_name = second_geometry[1][1][2]
                     second_set = []
                     # noinspection PyTypeChecker
                     if second_distance <= 2.5 and second_angle >= (180 - 60):
-                        second_set = [True, second_distance, second_angle, 'hydrogen vertex', second_h_name, rotated_res]
+                        second_set = [True, second_distance, second_angle, 'hydrogen', second_h_name, rotated_res]
                     else:
-                        second_set = [False, second_distance, second_angle, 'hydrogen vertex', second_h_name, rotated_res]
+                        second_set = [False, second_distance, second_angle, 'hydrogen', second_h_name, rotated_res]
                     second_eval = [first_set, second_set]
             elif vertex == 'donor':
                 distance = second_geometry[1][0]
@@ -274,9 +274,9 @@ def evaluate(donor_atom, acceptor_atom, pdb, library):
                 h_name = second_geometry[1][2]
                 # noinspection PyTypeChecker
                 if distance <= 3.5 and (109.5 - 45) <= angle <= (109.5 + 45):
-                    second_eval = [[True, distance, angle, 'donor vertex', h_name, rotated_res]]
+                    second_eval = [[True, distance, angle, 'donor', h_name, rotated_res]]
                 else:
-                    second_eval = [[False, distance, angle, 'donor vertex', h_name, rotated_res]]
+                    second_eval = [[False, distance, angle, 'donor', h_name, rotated_res]]
         # rotate the ambiguous side chain atoms of the donor or acceptor residue to get them back to their original
         # conformation
         if ambiguous_donor:
@@ -319,11 +319,11 @@ def evaluate(donor_atom, acceptor_atom, pdb, library):
         h_name = geometry[1][2]
         # noinspection PyTypeChecker
         if distance <= 2.5 and angle >= (180 - 60):
-            original_conformation = [True, distance, angle, 'hydrogen vertex', h_name, 'none']
+            original_conformation = [True, distance, angle, 'hydrogen', h_name, 'none']
         else:
-            original_conformation = [False, distance, angle, 'hydrogen vertex', h_name, 'none']
+            original_conformation = [False, distance, angle, 'hydrogen', h_name, 'none']
         # rotate the tyrosine hydroxyl
-        rotated_res = f'rotated {donor_atom[2]}{donor_atom[3]} {donor_atom[4]}'
+        rotated_res = f'{donor_atom[2]}{donor_atom[3]} {donor_atom[4]}'
         rotation = rotate_side_chain(donor_atom, pdb)
         # if the rotation was not successful, return an explanation of what went wrong
         successful_completion = rotation[0]
@@ -342,9 +342,9 @@ def evaluate(donor_atom, acceptor_atom, pdb, library):
         h_name = geometry[1][2]
         # noinspection PyTypeChecker
         if distance <= 2.5 and angle >= (180 - 60):
-            rotated_conformation = [True, distance, angle, 'hydrogen vertex', h_name, rotated_res]
+            rotated_conformation = [True, distance, angle, 'hydrogen', h_name, rotated_res]
         else:
-            rotated_conformation = [False, distance, angle, 'hydrogen vertex', h_name, rotated_res]
+            rotated_conformation = [False, distance, angle, 'hydrogen', h_name, rotated_res]
         # rotate the tyrosine hydroxyl to get it back to its original conformation
         rotation = rotate_side_chain(donor_atom, pdb)
         # if the rotation was not successful, return an explanation of what went wrong
