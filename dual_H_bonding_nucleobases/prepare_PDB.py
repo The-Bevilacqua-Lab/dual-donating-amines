@@ -464,8 +464,26 @@ for eq_class in nrlist_info:
                     print(note)
                 sys.exit(1)
         prot_donor_h_bonds_amb.append(h_bonds)
+    # construct a list of all nucleobases containing all donors and acceptors of interest
+    nucleobase_list = []
+    for i in range(len(stored.donor_list)):
+        if (stored.donor_list[i][2] == stored.acceptor_list[i*2][2] == stored.acceptor_list[i*2+1][2] and
+                stored.donor_list[i][3] == stored.acceptor_list[i*2][3] == stored.acceptor_list[i*2+1][3] and
+                stored.donor_list[i][4] == stored.acceptor_list[i*2][4] == stored.acceptor_list[i*2+1][4]):
+            nucleobase_list.append((stored.donor_list[i][2]+stored.donor_list[i][3]+stored.donor_list[i][4],
+                                    stored.donor_list[i][0], stored.donor_list[i][1],
+                                    stored.acceptor_list[i*2][0], stored.acceptor_list[i*2][1],
+                                    stored.acceptor_list[i*2+1][0], stored.acceptor_list[i*2+1][1]))
+        else:
+            print("Error: The code was unable to complete construction of nucleobase_list.")
+            sys.exit(1)
 
-    with open(f"{eq_class[0]}_test_data.csv", "w") as csv_file:
+    with open(f"{eq_class[0]}_nuc_test_data.csv", "w") as csv_file:
+        writer = csv.writer(csv_file)
+        for nuc in nucleobase_list:
+            writer.writerow(nuc)
+
+    with open(f"{eq_class[0]}_hbond_test_data.csv", "w") as csv_file:
         writer = csv.writer(csv_file)
         for x in enumerate(donor_h_bonds):
             for y in enumerate(x[1]):
