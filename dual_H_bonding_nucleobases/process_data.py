@@ -6,8 +6,11 @@ import sys
 import os
 import csv
 import pandas as pd
+from datetime import datetime
 
-os.chdir("/Users/drew/Documents/Research/Dual H-Bonding/Scratch")
+start = datetime.now()
+
+os.chdir("/Users/drew/Documents/Research/Dual H-Bonding/Scratch/")
 
 # set the H-bonding criteria
 # H_DIST_MAX = 2.5
@@ -48,13 +51,13 @@ ACCEPTORS_OF_INTEREST = (('A', 'N1'), ('A', 'N3'), ('C', 'O2'), ('C', 'N3'), ('G
 #                 "rotated side chain": line[16]
 #             })
 
-# extract the data from the hbond csv file
+# extract the data from the hbond csv file and remove redundant lines
+hbond_file = "NR_3.0_08591.1_hbond_test_data.csv"
 hbond_col_names = ["success", "don index", "don name", "don resn", "don resi", "don chain", "acc index", "acc name",
                    "acc resn", "acc resi", "acc chain", "hbond", "dist", "ang", "vertex", "hydrogen",
                    "rotated side chain"]
-hbond_data = pd.read_csv("NR_3.0_08591.1_hbond_test_data.csv", names=hbond_col_names, index_col=["dist", "ang"])
-
-print(hbond_data.loc[:5, :])
+unique_col_comb = ["don index", "acc index", "hydrogen", "rotated side chain", "dist", "ang"]
+hbond_data = pd.read_csv(hbond_file, names=hbond_col_names).drop_duplicates(subset=unique_col_comb)
 
 # # extract the data from the nuc csv file
 # nuc_file = "NR_3.0_08591.1_nuc_test_data.csv"
@@ -69,7 +72,18 @@ print(hbond_data.loc[:5, :])
 #         else:
 #             print(f"Error: There are multiple lines referencing the same nucleobase in {nuc_file}.")
 #             sys.exit(1)
-#
+
+# extract the data from the nuc csv file
+nuc_file = "NR_3.0_08591.1_nuc_test_data.csv"
+nuc_col_names = ["residue", "don index", "don name", "acc1 index", "acc1 name", "acc2 index", "acc2 name"]
+nuc_data = pd.read_csv(nuc_file, names=nuc_col_names, index_col="residue")
+
+# h_bond_from_don_of_int = hbond_data.loc[(hbond_data.loc[:, "dist"] <= H_DIST_MAX) & (hbond_data.loc[:, "ang"] >= 180.0 - H_ANG_TOL), ["dist", "ang"]]
+
+h_bond_from_don_of_int = hbond_data
+
+# print(h_bond_from_don_of_int)
+
 # # identify atom pairs that meet the H-bond criteria and include a donor of interest
 # # also, identify atom pairs that meet the H-bond criteria and include an acceptor of interest
 # h_bond_from_don_of_int = {}
@@ -270,3 +284,6 @@ print(hbond_data.loc[:5, :])
 #     count += 1
 #     # values.append(len(x))
 # print(count)
+
+end = datetime.now()
+print(end-start)
