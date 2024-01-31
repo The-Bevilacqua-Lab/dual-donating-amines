@@ -4,5 +4,4 @@ These scripts make up a computational pipeline to identify nucleobases in struct
 
 ## Dependencies
 
-PyMOL==2.5.0  
-HBPLUS==3.2
+PyMOL==2.5.0
