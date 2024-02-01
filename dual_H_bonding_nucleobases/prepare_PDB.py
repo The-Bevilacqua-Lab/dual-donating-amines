@@ -488,48 +488,42 @@ for eq_class in nrlist_info:
         for x in enumerate(donor_h_bonds):
             for y in enumerate(x[1]):
                 for z in y[1][1]:
-                    row = [y[1][0]]
-                    row.extend(stored.donor_list[x[0]])
+                    row = stored.donor_list[x[0]]
                     row.extend(acceptors_near_donors[x[0]][y[0]])
                     row.extend(z)
                     writer.writerow(row)
         for x in enumerate(donor_h_bonds_amb):
             for y in enumerate(x[1]):
                 for z in y[1][1]:
-                    row = [y[1][0]]
-                    row.extend(stored.donor_list[x[0]])
+                    row = stored.donor_list[x[0]]
                     row.extend(acceptors_near_donors_amb[x[0]][y[0]])
                     row.extend(z)
                     writer.writerow(row)
         for x in enumerate(acceptor_h_bonds):
             for y in enumerate(x[1]):
                 for z in y[1][1]:
-                    row = [y[1][0]]
-                    row.extend(donors_near_acceptors[x[0]][y[0]])
+                    row = donors_near_acceptors[x[0]][y[0]]
                     row.extend(stored.acceptor_list[x[0]])
                     row.extend(z)
                     writer.writerow(row)
         for x in enumerate(acceptor_h_bonds_amb):
             for y in enumerate(x[1]):
                 for z in y[1][1]:
-                    row = [y[1][0]]
-                    row.extend(donors_near_acceptors_amb[x[0]][y[0]])
+                    row = donors_near_acceptors_amb[x[0]][y[0]]
                     row.extend(stored.acceptor_list[x[0]])
                     row.extend(z)
                     writer.writerow(row)
         for x in enumerate(prot_donor_h_bonds):
             for y in enumerate(x[1]):
                 for z in y[1][1]:
-                    row = [y[1][0]]
-                    row.extend(prot_donor_list[x[0]])
+                    row = prot_donor_list[x[0]]
                     row.extend(acceptors_near_prot_donors[x[0]][y[0]])
                     row.extend(z)
                     writer.writerow(row)
         for x in enumerate(prot_donor_h_bonds_amb):
             for y in enumerate(x[1]):
                 for z in y[1][1]:
-                    row = [y[1][0]]
-                    row.extend(prot_donor_list[x[0]])
+                    row = prot_donor_list[x[0]]
                     row.extend(acceptors_near_prot_donors_amb[x[0]][y[0]])
                     row.extend(z)
                     writer.writerow(row)
