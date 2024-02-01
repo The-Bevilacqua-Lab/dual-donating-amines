@@ -78,11 +78,15 @@ nuc_file = "NR_3.0_08591.1_nuc_test_data.csv"
 nuc_col_names = ["residue", "don index", "don name", "acc1 index", "acc1 name", "acc2 index", "acc2 name"]
 nuc_data = pd.read_csv(nuc_file, names=nuc_col_names, index_col="residue")
 
-# h_bond_from_don_of_int = hbond_data.loc[(hbond_data.loc[:, "dist"] <= H_DIST_MAX) & (hbond_data.loc[:, "ang"] >= 180.0 - H_ANG_TOL), ["dist", "ang"]]
+h_bond_from_don_of_int = (hbond_data[(hbond_data["dist"] <= H_DIST_MAX) & (hbond_data["ang"] >= 180.0 - H_ANG_TOL)]
+                          .merge(pd.DataFrame(DONORS_OF_INTEREST, columns=["don resn", "don name"]), how='inner'))
 
-h_bond_from_don_of_int = hbond_data
-
-# print(h_bond_from_don_of_int)
+h_bond_to_acc_of_int = (hbond_data[((hbond_data["vertex"] == "hydrogen") & (hbond_data["dist"] <= H_DIST_MAX) &
+                                    (hbond_data["ang"] >= 180.0 - H_ANG_TOL)) |
+                                   ((hbond_data["vertex"] == "donor") & (hbond_data["dist"] <= DON_DIST_MAX) &
+                                    (hbond_data["ang"] >= 109.5 - DON_ANG_TOL) &
+                                    (hbond_data["ang"] <= 109.5 + DON_ANG_TOL))]
+                        .merge(pd.DataFrame(ACCEPTORS_OF_INTEREST, columns=["acc resn", "acc name"]), how='inner'))
 
 # # identify atom pairs that meet the H-bond criteria and include a donor of interest
 # # also, identify atom pairs that meet the H-bond criteria and include an acceptor of interest
