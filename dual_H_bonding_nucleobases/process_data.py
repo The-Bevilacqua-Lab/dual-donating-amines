@@ -9,6 +9,9 @@ import pandas as pd
 from datetime import datetime
 
 start = datetime.now()
+pd.set_option("display.width", 500)
+pd.set_option("display.max_columns", 17)
+# pd.set_option("display.max_rows", 1000)
 
 os.chdir("/Users/drew/Documents/Research/Dual H-Bonding/Scratch/")
 
@@ -51,14 +54,6 @@ ACCEPTORS_OF_INTEREST = (('A', 'N1'), ('A', 'N3'), ('C', 'O2'), ('C', 'N3'), ('G
 #                 "rotated side chain": line[16]
 #             })
 
-# extract the data from the hbond csv file and remove redundant lines
-hbond_file = "NR_3.0_08591.1_hbond_test_data.csv"
-hbond_col_names = ["success", "don index", "don name", "don resn", "don resi", "don chain", "acc index", "acc name",
-                   "acc resn", "acc resi", "acc chain", "hbond", "dist", "ang", "vertex", "hydrogen",
-                   "rotated side chain"]
-unique_col_comb = ["don index", "acc index", "hydrogen", "rotated side chain", "dist", "ang"]
-hbond_data = pd.read_csv(hbond_file, names=hbond_col_names).drop_duplicates(subset=unique_col_comb)
-
 # # extract the data from the nuc csv file
 # nuc_file = "NR_3.0_08591.1_nuc_test_data.csv"
 # with open(nuc_file, "r") as csv_file:
@@ -72,21 +67,6 @@ hbond_data = pd.read_csv(hbond_file, names=hbond_col_names).drop_duplicates(subs
 #         else:
 #             print(f"Error: There are multiple lines referencing the same nucleobase in {nuc_file}.")
 #             sys.exit(1)
-
-# extract the data from the nuc csv file
-nuc_file = "NR_3.0_08591.1_nuc_test_data.csv"
-nuc_col_names = ["residue", "don index", "don name", "acc1 index", "acc1 name", "acc2 index", "acc2 name"]
-nuc_data = pd.read_csv(nuc_file, names=nuc_col_names, index_col="residue")
-
-h_bond_from_don_of_int = (hbond_data[(hbond_data["dist"] <= H_DIST_MAX) & (hbond_data["ang"] >= 180.0 - H_ANG_TOL)]
-                          .merge(pd.DataFrame(DONORS_OF_INTEREST, columns=["don resn", "don name"]), how='inner'))
-
-h_bond_to_acc_of_int = (hbond_data[((hbond_data["vertex"] == "hydrogen") & (hbond_data["dist"] <= H_DIST_MAX) &
-                                    (hbond_data["ang"] >= 180.0 - H_ANG_TOL)) |
-                                   ((hbond_data["vertex"] == "donor") & (hbond_data["dist"] <= DON_DIST_MAX) &
-                                    (hbond_data["ang"] >= 109.5 - DON_ANG_TOL) &
-                                    (hbond_data["ang"] <= 109.5 + DON_ANG_TOL))]
-                        .merge(pd.DataFrame(ACCEPTORS_OF_INTEREST, columns=["acc resn", "acc name"]), how='inner'))
 
 # # identify atom pairs that meet the H-bond criteria and include a donor of interest
 # # also, identify atom pairs that meet the H-bond criteria and include an acceptor of interest
@@ -136,7 +116,41 @@ h_bond_to_acc_of_int = (hbond_data[((hbond_data["vertex"] == "hydrogen") & (hbon
 #                         already_included = True
 #                 if not already_included:
 #                     h_bond_to_acc_of_int[acc_of_int][acc_nucleobase].append(atom_pair)
-#
+
+# extract the data from the hbond csv file and remove redundant lines
+hbond_file = "test_NR_3.0_08591.1_hbond_test_data.csv"
+hbond_col_names = ["success", "don index", "don name", "don resn", "don resi", "don chain", "acc index", "acc name",
+                   "acc resn", "acc resi", "acc chain", "hbond", "dist", "ang", "vertex", "hydrogen",
+                   "rotated side chain"]
+unique_col_comb = ["don index", "acc index", "hydrogen", "rotated side chain"]
+hbond_data = pd.read_csv(hbond_file, names=hbond_col_names).drop_duplicates(subset=unique_col_comb)
+
+# extract the data from the nuc csv file
+nuc_file = "NR_3.0_08591.1_nuc_test_data.csv"
+nuc_col_names = ["residue", "don index", "don name", "acc1 index", "acc1 name", "acc2 index", "acc2 name"]
+nuc_data = pd.read_csv(nuc_file, names=nuc_col_names, index_col="residue")
+
+# identify atom pairs that meet the H-bond criteria and include a donor of interest
+h_bond_from_don_of_int = (hbond_data[(hbond_data["dist"] <= H_DIST_MAX) & (hbond_data["ang"] >= 180.0 - H_ANG_TOL)]
+                          .merge(pd.DataFrame(DONORS_OF_INTEREST, columns=["don resn", "don name"]), how='inner'))
+
+# identify atom pairs that meet the H-bond criteria and include an acceptor of interest
+h_bond_to_acc_of_int = (hbond_data[((hbond_data["vertex"] == "hydrogen") & (hbond_data["dist"] <= H_DIST_MAX) &
+                                    (hbond_data["ang"] >= 180.0 - H_ANG_TOL)) |
+                                   ((hbond_data["vertex"] == "donor") & (hbond_data["dist"] <= DON_DIST_MAX) &
+                                    (hbond_data["ang"] >= 109.5 - DON_ANG_TOL) &
+                                    (hbond_data["ang"] <= 109.5 + DON_ANG_TOL))]
+                        .merge(pd.DataFrame(ACCEPTORS_OF_INTEREST, columns=["acc resn", "acc name"]), how='inner'))
+
+# TODO run test with HIS residue where one nitrogen interacts in original conf and other nitrogen interacts in rotated conf
+# TODO comment about limitation where situation with original conf of one residue and original conf of second residue both bound to HO1 will be prioritiezed over situation with original conf of one residue bound to H01 and rotated conf of second residue bound to H02
+unique_col_comb = ["don index", "acc resn", "acc resi", "acc chain"]
+print(h_bond_from_don_of_int[h_bond_from_don_of_int.duplicated(subset=unique_col_comb, keep=False) & h_bond_from_don_of_int["acc resn"].isin(["ASN", "GLN", "HIS"])].groupby(unique_col_comb)["rotated side chain"].nunique())
+
+
+# print(h_bond_from_don_of_int[h_bond_from_don_of_int["don index"] == 99054])
+# print(h_bond_from_don_of_int.duplicated(subset=unique_col_comb, keep=False))
+
 # # create a new list of H-bonding atom pairs involving the donors of interest with redundancy removed such that if
 # # multiple atom pairs involve different side chain conformations of the same ASN, GLN, or HIS residue, only the atom
 # # pairs with the original conformation are kept
@@ -173,7 +187,8 @@ h_bond_to_acc_of_int = (hbond_data[((hbond_data["vertex"] == "hydrogen") & (hbon
 #         elif rotated:
 #             filtered_pairs.extend(rotated)
 #     h_bond_from_don_nonredundant[don_nucleobase] = filtered_pairs
-#
+
+# TODO consider tyrosine as donor, keep the conformation with the H closest to the acceptor
 # # create a new list of H-bonding atom pairs involving the acceptors of interest with redundancy removed such that if
 # # multiple atom pairs involve different side chain conformations of the same ASN, GLN, or HIS residue, only the atom
 # # pairs with the original conformation are kept
@@ -283,10 +298,10 @@ h_bond_to_acc_of_int = (hbond_data[((hbond_data["vertex"] == "hydrogen") & (hbon
 #                     writer.writerow([atom_pair["ang"], atom_pair["dist"]])
 
 # count = 0
-# values = []
-# for atom_pair_list in dual_donating_exo_amines.values():
-#     count += 1
-#     # values.append(len(x))
+# for key in h_bond_to_acc_of_int.keys():
+#     for x in h_bond_to_acc_of_int[key].values():
+#         for y in x:
+#             count += 1
 # print(count)
 
 end = datetime.now()
