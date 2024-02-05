@@ -11,7 +11,7 @@ from datetime import datetime
 start = datetime.now()
 pd.set_option("display.width", 500)
 pd.set_option("display.max_columns", 17)
-# pd.set_option("display.max_rows", 1000)
+pd.set_option("display.max_rows", 1000)
 
 os.chdir("/Users/drew/Documents/Research/Dual H-Bonding/Scratch/")
 
@@ -131,25 +131,26 @@ nuc_col_names = ["residue", "don index", "don name", "acc1 index", "acc1 name", 
 nuc_data = pd.read_csv(nuc_file, names=nuc_col_names, index_col="residue")
 
 # identify atom pairs that meet the H-bond criteria and include a donor of interest
-h_bond_from_don_of_int = (hbond_data[(hbond_data["dist"] <= H_DIST_MAX) & (hbond_data["ang"] >= 180.0 - H_ANG_TOL)]
-                          .merge(pd.DataFrame(DONORS_OF_INTEREST, columns=["don resn", "don name"]), how='inner'))
+don_hbonds = (hbond_data[(hbond_data["dist"] <= H_DIST_MAX) & (hbond_data["ang"] >= 180.0 - H_ANG_TOL)]
+              .merge(pd.DataFrame(DONORS_OF_INTEREST, columns=["don resn", "don name"]), how='inner'))
 
 # identify atom pairs that meet the H-bond criteria and include an acceptor of interest
-h_bond_to_acc_of_int = (hbond_data[((hbond_data["vertex"] == "hydrogen") & (hbond_data["dist"] <= H_DIST_MAX) &
-                                    (hbond_data["ang"] >= 180.0 - H_ANG_TOL)) |
-                                   ((hbond_data["vertex"] == "donor") & (hbond_data["dist"] <= DON_DIST_MAX) &
+acc_hbonds = (hbond_data[((hbond_data["vertex"] == "hydrogen") & (hbond_data["dist"] <= H_DIST_MAX) &
+                          (hbond_data["ang"] >= 180.0 - H_ANG_TOL)) |
+                         ((hbond_data["vertex"] == "donor") & (hbond_data["dist"] <= DON_DIST_MAX) &
                                     (hbond_data["ang"] >= 109.5 - DON_ANG_TOL) &
                                     (hbond_data["ang"] <= 109.5 + DON_ANG_TOL))]
-                        .merge(pd.DataFrame(ACCEPTORS_OF_INTEREST, columns=["acc resn", "acc name"]), how='inner'))
+              .merge(pd.DataFrame(ACCEPTORS_OF_INTEREST, columns=["acc resn", "acc name"]), how='inner'))
 
 # TODO run test with HIS residue where one nitrogen interacts in original conf and other nitrogen interacts in rotated conf
 # TODO comment about limitation where situation with original conf of one residue and original conf of second residue both bound to HO1 will be prioritiezed over situation with original conf of one residue bound to H01 and rotated conf of second residue bound to H02
-unique_col_comb = ["don index", "acc resn", "acc resi", "acc chain"]
-print(h_bond_from_don_of_int[h_bond_from_don_of_int.duplicated(subset=unique_col_comb, keep=False) & h_bond_from_don_of_int["acc resn"].isin(["ASN", "GLN", "HIS"])].groupby(unique_col_comb)["rotated side chain"].nunique())
+acc_grp = ["don index", "acc resn", "acc resi", "acc chain"]
+don_hbonds_nonredundant = (don_hbonds[don_hbonds.groupby(acc_grp)["rotated side chain"]
+                           .transform(lambda x: x.str.fullmatch("none") if any(x.str.fullmatch("none")) else True)])
 
+print(don_hbonds_nonredundant.size)
 
-# print(h_bond_from_don_of_int[h_bond_from_don_of_int["don index"] == 99054])
-# print(h_bond_from_don_of_int.duplicated(subset=unique_col_comb, keep=False))
+# print(h_bond_from_don_of_int["hydrogen"].size)
 
 # # create a new list of H-bonding atom pairs involving the donors of interest with redundancy removed such that if
 # # multiple atom pairs involve different side chain conformations of the same ASN, GLN, or HIS residue, only the atom
