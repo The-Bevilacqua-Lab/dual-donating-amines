@@ -11,7 +11,7 @@ from datetime import datetime
 start = datetime.now()
 pd.set_option("display.width", 500)
 pd.set_option("display.max_columns", 17)
-pd.set_option("display.max_rows", 1000)
+pd.set_option("display.max_rows", 1300)
 
 os.chdir("/Users/drew/Documents/Research/Dual H-Bonding/Scratch/")
 
@@ -64,15 +64,31 @@ acc_hbonds = (hbond_data[((hbond_data["vertex"] == "hydrogen") & (hbond_data["di
 # side chain conformation and keeping the atom pair involving the rotated side chain conformation.
 acc_grp = ["don index", "acc resn", "acc resi", "acc chain"]
 don_hbonds_nonredundant = (don_hbonds[don_hbonds.groupby(acc_grp)["rotated side chain"]
-                           .transform(lambda x: x.str.fullmatch("none") if any(x.str.fullmatch("none")) else True)])
+                           .transform(lambda grp: grp.str.fullmatch("none")
+                                      if any(grp.str.fullmatch("none")) else True)])
 
-# TODO consider tyrosine as donor, keep the conformation with the H closest to the acceptor
 # Create a new list of H-bonding atom pairs involving the acceptors of interest with redundancy removed such that if
 # multiple atom pairs involve the same acceptor and a donor belonging to different side chain conformations of the same
-# ASN, GLN, or HIS residue, only the atom pairs with the original conformation are kept.
+# ASN, GLN, or HIS residue, only the atom pairs with the original conformation are kept. Redundancy pertaining to
+# donation by TYR OH atoms is also removed. The TYR OH hydrogen can occupy two different conformations. If both
+# conformations are capable of forming an H-bond with the acceptor of interest, only the conformation with the shortest
+# hydrogen-acceptor distance is kept.
 don_grp = ["don resn", "don resi", "don chain", "acc index"]
-acc_hbonds_nonredundant = (acc_hbonds[acc_hbonds.groupby(don_grp)["rotated side chain"]
-                           .transform(lambda x: x.str.fullmatch("none") if any(x.str.fullmatch("none")) else True)])
+acc_hbonds_nonredundant = (acc_hbonds[(((acc_hbonds["don resn"] != "TYR") &
+                                        (acc_hbonds.groupby(don_grp)["rotated side chain"]
+                                         .transform(lambda grp: grp.str.fullmatch("none")
+                                                    if any(grp.str.fullmatch("none")) else True))) |
+                                       ((acc_hbonds["don resn"] == "TYR") &
+                                        (acc_hbonds.groupby(don_grp)["dist"]
+                                         .transform(lambda grp: [mem == grp.min() for mem in grp]))))])
+
+print((((acc_hbonds["don resn"] != "TYR") &
+        (acc_hbonds.groupby(don_grp)["rotated side chain"]
+         .transform(lambda grp: grp.str.fullmatch("none")
+                    if any(grp.str.fullmatch("none")) else True))) |
+       ((acc_hbonds["don resn"] == "TYR") &
+        (acc_hbonds.groupby(don_grp)["dist"]
+         .transform(lambda grp: [mem == grp.min() for mem in grp]))))[462:464])
 
 # identify nucleobases that donate either one or at least two H-bonds via their exocyclic amines
 # the H-bonds from the latter nucleobases must involve both exocyclic amine hydrogens and at least two different
@@ -84,10 +100,6 @@ single_don_exo_amines = pd.Series(don_indices, index=don_indices)[
 dual_don_exo_amines = pd.Series(don_indices, index=don_indices)[
     (don_hbonds_nonredundant.groupby("don index")["hydrogen"].nunique() == 2) &
     (don_hbonds_nonredundant.groupby("don index")["acc index"].nunique() >= 2)]
-
-print(single_don_exo_amines.size)
-print(dual_don_exo_amines.size)
-print(pd.Series(don_indices, index=don_indices).size)
 
 # with open(f"donor_of_int_hbond.csv", "w") as csv_file:
 #     writer = csv.writer(csv_file)
