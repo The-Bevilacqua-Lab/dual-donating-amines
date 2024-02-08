@@ -7,6 +7,7 @@ import os
 import csv
 import pandas as pd
 from datetime import datetime
+import residue_library
 
 start = datetime.now()
 pd.set_option("display.width", 500)
@@ -29,6 +30,15 @@ DONORS_OF_INTEREST = (('A', 'N6'), ('C', 'N4'), ('G', 'N2'))
 PROT_DONORS_OF_INTEREST = (('A', 'N1'), ('A', 'N3'), ('C', 'N3'), ('G', 'N3'))
 ACCEPTORS_OF_INTEREST = (('A', 'N1'), ('A', 'N3'), ('C', 'O2'), ('C', 'N3'), ('G', 'N3'), ('G', 'O6'))
 
+# construct a list of tuples containing atom and residue names that describe atoms capable of donating and accepting an
+# H-bond
+don_acc_atoms = []
+for residue in residue_library.residue_library:
+    for donor in residue['don']:
+        for acceptor in residue['acc']:
+            if donor[0] == acceptor[0]:
+                don_acc_atoms.append((residue['res'], donor[0]))
+
 # extract the data from the hbond csv file and remove redundant lines
 hbond_file = "test_NR_3.0_08591.1_hbond_test_data.csv"
 hbond_col_names = ["success", "don index", "don name", "don resn", "don resi", "don chain", "acc index", "acc name",
@@ -45,6 +55,15 @@ nuc_data = pd.read_csv(nuc_file, names=nuc_col_names, index_col="residue")
 # identify atom pairs that meet the H-bond criteria and include a donor of interest
 don_hbonds = (hbond_data[(hbond_data["dist"] <= H_DIST_MAX) & (hbond_data["ang"] >= 180.0 - H_ANG_TOL)]
               .merge(pd.DataFrame(DONORS_OF_INTEREST, columns=["don resn", "don name"]), how='inner'))
+
+# identify atom pairs that meet the H-bond criteria and include a protonated donor of interest
+# values in the _merge column matching left_only indicate acceptors that cannot typically also donate an H-bond
+prot_don_hbonds = (hbond_data[(hbond_data["dist"] <= H_DIST_MAX) & (hbond_data["ang"] >= 180.0 - H_ANG_TOL)]
+                   .merge(pd.DataFrame(PROT_DONORS_OF_INTEREST, columns=["don resn", "don name"]), how='inner')
+                   .merge(pd.DataFrame(don_acc_atoms, columns=["acc resn", "acc name"]), how='left', indicator=True))
+
+# filter prot_don_hbonds such that only acceptors that cannot typically donate an H-bond are included
+prot_don_hbonds_filtered = prot_don_hbonds[prot_don_hbonds["_merge"] == "left_only"]
 
 # identify atom pairs that meet the H-bond criteria and include an acceptor of interest
 acc_hbonds = (hbond_data[((hbond_data["vertex"] == "hydrogen") & (hbond_data["dist"] <= H_DIST_MAX) &
@@ -81,14 +100,6 @@ acc_hbonds_nonredundant = (acc_hbonds[(((acc_hbonds["don resn"] != "TYR") &
                                        ((acc_hbonds["don resn"] == "TYR") &
                                         (acc_hbonds.groupby(don_grp)["dist"]
                                          .transform(lambda grp: [mem == grp.min() for mem in grp]))))])
-
-print((((acc_hbonds["don resn"] != "TYR") &
-        (acc_hbonds.groupby(don_grp)["rotated side chain"]
-         .transform(lambda grp: grp.str.fullmatch("none")
-                    if any(grp.str.fullmatch("none")) else True))) |
-       ((acc_hbonds["don resn"] == "TYR") &
-        (acc_hbonds.groupby(don_grp)["dist"]
-         .transform(lambda grp: [mem == grp.min() for mem in grp]))))[462:464])
 
 # identify nucleobases that donate either one or at least two H-bonds via their exocyclic amines
 # the H-bonds from the latter nucleobases must involve both exocyclic amine hydrogens and at least two different
