@@ -6,10 +6,8 @@ import sys
 import os
 import csv
 import pandas as pd
-from datetime import datetime
 import residue_library
 
-start = datetime.now()
 pd.set_option("display.width", 500)
 pd.set_option("display.max_columns", 17)
 pd.set_option("display.max_rows", 1300)
@@ -17,10 +15,10 @@ pd.set_option("display.max_rows", 1300)
 os.chdir("/Users/drew/Documents/Research/Dual H-Bonding/Scratch/")
 
 # set the H-bonding criteria
-# H_DIST_MAX = 2.5
-# H_ANG_TOL = 60.0
-H_DIST_MAX = 2.0
-H_ANG_TOL = 30
+H_DIST_MAX = 3.6
+H_ANG_TOL = 180.0
+# H_DIST_MAX = 2.0
+# H_ANG_TOL = 30
 DON_DIST_MAX = 3.5
 DON_ANG_TOL = 45.0
 
@@ -40,7 +38,7 @@ for residue in residue_library.residue_library:
                 don_acc_atoms.append((residue['res'], donor[0]))
 
 # extract the data from the hbond csv file and remove redundant lines
-hbond_file = "test_NR_3.0_08591.1_hbond_test_data.csv"
+hbond_file = "NR_3.0_08591.1_hbond_test_data.csv"
 hbond_col_names = ["success", "don index", "don name", "don resn", "don resi", "don chain", "acc index", "acc name",
                    "acc resn", "acc resi", "acc chain", "hbond", "dist", "ang", "vertex", "hydrogen",
                    "rotated side chain"]
@@ -112,30 +110,18 @@ dual_don_exo_amines = pd.Series(don_indices, index=don_indices)[
     (don_hbonds_nonredundant.groupby("don index")["hydrogen"].nunique() == 2) &
     (don_hbonds_nonredundant.groupby("don index")["acc index"].nunique() >= 2)]
 
-# with open(f"donor_of_int_hbond.csv", "w") as csv_file:
-#     writer = csv.writer(csv_file)
-#     for atom_pair_list in h_bond_from_don_nonredundant.values():
-#         keep = []
-#         for atom_pair in atom_pair_list:
-#             if len(keep) == 0:
-#                 keep.append(atom_pair)
-#             else:
-#                 append = False
-#                 remove = {}
-#                 for compare in keep:
-#                     if atom_pair["acc index"] == compare["acc index"]:
-#                         if float(atom_pair["ang"]) > float(compare["ang"]):
-#                             remove = compare
-#                             append = True
-#                     else:
-#                         append = True
-#                 if append:
-#                     keep.append(atom_pair)
-#                     if remove:
-#                         keep.remove(remove)
-#         for atom_pair in keep:
-#             writer.writerow([atom_pair["ang"], atom_pair["dist"]])
-#
+don_acc_grp = ["don index", "acc index"]
+# print(don_hbonds_nonredundant[
+#           # do not include hydrogens with smaller D-H...A angle
+#           (don_hbonds_nonredundant.groupby(don_acc_grp)["ang"]
+#            .transform(lambda grp: [mem == grp.max() for mem in grp])) &
+#           # do not consider ASN, GLN, or HIS acceptors
+#           (~don_hbonds_nonredundant["acc resn"].isin(["ASN", "GLN", "HIS"])) &
+#           ((don_hbonds_nonredundant["don name"] != "N2") & (don_hbonds_nonredundant["acc resn", "acc name"] != ("C", "O2")))]
+#       .to_csv("don_hbonds.csv", index=False, columns=["dist", "ang"]))
+
+print(don_hbonds_nonredundant[((don_hbonds_nonredundant["don name"] != "N2") & (don_hbonds_nonredundant["acc resn"] != "C") & (don_hbonds_nonredundant["acc name"] != "O2"))])
+
 # with open(f"acceptor_of_int_hbond_nonrot.csv", "w") as csv_file:
 #     writer = csv.writer(csv_file)
 #     for acceptor in h_bond_to_acc_nonredundant.keys():
@@ -158,6 +144,3 @@ dual_don_exo_amines = pd.Series(don_indices, index=don_indices)[
 #         for y in x:
 #             count += 1
 # print(count)
-
-end = datetime.now()
-print(end-start)
