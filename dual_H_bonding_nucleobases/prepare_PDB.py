@@ -11,6 +11,7 @@ from pymol import cmd
 from pymol import stored
 from datetime import datetime
 import parse_nrlist
+import residue_library
 import eval_H_bonding
 import remove_alt_conf
 
@@ -58,7 +59,7 @@ nrlist_info = parse_nrlist.get_info(nrlist_file)
 donor_atoms = []
 rotatable_donor_atoms = []
 acceptor_atoms = []
-for residue in eval_H_bonding.residue_library:
+for residue in residue_library.residue_library:
     for donor in residue['don']:
         donor_atoms.append((residue['res'], donor[0]))
         if donor[2]:
@@ -91,7 +92,7 @@ for atom in acceptor_atoms:
 # belong to side chains that have conformations that may have been ambiguously assigned
 ambiguous_donor_atoms = []
 ambiguous_acceptor_atoms = []
-for residue in eval_H_bonding.residue_library:
+for residue in residue_library.residue_library:
     if residue['res'] in ["ASN", "GLN", "HIS"]:
         for donor in residue['don']:
             if donor[0] != "N":
@@ -152,8 +153,8 @@ guanine_nuc_acceptors = ["N3", "O6", "N7"]
 uracil_nuc_donors = ["N3"]
 uracil_nuc_acceptors = ["O2", "O4"]
 
-# using the library provided by the eval_H_bonding module, create a new library with protonated A, C, and G residues
-prot_library = eval_H_bonding.residue_library
+# using the library provided by the residue_library module, create a new library with protonated A, C, and G residues
+prot_library = residue_library.residue_library
 for res in prot_library:
     if res['res'] == 'A':
         res['don'].append(["N1", "N", False, 1, "C2"])
