@@ -479,6 +479,8 @@ for eq_class in nrlist_info:
             print("Error: The code was unable to complete construction of nucleobase_list.")
             sys.exit(1)
 
+    # TODO collect and report b-factors
+
     with open(f"{eq_class[0]}_nuc_test_data.csv", "w") as csv_file:
         writer = csv.writer(csv_file)
         for nuc in nucleobase_list:
