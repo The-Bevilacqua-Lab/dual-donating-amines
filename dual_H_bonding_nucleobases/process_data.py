@@ -8,14 +8,14 @@ import csv
 import pandas as pd
 import residue_library
 
-pd.set_option("display.width", 500)
-pd.set_option("display.max_columns", 17)
+pd.set_option("display.width", 1000)
+pd.set_option("display.max_columns", 40)
 pd.set_option("display.max_rows", 1300)
 
 os.chdir("/Users/drew/Documents/Research/Dual H-Bonding/Scratch/")
 
 # set the H-bonding criteria
-H_DIST_MAX = 3.6
+H_DIST_MAX = 3.5
 H_ANG_TOL = 180.0
 # H_DIST_MAX = 2.0
 # H_ANG_TOL = 30
@@ -38,10 +38,14 @@ for residue in residue_library.residue_library:
                 don_acc_atoms.append((residue['res'], donor[0]))
 
 # extract the data from the hbond csv file and remove redundant lines
-hbond_file = "NR_3.0_08591.1_hbond_test_data.csv"
-hbond_col_names = ["success", "don index", "don name", "don resn", "don resi", "don chain", "acc index", "acc name",
-                   "acc resn", "acc resi", "acc chain", "hbond", "dist", "ang", "vertex", "hydrogen",
+hbond_file = "NR_3.0_65061.22_hbond_test_data.csv"
+# hbond_file = "NR_3.0_08591.1_hbond_test_data.csv"
+hbond_col_names = ["don index", "don name", "don resn", "don resi", "don chain", "acc index", "acc name",
+                   "acc resn", "acc resi", "acc chain", "dist", "ang", "vertex", "hydrogen",
                    "rotated side chain"]
+# hbond_col_names = ["success", "don index", "don name", "don resn", "don resi", "don chain", "acc index", "acc name",
+#                    "acc resn", "acc resi", "acc chain", "hbond", "dist", "ang", "vertex", "hydrogen",
+#                    "rotated side chain"]
 unique_col_comb = ["don index", "acc index", "hydrogen", "rotated side chain"]
 hbond_data = pd.read_csv(hbond_file, names=hbond_col_names).drop_duplicates(subset=unique_col_comb)
 
@@ -61,7 +65,7 @@ prot_don_hbonds = (hbond_data[(hbond_data["dist"] <= H_DIST_MAX) & (hbond_data["
                    .merge(pd.DataFrame(don_acc_atoms, columns=["acc resn", "acc name"]), how='left', indicator=True))
 
 # filter prot_don_hbonds such that only acceptors that cannot typically donate an H-bond are included
-prot_don_hbonds_filtered = prot_don_hbonds[prot_don_hbonds["_merge"] == "left_only"]
+prot_don_hbonds_filtered = prot_don_hbonds[prot_don_hbonds["_merge"] == "left_only"].drop(columns="_merge")
 
 # identify atom pairs that meet the H-bond criteria and include an acceptor of interest
 acc_hbonds = (hbond_data[((hbond_data["vertex"] == "hydrogen") & (hbond_data["dist"] <= H_DIST_MAX) &
@@ -103,24 +107,33 @@ acc_hbonds_nonredundant = (acc_hbonds[(((acc_hbonds["don resn"] != "TYR") &
 # the H-bonds from the latter nucleobases must involve both exocyclic amine hydrogens and at least two different
 # acceptors
 don_indices = list(don_hbonds_nonredundant.groupby("don index").groups.keys())
-single_don_exo_amines = pd.Series(don_indices, index=don_indices)[
+single_don_exo_amines = pd.Series(don_indices, index=don_indices, name="don index")[
     (don_hbonds_nonredundant.groupby("don index")["hydrogen"].nunique() == 1) |
     (don_hbonds_nonredundant.groupby("don index")["acc index"].nunique() == 1)]
-dual_don_exo_amines = pd.Series(don_indices, index=don_indices)[
+dual_don_exo_amines = pd.Series(don_indices, index=don_indices, name="don index")[
     (don_hbonds_nonredundant.groupby("don index")["hydrogen"].nunique() == 2) &
     (don_hbonds_nonredundant.groupby("don index")["acc index"].nunique() >= 2)]
 
 don_acc_grp = ["don index", "acc index"]
-# print(don_hbonds_nonredundant[
-#           # do not include hydrogens with smaller D-H...A angle
-#           (don_hbonds_nonredundant.groupby(don_acc_grp)["ang"]
-#            .transform(lambda grp: [mem == grp.max() for mem in grp])) &
-#           # do not consider ASN, GLN, or HIS acceptors
-#           (~don_hbonds_nonredundant["acc resn"].isin(["ASN", "GLN", "HIS"])) &
-#           ((don_hbonds_nonredundant["don name"] != "N2") & (don_hbonds_nonredundant["acc resn", "acc name"] != ("C", "O2")))]
-#       .to_csv("don_hbonds.csv", index=False, columns=["dist", "ang"]))
+print(don_hbonds_nonredundant[
+          # do not include hydrogens with smaller D-H...A angle
+          (don_hbonds_nonredundant.groupby(don_acc_grp)["ang"]
+           .transform(lambda grp: [mem == grp.max() for mem in grp])) &
+          # do not consider ASN, GLN, or HIS acceptors
+          (~don_hbonds_nonredundant["acc resn"].isin(["ASN", "GLN", "HIS"])) &
+          # do not consider H-bonds found in canonical WCF base pairs
+          (~don_hbonds_nonredundant[["don name", "acc resn", "acc name"]].eq(["N6", "U", "O4"]).all(axis='columns')) &
+          (~don_hbonds_nonredundant[["don name", "acc resn", "acc name"]].eq(["N4", "G", "O6"]).all(axis='columns')) &
+          (~don_hbonds_nonredundant[["don name", "acc resn", "acc name"]].eq(["N2", "C", "O2"]).all(axis='columns'))]
+      .to_csv("don_hbonds.csv", index=False, columns=["dist", "ang"]))
 
-print(don_hbonds_nonredundant[((don_hbonds_nonredundant["don name"] != "N2") & (don_hbonds_nonredundant["acc resn"] != "C") & (don_hbonds_nonredundant["acc name"] != "O2"))])
+# TODO prot donor should not donate to the same atom the exo amine is donating to (e.g., C788 A5 in 6xu8)
+
+# inspect a specific region in the H-bond geometry
+# print(don_hbonds_nonredundant[(don_hbonds_nonredundant["ang"] < 133) & (don_hbonds_nonredundant["ang"] > 132) & (don_hbonds_nonredundant["dist"] > 2.8) & (don_hbonds_nonredundant["dist"] < 2.85)][["dist", "ang"]])
+
+# print dual H-bonding nucleobases that also accept H-bonds via their acc of interest
+# print(don_hbonds.merge(dual_don_exo_amines).merge(acc_hbonds_nonredundant, left_on=["don resn", "don resi", "don chain"], right_on=["acc resn", "acc resi", "acc chain"]))
 
 # with open(f"acceptor_of_int_hbond_nonrot.csv", "w") as csv_file:
 #     writer = csv.writer(csv_file)
