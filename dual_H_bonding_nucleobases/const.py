@@ -1,6 +1,12 @@
 """
-This module contains a library of canonical protein and RNA/DNA residues.
+This module contains various constants that are used by other modules in this package.
 """
+
+# construct three tuples of tuples containing atom and residue names that describe either donor, protonated donor
+# (formal charge of +1), or acceptor atoms of particular interest
+DONORS_OF_INTEREST = (('A', 'N6'), ('C', 'N4'), ('G', 'N2'))
+PROT_DONORS_OF_INTEREST = (('A', 'N1'), ('A', 'N3'), ('C', 'N3'), ('G', 'N3'))
+ACCEPTORS_OF_INTEREST = (('A', 'N1'), ('A', 'N3'), ('C', 'O2'), ('C', 'N3'), ('G', 'N3'), ('G', 'O6'))
 
 # define a list of dictionaries that provides information on the canonical protein and RNA/DNA residues
 # the indices of each donor or acceptor atom list specifies the following:
@@ -9,7 +15,7 @@ This module contains a library of canonical protein and RNA/DNA residues.
 #     2: is the donor/acceptor rotatable?
 #     3: donor/acceptor formal charge
 #     4: antecedent atom of donor/acceptor
-residue_library = [
+RESIDUE_LIBRARY = [
     {
         "res": "ALA",
         "don": [["N", "N", False, 0, "CA"]],

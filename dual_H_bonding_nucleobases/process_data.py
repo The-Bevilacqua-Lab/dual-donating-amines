@@ -7,7 +7,7 @@ import os
 import csv
 import pandas as pd
 from datetime import datetime
-import residue_library
+import const
 
 os.chdir("/Users/drew/Documents/Research/Dual H-Bonding/Scratch/")
 pd.set_option("display.width", 1000)
@@ -28,16 +28,10 @@ H_ANG_TOL = 30
 DON_DIST_MAX = 3.5
 DON_ANG_TOL = 45.0
 
-# construct three tuples of tuples containing atom and residue names that describe either donor, protonated donor
-# (formal charge of +1), or acceptor atoms of particular interest
-DONORS_OF_INTEREST = (('A', 'N6'), ('C', 'N4'), ('G', 'N2'))
-PROT_DONORS_OF_INTEREST = (('A', 'N1'), ('A', 'N3'), ('C', 'N3'), ('G', 'N3'))
-ACCEPTORS_OF_INTEREST = (('A', 'N1'), ('A', 'N3'), ('C', 'O2'), ('C', 'N3'), ('G', 'N3'), ('G', 'O6'))
-
 # construct a list of tuples containing atom and residue names that describe atoms capable of donating and accepting an
 # H-bond
 don_acc_atoms = []
-for residue in residue_library.residue_library:
+for residue in const.RESIDUE_LIBRARY:
     for donor in residue['don']:
         for acceptor in residue['acc']:
             if donor[0] == acceptor[0]:
@@ -62,12 +56,12 @@ nuc_data = pd.read_csv(nuc_file, names=nuc_col_names, index_col="residue")
 
 # identify atom pairs that meet the H-bond criteria and include a donor of interest
 don_hbonds = (hbond_data[(hbond_data["dist"] <= H_DIST_MAX) & (hbond_data["ang"] >= 180.0 - H_ANG_TOL)]
-              .merge(pd.DataFrame(DONORS_OF_INTEREST, columns=["don resn", "don name"]), how='inner'))
+              .merge(pd.DataFrame(const.DONORS_OF_INTEREST, columns=["don resn", "don name"]), how='inner'))
 
 # identify atom pairs that meet the H-bond criteria and include a protonated donor of interest
 # values in the _merge column matching left_only indicate acceptors that cannot typically also donate an H-bond
 prot_don_hbonds = (hbond_data[(hbond_data["dist"] <= H_DIST_MAX) & (hbond_data["ang"] >= 180.0 - H_ANG_TOL)]
-                   .merge(pd.DataFrame(PROT_DONORS_OF_INTEREST, columns=["don resn", "don name"]), how='inner')
+                   .merge(pd.DataFrame(const.PROT_DONORS_OF_INTEREST, columns=["don resn", "don name"]), how='inner')
                    .merge(pd.DataFrame(don_acc_atoms, columns=["acc resn", "acc name"]), how='left', indicator=True))
 
 # filter prot_don_hbonds such that only acceptors that cannot typically donate an H-bond are included
@@ -79,7 +73,7 @@ acc_hbonds = (hbond_data[((hbond_data["vertex"] == "hydrogen") & (hbond_data["di
                          ((hbond_data["vertex"] == "donor") & (hbond_data["dist"] <= DON_DIST_MAX) &
                                     (hbond_data["ang"] >= 109.5 - DON_ANG_TOL) &
                                     (hbond_data["ang"] <= 109.5 + DON_ANG_TOL))]
-              .merge(pd.DataFrame(ACCEPTORS_OF_INTEREST, columns=["acc resn", "acc name"]), how='inner'))
+              .merge(pd.DataFrame(const.ACCEPTORS_OF_INTEREST, columns=["acc resn", "acc name"]), how='inner'))
 
 # Create a new list of H-bonding atom pairs involving the donors of interest with redundancy removed such that if
 # multiple atom pairs involve the same donor and an acceptor belonging to different side chain conformations of the same
@@ -171,7 +165,7 @@ if "single_don_rev" in args:
         file.write("    cmd.show('sticks', f'resn {atoms[i][1]} and resi {atoms[i][2]} and chain {atoms[i][3]}')\n")
         file.write("    cmd.color('cyan', 'elem C and visible')\n")
         file.write("    cmd.show('sticks', 'byres all within 3.6 of (visible and sidechain)')\n")
-        for don in PROT_DONORS_OF_INTEREST:
+        for don in const.PROT_DONORS_OF_INTEREST:
             file.write(f"    cmd.hide('sticks', '(neighbor (resn {don[0]} and name {don[1]})) and elem H')\n")
         file.write("    cmd.distance(f'dist_{num}', f'name {atoms[i][0]} and resn {atoms[i][1]} and resi {atoms[i][2]} "
                    "and chain {atoms[i][3]}', f'name {atoms[i][4]} and resn {atoms[i][5]} and resi {atoms[i][6]} and "
