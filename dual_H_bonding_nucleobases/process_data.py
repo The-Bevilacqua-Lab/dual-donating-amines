@@ -8,6 +8,7 @@ import csv
 import pandas as pd
 from datetime import datetime
 import const
+import review_hbonds
 
 os.chdir("/Users/drew/Documents/Research/Dual H-Bonding/Scratch/")
 pd.set_option("display.width", 1000)
@@ -132,51 +133,11 @@ if "don_geom" in args:
 # if single_don_rev is provided as an argument, create a new python script with PyMOL commands to review the donors
 # included in the single_don_exo_amines dataframe
 if "single_don_rev" in args:
-    with open(f"single_don_rev_{datetime.now().strftime('%y%m%d_%H%M%S_%f')}.py", "w") as file:
-        file.write(f"# info on interactions came from {hbond_file}\n\n")
-        file.write("from pymol import cmd\n\n")
-        file.write("atoms = [\n")
-        atom_dict = don_hbonds_nonredundant[
-            # do not consider H-bonds found in canonical WCF base pairs
-            (~don_hbonds_nonredundant[["don name", "acc resn", "acc name"]].eq(["N6", "U", "O4"]).all(axis='columns')) &
-            (~don_hbonds_nonredundant[["don name", "acc resn", "acc name"]].eq(["N4", "G", "O6"]).all(axis='columns')) &
-            (~don_hbonds_nonredundant[["don name", "acc resn", "acc name"]].eq(["N2", "C", "O2"]).all(axis='columns'))
-        ].merge(single_don_exo_amines)[["hydrogen", "don resn", "don resi", "don chain", "acc name", "acc resn",
-                                        "acc resi", "acc chain"]].to_dict('index')
-        last_i = len(atom_dict) - 1
-        for i, row in enumerate(atom_dict.values()):
-            if i < last_i:
-                file.write(f'    ["{row["hydrogen"]}", "{row["don resn"]}", "{row["don resi"]}", "{row["don chain"]}", '
-                           f'"{row["acc name"]}", "{row["acc resn"]}", "{row["acc resi"]}", "{row["acc chain"]}"],\n')
-            else:
-                file.write(f'    ["{row["hydrogen"]}", "{row["don resn"]}", "{row["don resi"]}", "{row["don chain"]}", '
-                           f'"{row["acc name"]}", "{row["acc resn"]}", "{row["acc resi"]}", "{row["acc chain"]}"]\n')
-        file.write("]\n")
-        file.write("\n")
-        file.write("print(f'Number of atoms to review: {len(atoms)}')\n")
-        file.write("\n")
-        file.write("def num_atoms():\n")
-        file.write("    print(len(atoms))\n")
-        file.write("\n")
-        file.write("def goto(num):\n")
-        file.write("    i = int(num) - 1\n")
-        file.write("    cmd.hide('all')\n")
-        file.write("    cmd.color('grey60', 'elem C')\n")
-        file.write("    cmd.show('sticks', f'resn {atoms[i][1]} and resi {atoms[i][2]} and chain {atoms[i][3]}')\n")
-        file.write("    cmd.color('cyan', 'elem C and visible')\n")
-        file.write("    cmd.show('sticks', 'byres all within 3.6 of (visible and sidechain)')\n")
-        for don in const.PROT_DONORS_OF_INTEREST:
-            file.write(f"    cmd.hide('sticks', '(neighbor (resn {don[0]} and name {don[1]})) and elem H')\n")
-        file.write("    cmd.distance(f'dist_{num}', f'name {atoms[i][0]} and resn {atoms[i][1]} and resi {atoms[i][2]} "
-                   "and chain {atoms[i][3]}', f'name {atoms[i][4]} and resn {atoms[i][5]} and resi {atoms[i][6]} and "
-                   "chain {atoms[i][7]}')\n")
-        file.write("    cmd.hide('labels')\n")
-        file.write("    cmd.show('dashes', f'dist_{num}')\n")
-        file.write("    cmd.orient('visible')\n")
-        file.write("\n")
-        file.write("cmd.extend('num_atoms', num_atoms)\n")
-        file.write("cmd.extend('goto', goto)\n")
-        file.write("\n")
+    review_hbonds.create_script("single_don_rev", [don_hbonds_nonredundant, single_don_exo_amines], hbond_file)
+# if dual_don_rev is provided as an argument, create a new python script with PyMOL commands to review the donors
+# included in the dual_don_exo_amines dataframe
+if "dual_don_rev" in args:
+    review_hbonds.create_script("dual_don_rev", [don_hbonds_nonredundant, dual_don_exo_amines], hbond_file)
 
 # TODO prot donor should not donate to the same atom the exo amine is donating to (e.g., C788 A5 in 6xu8)
 
