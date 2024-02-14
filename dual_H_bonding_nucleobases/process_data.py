@@ -119,20 +119,22 @@ dual_don_exo_amines = pd.Series(don_indices, index=don_indices, name="don index"
     (don_hbonds_nonredundant.groupby("don index")["hydrogen"].nunique() == 2) &
     (don_hbonds_nonredundant.groupby("don index")["acc index"].nunique() >= 2)]
 
-# if don_geom is provided as an argument, write H-bond geometry info to a csv file excluding certain atom pairs
+# write H-bond geometry info to a csv file
+# if don_geom is provided as an argument, write info related to don_hbonds_nonredundant excluding certain atom pairs
 if "don_geom" in args:
     don_acc_grp = ["don index", "acc index"]
     (don_hbonds_nonredundant[
         # do not include hydrogens with smaller D-H...A angle
         (don_hbonds_nonredundant.groupby(don_acc_grp)["ang"]
          .transform(lambda grp: [mem == grp.max() for mem in grp])) &
-        # do not consider ASN, GLN, or HIS acceptors
-        (~don_hbonds_nonredundant["acc resn"].isin(["ASN", "GLN", "HIS"])) &
         # do not consider H-bonds found in canonical WCF base pairs
         (~don_hbonds_nonredundant[["don name", "acc resn", "acc name"]].eq(["N6", "U", "O4"]).all(axis='columns')) &
         (~don_hbonds_nonredundant[["don name", "acc resn", "acc name"]].eq(["N4", "G", "O6"]).all(axis='columns')) &
         (~don_hbonds_nonredundant[["don name", "acc resn", "acc name"]].eq(["N2", "C", "O2"]).all(axis='columns'))]
      .to_csv("don_hbonds.csv", index=False, columns=["dist", "ang"]))
+# if prot_don_geom is provided as an argument, write info related to prot_don_hbonds_filtered
+if "prot_don_geom" in args:
+    (prot_don_hbonds_filtered.to_csv("prot_don_hbonds.csv", index=False, columns=["dist", "ang"]))
 
 # if single_don_rev is provided as an argument, create a new python script with PyMOL commands to review the donors
 # included in the single_don_exo_amines dataframe
