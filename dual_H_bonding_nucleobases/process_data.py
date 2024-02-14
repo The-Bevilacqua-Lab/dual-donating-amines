@@ -68,6 +68,8 @@ prot_don_hbonds = (hbond_data[(hbond_data["dist"] <= H_DIST_MAX) & (hbond_data["
 # filter prot_don_hbonds such that only acceptors that cannot typically donate an H-bond are included
 prot_don_hbonds_filtered = prot_don_hbonds[prot_don_hbonds["_merge"] == "left_only"].drop(columns="_merge")
 
+print(prot_don_hbonds_filtered)
+
 # identify atom pairs that meet the H-bond criteria and include an acceptor of interest
 acc_hbonds = (hbond_data[((hbond_data["vertex"] == "hydrogen") & (hbond_data["dist"] <= H_DIST_MAX) &
                           (hbond_data["ang"] >= 180.0 - H_ANG_TOL)) |
@@ -88,6 +90,8 @@ acc_grp = ["don index", "acc resn", "acc resi", "acc chain"]
 don_hbonds_nonredundant = (don_hbonds[don_hbonds.groupby(acc_grp)["rotated side chain"]
                            .transform(lambda grp: grp.str.fullmatch("none")
                                       if any(grp.str.fullmatch("none")) else True)])
+
+# TODO make nonredundant version for prot_don_hbonds_filtered
 
 # Create a new list of H-bonding atom pairs involving the acceptors of interest with redundancy removed such that if
 # multiple atom pairs involve the same acceptor and a donor belonging to different side chain conformations of the same
@@ -138,8 +142,14 @@ if "single_don_rev" in args:
 # included in the dual_don_exo_amines dataframe
 if "dual_don_rev" in args:
     review_hbonds.create_script("dual_don_rev", [don_hbonds_nonredundant, dual_don_exo_amines], hbond_file)
+# if dual_don_rev is provided as an argument, create a new python script with PyMOL commands to review the donors
+# included in the dual_don_exo_amines dataframe
+if "prot_don_rev" in args:
+    review_hbonds.create_script("prot_don_rev", [prot_don_hbonds_filtered], hbond_file)
 
 # TODO prot donor should not donate to the same atom the exo amine is donating to (e.g., C788 A5 in 6xu8)
+# TODO keep in mind ["H04", "A", "4212", "L5", "OD1", "ASN", "3", "LT"] in 8GLP
+# TODO why is NR_3.0_65061.22_hbond_test_data/LA/LA/ARG`3/NH2 missing a proton?
 
 # inspect a specific region in the H-bond geometry
 # print(don_hbonds_nonredundant[(don_hbonds_nonredundant["ang"] < 133) & (don_hbonds_nonredundant["ang"] > 132) & (don_hbonds_nonredundant["dist"] > 2.8) & (don_hbonds_nonredundant["dist"] < 2.85)][["dist", "ang"]])

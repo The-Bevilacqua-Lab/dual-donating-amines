@@ -33,13 +33,32 @@ def create_script(cat, df_list, source_file):
                         else:
                             file.write(f']\n')
             file.write("]\n")
+        if cat == "prot_don_rev":
+            file.write("hbonds = [\n")
+            last_grp = list(df_list[0].groupby("don index").groups.keys())[-1]
+            for grp, mem in df_list[0].groupby("don index"):
+                for i, pair in enumerate(mem.to_dict('index').values()):
+                    if i == 0:
+                        file.write(f'    [["{pair["hydrogen"]}", "{pair["don resn"]}", "{pair["don resi"]}", '
+                                   f'"{pair["don chain"]}", "{pair["acc name"]}", "{pair["acc resn"]}", '
+                                   f'"{pair["acc resi"]}", "{pair["acc chain"]}"]')
+                    else:
+                        file.write(f', ["{pair["hydrogen"]}", "{pair["don resn"]}", "{pair["don resi"]}", '
+                                   f'"{pair["don chain"]}", "{pair["acc name"]}", "{pair["acc resn"]}", '
+                                   f'"{pair["acc resi"]}", "{pair["acc chain"]}"]')
+                    if i == mem["don index"].size - 1:
+                        if grp != last_grp:
+                            file.write(f'],\n')
+                        else:
+                            file.write(f']\n')
+            file.write("]\n")
         file.write("\n")
         file.write("print(f'Number of hbond sets to review: {len(hbonds)}')\n")
         file.write("\n")
         file.write("def num_hbonds():\n")
         file.write("    print(len(hbonds))\n")
         file.write("\n")
-        if cat == "single_don_rev" or cat == "dual_don_rev":
+        if cat == "single_don_rev" or cat == "dual_don_rev" or cat == "prot_don_rev":
             file.write("def goto(num):\n")
             file.write("    i1 = int(num) - 1\n")
             file.write("    cmd.hide('all')\n")
@@ -50,6 +69,9 @@ def create_script(cat, df_list, source_file):
             file.write("    cmd.show('sticks', 'byres all within 3.6 of (visible and sidechain)')\n")
             for don in const.PROT_DONORS_OF_INTEREST:
                 file.write(f"    cmd.hide('sticks', '(neighbor (resn {don[0]} and name {don[1]})) and elem H')\n")
+            if cat == "prot_don_rev":
+                file.write("    cmd.show('sticks', f'name {hbonds[i1][0][0]} and resn {hbonds[i1][0][1]} and "
+                           "resi {hbonds[i1][0][2]} and chain {hbonds[i1][0][3]}')\n")
             file.write("    for i2, pair in enumerate(hbonds[i1]):\n")
             file.write("        cmd.distance(f'dist_{num}_{i2}', f'name {hbonds[i1][i2][0]} and "
                        "resn {hbonds[i1][i2][1]} and resi {hbonds[i1][i2][2]} and chain {hbonds[i1][i2][3]}', "
