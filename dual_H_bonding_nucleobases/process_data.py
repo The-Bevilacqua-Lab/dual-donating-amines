@@ -68,8 +68,6 @@ prot_don_hbonds = (hbond_data[(hbond_data["dist"] <= H_DIST_MAX) & (hbond_data["
 # filter prot_don_hbonds such that only acceptors that cannot typically donate an H-bond are included
 prot_don_hbonds_filtered = prot_don_hbonds[prot_don_hbonds["_merge"] == "left_only"].drop(columns="_merge")
 
-print(prot_don_hbonds_filtered)
-
 # identify atom pairs that meet the H-bond criteria and include an acceptor of interest
 acc_hbonds = (hbond_data[((hbond_data["vertex"] == "hydrogen") & (hbond_data["dist"] <= H_DIST_MAX) &
                           (hbond_data["ang"] >= 180.0 - H_ANG_TOL)) |
