@@ -21,38 +21,49 @@ directory = os.getcwd()
 original_mmCIF_directory = directory + "/original_mmCIF_files"
 modified_mmCIF_directory = directory + "/modified_mmCIF_files"
 
-# identify the representative set file
-nrlist_file = parse_nrlist.identify()
+# check to make sure the representative set file exists
+nrlist_file = ""
+try:
+    if not os.path.isfile(sys.argv[1]):
+        print(f"Error: The file named {sys.argv[1]} was not found in the current working directory.")
+        sys.exit(1)
+    else:
+        nrlist_file = sys.argv[1]
+except IndexError:
+    print("Error: The name of the csv file containing info about the representative structure must be provided as the "
+          "first argument.")
+    sys.exit(1)
 
 # iterate through the lines of the representative set file and collect the equivalence class names and PDB IDs, model
 # info, and chain info for the representative structures
-nrlist_info = parse_nrlist.get_info(nrlist_file)
+with open(nrlist_file, mode='r') as read_file:
+    nrlist_info = list(csv.reader(read_file))[0]
 
-# # check whether an original_mmCIF_files folder exists
-# # if it exists and contains files, exit with an error message
-# # if it does not exist, create the folder
-# if os.path.isdir(original_mmCIF_directory):
-#     if len(os.listdir(original_mmCIF_directory)) != 0:
-#         print("Error: There are already files in the original_mmCIF_files folder. This folder should be empty prior to "
-#               "running the prepare_PDB module.")
-#         sys.exit(1)
-# else:
-#     os.mkdir(original_mmCIF_directory)
-#
-# # change fetch_path to the original_mmCIF_files folder in the current working directory so that PyMOL drops the mmCIF
-# # files into this folder when running fetch
-# cmd.set('fetch_path', cmd.exp_path('./original_mmCIF_files'))
-#
-# # check whether a modified_mmCIF_files folder exists
-# # if it exists and contains files, exit with an error message
-# # if it does not exist, create the folder
-# if os.path.isdir(modified_mmCIF_directory):
-#     if len(os.listdir(modified_mmCIF_directory)) != 0:
-#         print("Error: There are already files in the modified_mmCIF_files folder. This folder should be empty prior to "
-#               "running the prepare_PDB module.")
-#         sys.exit(1)
-# else:
-#     os.mkdir(modified_mmCIF_directory)
+# check whether an original_mmCIF_files folder exists
+# if it exists and contains files, exit with an error message
+# if it does not exist, create the folder
+if os.path.isdir(original_mmCIF_directory):
+    if len(os.listdir(original_mmCIF_directory)) != 0:
+        print("Error: There are already files in the original_mmCIF_files folder. This folder should be empty prior to "
+              "running the prepare_PDB module.")
+        sys.exit(1)
+else:
+    os.mkdir(original_mmCIF_directory)
+
+# change fetch_path to the original_mmCIF_files folder in the current working directory so that PyMOL drops the mmCIF
+# files into this folder when running fetch
+cmd.set('fetch_path', cmd.exp_path('./original_mmCIF_files'))
+
+# check whether a modified_mmCIF_files folder exists
+# if it exists and contains files, exit with an error message
+# if it does not exist, create the folder
+if os.path.isdir(modified_mmCIF_directory):
+    if len(os.listdir(modified_mmCIF_directory)) != 0:
+        print("Error: There are already files in the modified_mmCIF_files folder. This folder should be empty prior to "
+              "running the prepare_PDB module.")
+        sys.exit(1)
+else:
+    os.mkdir(modified_mmCIF_directory)
 
 # construct two lists of tuples containing atom and residue names that describe either donor or acceptor atoms
 # additionally, construct a list of tuples containing atom and residue names that describe rotatable donor atoms
