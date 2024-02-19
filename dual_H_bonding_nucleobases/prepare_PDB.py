@@ -10,16 +10,11 @@ import csv
 from pymol import cmd
 from pymol import stored
 from datetime import datetime
-import parse_nrlist
 import const
 import eval_H_bonding
 import remove_alt_conf
 
 start = datetime.now()
-
-directory = os.getcwd()
-original_mmCIF_directory = directory + "/original_mmCIF_files"
-modified_mmCIF_directory = directory + "/modified_mmCIF_files"
 
 # check to make sure the representative set file exists
 nrlist_file = ""
@@ -39,30 +34,18 @@ except IndexError:
 with open(nrlist_file, mode='r') as read_file:
     nrlist_info = list(csv.reader(read_file))[0]
 
-# check whether an original_mmCIF_files folder exists
-# if it exists and contains files, exit with an error message
-# if it does not exist, create the folder
-if os.path.isdir(original_mmCIF_directory):
-    if len(os.listdir(original_mmCIF_directory)) != 0:
-        print("Error: There are already files in the original_mmCIF_files folder. This folder should be empty prior to "
-              "running the prepare_PDB module.")
-        sys.exit(1)
-else:
+# check whether an original_mmCIF_files folder exists, and if it does not exist, create the folder
+original_mmCIF_directory = os.getcwd() + "/original_mmCIF_files"
+if not os.path.isdir(original_mmCIF_directory):
     os.mkdir(original_mmCIF_directory)
 
 # change fetch_path to the original_mmCIF_files folder in the current working directory so that PyMOL drops the mmCIF
 # files into this folder when running fetch
 cmd.set('fetch_path', cmd.exp_path('./original_mmCIF_files'))
 
-# check whether a modified_mmCIF_files folder exists
-# if it exists and contains files, exit with an error message
-# if it does not exist, create the folder
-if os.path.isdir(modified_mmCIF_directory):
-    if len(os.listdir(modified_mmCIF_directory)) != 0:
-        print("Error: There are already files in the modified_mmCIF_files folder. This folder should be empty prior to "
-              "running the prepare_PDB module.")
-        sys.exit(1)
-else:
+# check whether a modified_mmCIF_files folder exists, and if it does not exist, create the folder
+modified_mmCIF_directory = os.getcwd() + "/modified_mmCIF_files"
+if not os.path.isdir(modified_mmCIF_directory):
     os.mkdir(modified_mmCIF_directory)
 
 # construct two lists of tuples containing atom and residue names that describe either donor or acceptor atoms
@@ -170,7 +153,7 @@ for res in prot_library:
         res['don'].append(["N3", "N", False, 1, "C2"])
 
 # define the distance used to search for nearby donor or acceptor atoms
-search_dist = 3.6
+search_dist = 4.1
 # define the distance used to search for nearby donor or acceptor atoms that belong to side chains that have
 # conformations that may have been ambiguously assigned
 search_dist_amb = search_dist + 3.0
