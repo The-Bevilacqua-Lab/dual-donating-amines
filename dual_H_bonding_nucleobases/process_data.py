@@ -48,12 +48,12 @@ hbond_col_names = ["don index", "don name", "don resn", "don resi", "don chain",
 #                    "acc resn", "acc resi", "acc chain", "hbond", "dist", "ang", "vertex", "hydrogen",
 #                    "rotated side chain"]
 unique_col_comb = ["don index", "acc index", "hydrogen", "rotated side chain"]
-hbond_data = pd.read_csv(hbond_file, names=hbond_col_names).drop_duplicates(subset=unique_col_comb)
+hbond_data = pd.read_csv(hbond_file, names=hbond_col_names, comment="#").drop_duplicates(subset=unique_col_comb)
 
 # extract the data from the nuc csv file
 nuc_file = "NR_3.0_08591.1_nuc_test_data.csv"
 nuc_col_names = ["residue", "don index", "don name", "acc1 index", "acc1 name", "acc2 index", "acc2 name"]
-nuc_data = pd.read_csv(nuc_file, names=nuc_col_names, index_col="residue")
+nuc_data = pd.read_csv(nuc_file, names=nuc_col_names, index_col="residue", comment="#")
 
 # identify atom pairs that meet the H-bond criteria and include a donor of interest
 don_hbonds = (hbond_data[(hbond_data["dist"] <= H_DIST_MAX) & (hbond_data["ang"] >= 180.0 - H_ANG_TOL)]
