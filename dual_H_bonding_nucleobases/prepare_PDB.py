@@ -7,6 +7,7 @@ file with modifications made (alternative conformations removed and hydrogens ad
 import sys
 import os
 import csv
+import subprocess
 from pymol import cmd
 from pymol import stored
 from datetime import datetime
@@ -35,18 +36,13 @@ with open(nrlist_file, mode='r') as read_file:
     eq_class = list(csv.reader(read_file))[0]
 
 # check whether an original_mmCIF_files folder exists, and if it does not exist, create the folder
-original_mmCIF_directory = os.getcwd() + "/original_mmCIF_files"
-if not os.path.isdir(original_mmCIF_directory):
-    os.mkdir(original_mmCIF_directory)
+original_mmCIF_dir = os.getcwd() + "/original_mmCIF_files"
+if not os.path.isdir(original_mmCIF_dir):
+    os.mkdir(original_mmCIF_dir)
 
 # change fetch_path to the original_mmCIF_files folder in the current working directory so that PyMOL drops the mmCIF
 # files into this folder when running fetch
 cmd.set('fetch_path', cmd.exp_path('./original_mmCIF_files'))
-
-# check whether a modified_mmCIF_files folder exists, and if it does not exist, create the folder
-modified_mmCIF_directory = os.getcwd() + "/modified_mmCIF_files"
-if not os.path.isdir(modified_mmCIF_directory):
-    os.mkdir(modified_mmCIF_directory)
 
 # construct two lists of tuples containing atom and residue names that describe either donor or acceptor atoms
 # additionally, construct a list of tuples containing atom and residue names that describe rotatable donor atoms
@@ -172,9 +168,6 @@ for i in range(len(eq_class[2])):
     rep_rna_list.append(f"chain {eq_class[3][i]}")
 rep_rna = " ".join(rep_rna_list)
 
-# delete all objects in the current PyMOL session
-cmd.delete('all')
-
 # retrieve the structure that contains the representative RNA chains
 cmd.fetch(eq_class[1][0])
 
@@ -183,7 +176,7 @@ if cmd.count_states(eq_class[1][0]) > 1:
     cmd.create(f'{eq_class[1][0]}_state_{eq_class[2][0]}', selection=eq_class[1][0], source_state=eq_class[2][0],
                target_state=1)
     cmd.delete(eq_class[1][0])
-    
+
 # remove atoms representing alternative conformations
 remove_status = remove_alt_conf.remove(eq_class[1][0])
 successful_completion = remove_status[0]
@@ -222,7 +215,7 @@ for donor in stored.donor_list:
     cmd.iterate(f'index {donor[0]} around {search_dist}',
                 'stored.nearby_atoms.append((index, name, resn, resi, chain))')
     atoms_near_donors.append(stored.nearby_atoms)
-    
+
 # extract the atoms that can act as H-bond acceptors
 acceptors_near_donors = []
 for atom_group in enumerate(atoms_near_donors):
@@ -251,7 +244,7 @@ for atom_group in enumerate(atoms_near_donors):
                     if atom[1] == acceptor[1] and atom[2] == acceptor[0]:
                         list_of_acceptors.append(atom)
     acceptors_near_donors.append(list_of_acceptors)
-    
+
 # acquire the H-bonding geometry measurements for all acceptors near each donor
 donor_h_bonds = []
 for donor in enumerate(stored.donor_list):
@@ -265,7 +258,7 @@ for donor in enumerate(stored.donor_list):
                 print(note)
             sys.exit(1)
     donor_h_bonds.append(h_bonds)
-    
+
 # using a greater search distance for the side chains of ASN, GLN, and HIS residues, store a list of atoms near the
 # donors of interest
 atoms_near_donors_amb = []
@@ -274,7 +267,7 @@ for donor in stored.donor_list:
     cmd.iterate(f'index {donor[0]} around {search_dist_amb}',
                 'stored.nearby_atoms.append((index, name, resn, resi, chain))')
     atoms_near_donors_amb.append(stored.nearby_atoms)
-    
+
 # extract the atoms that can act as H-bond acceptors that belong to the side chains of ASN, GLN, and HIS residues
 acceptors_near_donors_amb = []
 for atom_group in enumerate(atoms_near_donors_amb):
@@ -286,7 +279,7 @@ for atom_group in enumerate(atoms_near_donors_amb):
                 if atom[1] == acceptor[1] and atom[2] == acceptor[0]:
                     list_of_acceptors.append(atom)
     acceptors_near_donors_amb.append(list_of_acceptors)
-    
+
 # acquire the H-bonding geometry measurements for side chain acceptor atoms in ASN, GLN, and HIS residues near each
 # donor
 donor_h_bonds_amb = []
@@ -301,7 +294,7 @@ for donor in enumerate(stored.donor_list):
                 print(note)
             sys.exit(1)
     donor_h_bonds_amb.append(h_bonds)
-    
+
 # store a list of acceptors of interest from the representative RNA
 stored.acceptor_list = []
 cmd.iterate(f'({rep_rna}) and ({acceptors_of_interest_str})',
@@ -321,7 +314,7 @@ for acceptor in stored.acceptor_list:
     if (acceptor[2], acceptor[1]) in const.PROT_DONORS_OF_INTEREST:
         prot_donor_list.append(acceptor)
         atoms_near_prot_donors.append(stored.nearby_atoms)
-        
+
 # extract the atoms near the acceptors of interest that can act as H-bond donors
 donors_near_acceptors = []
 for atom_group in enumerate(atoms_near_acceptors):
@@ -350,6 +343,7 @@ for atom_group in enumerate(atoms_near_acceptors):
                     if atom[1] == donor[1] and atom[2] == donor[0]:
                         list_of_donors.append(atom)
     donors_near_acceptors.append(list_of_donors)
+
 # acquire the H-bonding geometry measurements for all donors near each acceptor
 acceptor_h_bonds = []
 for acceptor in enumerate(stored.acceptor_list):
@@ -363,6 +357,7 @@ for acceptor in enumerate(stored.acceptor_list):
                 print(note)
             sys.exit(1)
     acceptor_h_bonds.append(h_bonds)
+
 # extract the atoms near the protonated donors of interest that can act as H-bond acceptors
 acceptors_near_prot_donors = []
 for atom_group in enumerate(atoms_near_prot_donors):
@@ -391,6 +386,7 @@ for atom_group in enumerate(atoms_near_prot_donors):
                     if atom[1] == acceptor[1] and atom[2] == acceptor[0]:
                         list_of_acceptors.append(atom)
     acceptors_near_prot_donors.append(list_of_acceptors)
+
 # acquire the H-bonding geometry measurements for all acceptors near each protonated donor
 prot_donor_h_bonds = []
 for donor in enumerate(prot_donor_list):
@@ -404,6 +400,7 @@ for donor in enumerate(prot_donor_list):
                 print(note)
             sys.exit(1)
     prot_donor_h_bonds.append(h_bonds)
+
 # using a greater search distance for the side chains of ASN, GLN, and HIS residues, store a list of atoms near the
 # acceptors of interest
 # additionally, construct a list of atoms near the protonated donors of interest using the greater search distance
@@ -416,6 +413,7 @@ for acceptor in stored.acceptor_list:
     atoms_near_acceptors_amb.append(stored.nearby_atoms)
     if (acceptor[2], acceptor[1]) in const.PROT_DONORS_OF_INTEREST:
         atoms_near_prot_donors_amb.append(stored.nearby_atoms)
+
 # extract the atoms that can act as H-bond donors that belong to the side chains of ASN, GLN, and HIS residues
 donors_near_acceptors_amb = []
 for atom_group in enumerate(atoms_near_acceptors_amb):
@@ -427,6 +425,7 @@ for atom_group in enumerate(atoms_near_acceptors_amb):
                 if atom[1] == donor[1] and atom[2] == donor[0]:
                     list_of_donors.append(atom)
     donors_near_acceptors_amb.append(list_of_donors)
+
 # acquire the H-bonding geometry measurements for side chain donor atoms in ASN, GLN, and HIS residues near each
 # acceptor
 acceptor_h_bonds_amb = []
@@ -441,6 +440,7 @@ for acceptor in enumerate(stored.acceptor_list):
                 print(note)
             sys.exit(1)
     acceptor_h_bonds_amb.append(h_bonds)
+
 # extract the atoms near the protonated donors of interest that can act as H-bond acceptors that belong to the
 # side chains of ASN, GLN, and HIS residues
 acceptors_near_prot_donors_amb = []
@@ -453,6 +453,7 @@ for atom_group in enumerate(atoms_near_prot_donors_amb):
                 if atom[1] == acceptor[1] and atom[2] == acceptor[0]:
                     list_of_acceptors.append(atom)
     acceptors_near_prot_donors_amb.append(list_of_acceptors)
+
 # acquire the H-bonding geometry measurements for side chain acceptor atoms in ASN, GLN, and HIS residues near each
 # protonated donor
 prot_donor_h_bonds_amb = []
@@ -467,6 +468,7 @@ for donor in enumerate(prot_donor_list):
                 print(note)
             sys.exit(1)
     prot_donor_h_bonds_amb.append(h_bonds)
+
 # construct a list of all nucleobases containing all donors and acceptors of interest
 nucleobase_list = []
 for i in range(len(stored.donor_list)):
@@ -483,64 +485,99 @@ for i in range(len(stored.donor_list)):
 
 # TODO collect and report b-factors
 
-with open(f"{eq_class[0]}_nuc_test_data.csv", "w") as csv_file:
-    writer = csv.writer(csv_file)
-    for nuc in nucleobase_list:
-        writer.writerow(nuc)
+# if inc_commit_hash is supplied as the first argument, get the hash of the current git commit
+commit_hash = ""
+if sys.argv[1] == "inc_commit_hash":
+    commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"],
+                                          cwd=os.path.dirname(os.path.realpath(__file__))).decode('ascii').strip()
 
-with open(f"{eq_class[0]}_hbond_test_data.csv", "w") as csv_file:
-    writer = csv.writer(csv_file)
-    for x in enumerate(donor_h_bonds):
-        for y in enumerate(x[1]):
-            for z in y[1][1]:
-                row = []
-                row.extend(stored.donor_list[x[0]])
-                row.extend(acceptors_near_donors[x[0]][y[0]])
-                row.extend(z)
-                writer.writerow(row)
-    for x in enumerate(donor_h_bonds_amb):
-        for y in enumerate(x[1]):
-            for z in y[1][1]:
-                row = []
-                row.extend(stored.donor_list[x[0]])
-                row.extend(acceptors_near_donors_amb[x[0]][y[0]])
-                row.extend(z)
-                writer.writerow(row)
-    for x in enumerate(acceptor_h_bonds):
-        for y in enumerate(x[1]):
-            for z in y[1][1]:
-                row = []
-                row.extend(donors_near_acceptors[x[0]][y[0]])
-                row.extend(stored.acceptor_list[x[0]])
-                row.extend(z)
-                writer.writerow(row)
-    for x in enumerate(acceptor_h_bonds_amb):
-        for y in enumerate(x[1]):
-            for z in y[1][1]:
-                row = []
-                row.extend(donors_near_acceptors_amb[x[0]][y[0]])
-                row.extend(stored.acceptor_list[x[0]])
-                row.extend(z)
-                writer.writerow(row)
-    for x in enumerate(prot_donor_h_bonds):
-        for y in enumerate(x[1]):
-            for z in y[1][1]:
-                row = []
-                row.extend(prot_donor_list[x[0]])
-                row.extend(acceptors_near_prot_donors[x[0]][y[0]])
-                row.extend(z)
-                writer.writerow(row)
-    for x in enumerate(prot_donor_h_bonds_amb):
-        for y in enumerate(x[1]):
-            for z in y[1][1]:
-                row = []
-                row.extend(prot_donor_list[x[0]])
-                row.extend(acceptors_near_prot_donors_amb[x[0]][y[0]])
-                row.extend(z)
-                writer.writerow(row)
+# check whether a nuc_data folder exists, and if it does not exist, create the folder
+nuc_data_dir = os.getcwd() + "/nuc_data"
+if not os.path.isdir(nuc_data_dir):
+    os.mkdir(nuc_data_dir)
+
+if not os.path.isfile(f"{nuc_data_dir}/{eq_class[0]}_nuc_data.csv"):
+    with open(f"{nuc_data_dir}/{eq_class[0]}_nuc_data.csv", "w") as csv_file:
+        writer = csv.writer(csv_file)
+        if commit_hash:
+            writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
+        writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
+        for nuc in nucleobase_list:
+            writer.writerow(nuc)
+else:
+    print(f"Error: The file named {eq_class[0]}_nuc_data.csv already exists.")
+    sys.exit(1)
+
+# check whether a hbond_data folder exists, and if it does not exist, create the folder
+hbond_data_dir = os.getcwd() + "/hbond_data"
+if not os.path.isdir(hbond_data_dir):
+    os.mkdir(hbond_data_dir)
+
+# TODO update for loop variables
+if not os.path.isfile(f"{hbond_data_dir}/{eq_class[0]}_hbond_data.csv"):
+    with open(f"{hbond_data_dir}/{eq_class[0]}_hbond_data.csv", "w") as csv_file:
+        writer = csv.writer(csv_file)
+        if commit_hash:
+            writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
+        writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
+        for x in enumerate(donor_h_bonds):
+            for y in enumerate(x[1]):
+                for z in y[1][1]:
+                    row = []
+                    row.extend(stored.donor_list[x[0]])
+                    row.extend(acceptors_near_donors[x[0]][y[0]])
+                    row.extend(z)
+                    writer.writerow(row)
+        for x in enumerate(donor_h_bonds_amb):
+            for y in enumerate(x[1]):
+                for z in y[1][1]:
+                    row = []
+                    row.extend(stored.donor_list[x[0]])
+                    row.extend(acceptors_near_donors_amb[x[0]][y[0]])
+                    row.extend(z)
+                    writer.writerow(row)
+        for x in enumerate(acceptor_h_bonds):
+            for y in enumerate(x[1]):
+                for z in y[1][1]:
+                    row = []
+                    row.extend(donors_near_acceptors[x[0]][y[0]])
+                    row.extend(stored.acceptor_list[x[0]])
+                    row.extend(z)
+                    writer.writerow(row)
+        for x in enumerate(acceptor_h_bonds_amb):
+            for y in enumerate(x[1]):
+                for z in y[1][1]:
+                    row = []
+                    row.extend(donors_near_acceptors_amb[x[0]][y[0]])
+                    row.extend(stored.acceptor_list[x[0]])
+                    row.extend(z)
+                    writer.writerow(row)
+        for x in enumerate(prot_donor_h_bonds):
+            for y in enumerate(x[1]):
+                for z in y[1][1]:
+                    row = []
+                    row.extend(prot_donor_list[x[0]])
+                    row.extend(acceptors_near_prot_donors[x[0]][y[0]])
+                    row.extend(z)
+                    writer.writerow(row)
+        for x in enumerate(prot_donor_h_bonds_amb):
+            for y in enumerate(x[1]):
+                for z in y[1][1]:
+                    row = []
+                    row.extend(prot_donor_list[x[0]])
+                    row.extend(acceptors_near_prot_donors_amb[x[0]][y[0]])
+                    row.extend(z)
+                    writer.writerow(row)
+else:
+    print(f"Error: The file named {eq_class[0]}_hbond_data.csv already exists.")
+    sys.exit(1)
 
 end = datetime.now()
 print(end - start)
 
-#     cmd.save(f'{modified_mmCIF_directory}/{eq_class[0]}.cif')
-#     cmd.delete('all')
+# check whether a modified_mmCIF_files folder exists, and if it does not exist, create the folder
+modified_mmCIF_dir = os.getcwd() + "/modified_mmCIF_files"
+if not os.path.isdir(modified_mmCIF_dir):
+    os.mkdir(modified_mmCIF_dir)
+
+#     cmd.save(f'{modified_mmCIF_dir}/{eq_class[0]}.cif')
