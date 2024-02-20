@@ -496,6 +496,7 @@ nuc_data_dir = os.getcwd() + "/nuc_data"
 if not os.path.isdir(nuc_data_dir):
     os.mkdir(nuc_data_dir)
 
+# write a csv containing all nucleobases that contain all donors and acceptors of interest
 if not os.path.isfile(f"{nuc_data_dir}/{eq_class[0]}_nuc_data.csv"):
     with open(f"{nuc_data_dir}/{eq_class[0]}_nuc_data.csv", "w") as csv_file:
         writer = csv.writer(csv_file)
@@ -513,60 +514,60 @@ hbond_data_dir = os.getcwd() + "/hbond_data"
 if not os.path.isdir(hbond_data_dir):
     os.mkdir(hbond_data_dir)
 
-# TODO update for loop variables
+# write a csv containing all H-bonding information
 if not os.path.isfile(f"{hbond_data_dir}/{eq_class[0]}_hbond_data.csv"):
     with open(f"{hbond_data_dir}/{eq_class[0]}_hbond_data.csv", "w") as csv_file:
         writer = csv.writer(csv_file)
         if commit_hash:
             writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
         writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
-        for x in enumerate(donor_h_bonds):
-            for y in enumerate(x[1]):
-                for z in y[1][1]:
+        for i, don in enumerate(donor_h_bonds):
+            for j, acc in enumerate(don):
+                for instance in acc[1]:
                     row = []
-                    row.extend(stored.donor_list[x[0]])
-                    row.extend(acceptors_near_donors[x[0]][y[0]])
-                    row.extend(z)
+                    row.extend(stored.donor_list[i])
+                    row.extend(acceptors_near_donors[i][j])
+                    row.extend(instance)
                     writer.writerow(row)
-        for x in enumerate(donor_h_bonds_amb):
-            for y in enumerate(x[1]):
-                for z in y[1][1]:
+        for i, don in enumerate(donor_h_bonds_amb):
+            for j, acc in enumerate(don):
+                for instance in acc[1]:
                     row = []
-                    row.extend(stored.donor_list[x[0]])
-                    row.extend(acceptors_near_donors_amb[x[0]][y[0]])
-                    row.extend(z)
+                    row.extend(stored.donor_list[i])
+                    row.extend(acceptors_near_donors_amb[i][j])
+                    row.extend(instance)
                     writer.writerow(row)
-        for x in enumerate(acceptor_h_bonds):
-            for y in enumerate(x[1]):
-                for z in y[1][1]:
+        for i, acc in enumerate(acceptor_h_bonds):
+            for j, don in enumerate(acc):
+                for instance in don[1]:
                     row = []
-                    row.extend(donors_near_acceptors[x[0]][y[0]])
-                    row.extend(stored.acceptor_list[x[0]])
-                    row.extend(z)
+                    row.extend(donors_near_acceptors[i][j])
+                    row.extend(stored.acceptor_list[i])
+                    row.extend(instance)
                     writer.writerow(row)
-        for x in enumerate(acceptor_h_bonds_amb):
-            for y in enumerate(x[1]):
-                for z in y[1][1]:
+        for i, acc in enumerate(acceptor_h_bonds_amb):
+            for j, don in enumerate(acc):
+                for instance in don[1]:
                     row = []
-                    row.extend(donors_near_acceptors_amb[x[0]][y[0]])
-                    row.extend(stored.acceptor_list[x[0]])
-                    row.extend(z)
+                    row.extend(donors_near_acceptors_amb[i][j])
+                    row.extend(stored.acceptor_list[i])
+                    row.extend(instance)
                     writer.writerow(row)
-        for x in enumerate(prot_donor_h_bonds):
-            for y in enumerate(x[1]):
-                for z in y[1][1]:
+        for i, don in enumerate(prot_donor_h_bonds):
+            for j, acc in enumerate(don):
+                for instance in acc[1]:
                     row = []
-                    row.extend(prot_donor_list[x[0]])
-                    row.extend(acceptors_near_prot_donors[x[0]][y[0]])
-                    row.extend(z)
+                    row.extend(prot_donor_list[i])
+                    row.extend(acceptors_near_prot_donors[i][j])
+                    row.extend(instance)
                     writer.writerow(row)
-        for x in enumerate(prot_donor_h_bonds_amb):
-            for y in enumerate(x[1]):
-                for z in y[1][1]:
+        for i, don in enumerate(prot_donor_h_bonds_amb):
+            for j, acc in enumerate(don):
+                for instance in acc[1]:
                     row = []
-                    row.extend(prot_donor_list[x[0]])
-                    row.extend(acceptors_near_prot_donors_amb[x[0]][y[0]])
-                    row.extend(z)
+                    row.extend(prot_donor_list[i])
+                    row.extend(acceptors_near_prot_donors_amb[i][j])
+                    row.extend(instance)
                     writer.writerow(row)
 else:
     print(f"Error: The file named {eq_class[0]}_hbond_data.csv already exists.")
