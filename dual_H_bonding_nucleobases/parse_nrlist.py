@@ -60,4 +60,8 @@ with open(nrlist_file, mode='r') as read_file:
                       f"match.")
                 sys.exit(1)
         with open(f"{line[0]}_info.csv", "w") as write_file:
-            csv.writer(write_file).writerow([line[0], PDB_ID_list, model_list, chain_list])
+            writer = csv.writer(write_file)
+            writer.writerow([line[0]])
+            writer.writerow(PDB_ID_list)
+            writer.writerow(model_list)
+            writer.writerow(chain_list)
