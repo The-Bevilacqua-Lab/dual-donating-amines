@@ -10,6 +10,7 @@ import csv
 import subprocess
 from pymol import cmd
 from pymol import stored
+import numpy as np
 from datetime import datetime
 import const
 import eval_H_bonding
@@ -18,22 +19,24 @@ import remove_alt_conf
 start = datetime.now()
 
 # check to make sure the representative set file exists
-nrlist_file = ""
+eq_class_file = ""
 try:
     if not os.path.isfile(sys.argv[1]):
         print(f"Error: The file named {sys.argv[1]} was not found in the current working directory.")
         sys.exit(1)
     else:
-        nrlist_file = sys.argv[1]
+        eq_class_file = sys.argv[1]
 except IndexError:
     print("Error: The name of the csv file containing info about the representative structure must be provided as the "
           "first argument.")
     sys.exit(1)
 
-# iterate through the lines of the representative set file and collect the equivalence class names and PDB IDs, model
-# info, and chain info for the representative structures
-with open(nrlist_file, mode='r') as read_file:
-    eq_class = list(csv.reader(read_file))[0]
+# iterate through the lines of the equivalence class file and collect the equivalence class name, PDB ID, model info,
+# and chain info for the representative structure
+with open(eq_class_file, mode='r') as read_file:
+    eq_class = []
+    for line in csv.reader(read_file):
+        eq_class.append(line)
 
 # check whether an original_mmCIF_files folder exists, and if it does not exist, create the folder
 original_mmCIF_dir = os.getcwd() + "/original_mmCIF_files"
@@ -154,8 +157,6 @@ search_dist = 4.1
 # conformations that may have been ambiguously assigned
 search_dist_amb = search_dist + 3.0
 
-# TODO build in some sort of check to insure that index values do not change when they are expected to remain constant
-
 # identify the chains of all the representative RNAs for the equivalence class
 rep_rna_list = []
 for i in range(len(eq_class[2])):
@@ -163,7 +164,7 @@ for i in range(len(eq_class[2])):
     # if this is not the case, print an error message and exit
     if eq_class[2][i] != eq_class[2][0]:
         print(f"Error: There are representative RNA chains that belong to different models for equivalence class "
-              f"{eq_class[0]}.")
+              f"{eq_class[0][0]}.")
         sys.exit(1)
     rep_rna_list.append(f"chain {eq_class[3][i]}")
 rep_rna = " ".join(rep_rna_list)
@@ -202,6 +203,13 @@ cmd.alter(f'(resn TYR and name OH) (resn HIS and name ND1) {prot_donors_of_inter
 # add hydrogens to non-rotatable donors that are a part of or near the representative RNA
 cmd.h_add(f'(({donor_string} {prot_donors_of_interest_str}) and not ({rotatable_donor_string})) within '
           f'{search_dist_amb + 3.0} of ({rep_rna})')
+
+# randomly sample 100 atom indices in the structure and record the info of the associated atoms for later comparison
+num_atoms = cmd.count_atoms('all')
+indices = np.random.default_rng().integers(low=1, high=num_atoms+1, size=100)
+stored.check_one = []
+for index in indices:
+    cmd.iterate(f'index {index}', 'stored.check_one.append((index, name, resn, resi, chain))')
 
 # store a list of donors of interest from the representative RNA
 stored.donor_list = []
@@ -485,6 +493,15 @@ for i in range(len(stored.donor_list)):
 
 # TODO collect and report b-factors
 
+# record info on the atoms associated with the previously determined 100 atom indices and check whether there are any
+# changes
+stored.check_two = []
+for index in indices:
+    cmd.iterate(f'index {index}', 'stored.check_two.append((index, name, resn, resi, chain))')
+if not stored.check_one == stored.check_two:
+    print(f"Error: The indices in PDB ID {eq_class[1][0]} changed.")
+    sys.exit(1)
+
 # if inc_commit_hash is supplied as the first argument, get the hash of the current git commit
 commit_hash = ""
 if sys.argv[1] == "inc_commit_hash":
@@ -497,8 +514,8 @@ if not os.path.isdir(nuc_data_dir):
     os.mkdir(nuc_data_dir)
 
 # write a csv containing all nucleobases that contain all donors and acceptors of interest
-if not os.path.isfile(f"{nuc_data_dir}/{eq_class[0]}_nuc_data.csv"):
-    with open(f"{nuc_data_dir}/{eq_class[0]}_nuc_data.csv", "w") as csv_file:
+if not os.path.isfile(f"{nuc_data_dir}/{eq_class[0][0]}_nuc_data.csv"):
+    with open(f"{nuc_data_dir}/{eq_class[0][0]}_nuc_data.csv", "w") as csv_file:
         writer = csv.writer(csv_file)
         if commit_hash:
             writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
@@ -506,7 +523,7 @@ if not os.path.isfile(f"{nuc_data_dir}/{eq_class[0]}_nuc_data.csv"):
         for nuc in nucleobase_list:
             writer.writerow(nuc)
 else:
-    print(f"Error: The file named {eq_class[0]}_nuc_data.csv already exists.")
+    print(f"Error: The file named {eq_class[0][0]}_nuc_data.csv already exists.")
     sys.exit(1)
 
 # check whether a hbond_data folder exists, and if it does not exist, create the folder
@@ -515,8 +532,8 @@ if not os.path.isdir(hbond_data_dir):
     os.mkdir(hbond_data_dir)
 
 # write a csv containing all H-bonding information
-if not os.path.isfile(f"{hbond_data_dir}/{eq_class[0]}_hbond_data.csv"):
-    with open(f"{hbond_data_dir}/{eq_class[0]}_hbond_data.csv", "w") as csv_file:
+if not os.path.isfile(f"{hbond_data_dir}/{eq_class[0][0]}_hbond_data.csv"):
+    with open(f"{hbond_data_dir}/{eq_class[0][0]}_hbond_data.csv", "w") as csv_file:
         writer = csv.writer(csv_file)
         if commit_hash:
             writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
@@ -570,7 +587,7 @@ if not os.path.isfile(f"{hbond_data_dir}/{eq_class[0]}_hbond_data.csv"):
                     row.extend(instance)
                     writer.writerow(row)
 else:
-    print(f"Error: The file named {eq_class[0]}_hbond_data.csv already exists.")
+    print(f"Error: The file named {eq_class[0][0]}_hbond_data.csv already exists.")
     sys.exit(1)
 
 end = datetime.now()
@@ -581,4 +598,4 @@ modified_mmCIF_dir = os.getcwd() + "/modified_mmCIF_files"
 if not os.path.isdir(modified_mmCIF_dir):
     os.mkdir(modified_mmCIF_dir)
 
-#     cmd.save(f'{modified_mmCIF_dir}/{eq_class[0]}.cif')
+#     cmd.save(f'{modified_mmCIF_dir}/{eq_class[0][0]}.cif')
