@@ -579,6 +579,7 @@ for acceptor in enumerate(stored.deprot_acceptor_list):
             sys.exit(1)
     deprot_acceptor_h_bonds_amb.append(h_bonds)
 
+# TODO update with deprot acc
 # construct a list of all nucleobases containing all donors and acceptors of interest
 nucleobase_list = []
 for i in range(len(stored.donor_list)):
@@ -593,7 +594,15 @@ for i in range(len(stored.donor_list)):
         print("Error: The code was unable to complete construction of nucleobase_list.")
         sys.exit(1)
 
-# TODO collect and report b-factors
+# collect the b-factors of nucleobase atoms within the representative structure
+stored.res_list = []
+cmd.iterate(f"name C1' and ({rep_rna})", "stored.res_list.append((index, name, resn, resi, chain))")
+nuc_b_factors = []
+for res in stored.res_list:
+    stored.b_factors = []
+    cmd.iterate(f"(byres index {res[0]}) and sidechain", "stored.b_factors.append(b)")
+    nuc_b_factors.append([f"{res[2]}{res[3]}{res[4]}"])
+    nuc_b_factors[-1].extend(stored.b_factors)
 
 # record info on the atoms associated with the previously determined 100 atom indices and check whether there are any
 # changes
@@ -609,6 +618,24 @@ commit_hash = ""
 if sys.argv[1] == "inc_commit_hash":
     commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"],
                                           cwd=os.path.dirname(os.path.realpath(__file__))).decode('ascii').strip()
+
+# check whether a b_factor_data folder exists, and if it does not exist, create the folder
+b_factor_data_dir = os.getcwd() + "/b_factor_data"
+if not os.path.isdir(b_factor_data_dir):
+    os.mkdir(b_factor_data_dir)
+
+# write a csv containing the b-factors of all nucleobase atoms in the representative structure
+if not os.path.isfile(f"{b_factor_data_dir}/{eq_class[0][0]}_b_factor_data.csv"):
+    with open(f"{b_factor_data_dir}/{eq_class[0][0]}_b_factor_data.csv", "w") as csv_file:
+        writer = csv.writer(csv_file)
+        if commit_hash:
+            writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
+        writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
+        for nuc in nuc_b_factors:
+            writer.writerow(nuc)
+else:
+    print(f"Error: The file named {eq_class[0][0]}_b_factor_data.csv already exists.")
+    sys.exit(1)
 
 # check whether a nuc_data folder exists, and if it does not exist, create the folder
 nuc_data_dir = os.getcwd() + "/nuc_data"
