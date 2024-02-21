@@ -206,9 +206,14 @@ cmd.iterate(f'(resn TYR and name OH) within {search_dist_amb} of ({rep_rna})',
             'cmd.unbond(f"index {index}", f"(byres index {index}) and name CZ"); '
             'cmd.bond(f"index {index}", f"(byres index {index}) and name CZ", "2")')
 
-# change the formal charge on TYR(OH), HIS(ND1), A(N1), A(N3), C(N3), and G(N3) to +1
-# with a formal charge of +1, PyMOL will add hydrogens to these atoms when the following h_add command is used
-cmd.alter(f'(resn TYR and name OH) (resn HIS and name ND1) {prot_donors_of_interest_str}', 'formal_charge=1')
+# Change the formal charge on ARG(NH2), TYR(OH), HIS(ND1), A(N1), A(N3), C(N3), and G(N3) to +1. With a formal charge
+# of +1, PyMOL will add hydrogens to these atoms when the following h_add command is used. The NH2 atoms of ARG residues
+# typically have a formal charge of 0. With a formal charge of 0, PyMOL only adds a single hydrogen to these atoms when
+# the h_add command is issued using a script. When the h_add command is issued through the PyMOL GUI, PyMOL correctly
+# adds two hydrogens without needing to increase the formal charge of the NH2 atoms to +1. This must be some sort of bug
+# with PyMOL 2.5.0 Open-Source. Other versions of PyMOL may not have this same behavior.
+cmd.alter(f'(resn ARG and name NH2) (resn TYR and name OH) (resn HIS and name ND1) {prot_donors_of_interest_str}',
+          'formal_charge=1')
 
 # add hydrogens to non-rotatable donors that are a part of or near the representative RNA
 cmd.h_add(f'(({donor_string} {prot_donors_of_interest_str}) and not ({rotatable_donor_string})) within '
@@ -648,7 +653,7 @@ nuc_data_dir = os.getcwd() + "/nuc_data"
 if not os.path.isdir(nuc_data_dir):
     os.mkdir(nuc_data_dir)
 
-# write a csv containing all nucleobases that contain all donors and acceptors of interest
+# write a csv containing all nucleobases that contain all donors, protonated donors, and acceptors of interest
 if not os.path.isfile(f"{nuc_data_dir}/{eq_class[0][0]}_nuc_data.csv"):
     with open(f"{nuc_data_dir}/{eq_class[0][0]}_nuc_data.csv", "w") as csv_file:
         writer = csv.writer(csv_file)
@@ -661,12 +666,12 @@ else:
     print(f"Error: The file named {eq_class[0][0]}_nuc_data.csv already exists.")
     sys.exit(1)
 
-# check whether a nuc_data folder exists, and if it does not exist, create the folder
+# check whether a deprot_nuc_data folder exists, and if it does not exist, create the folder
 deprot_nuc_data_dir = os.getcwd() + "/deprot_nuc_data"
 if not os.path.isdir(deprot_nuc_data_dir):
     os.mkdir(deprot_nuc_data_dir)
 
-# write a csv containing all nucleobases that contain all donors and acceptors of interest
+# write a csv containing all nucleobases that contain all deprotonated acceptors of interest
 if not os.path.isfile(f"{deprot_nuc_data_dir}/{eq_class[0][0]}_deprot_nuc_data.csv"):
     with open(f"{deprot_nuc_data_dir}/{eq_class[0][0]}_deprot_nuc_data.csv", "w") as csv_file:
         writer = csv.writer(csv_file)
