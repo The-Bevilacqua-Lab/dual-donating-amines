@@ -5,8 +5,9 @@ This module contains various constants that are used by other modules in this pa
 # construct three tuples of tuples containing atom and residue names that describe either donor, protonated donor
 # (formal charge of +1), or acceptor atoms of particular interest
 DONORS_OF_INTEREST = (('A', 'N6'), ('C', 'N4'), ('G', 'N2'))
-PROT_DONORS_OF_INTEREST = (('A', 'N1'), ('A', 'N3'), ('C', 'N3'), ('G', 'N3'))
-ACCEPTORS_OF_INTEREST = (('A', 'N1'), ('A', 'N3'), ('C', 'O2'), ('C', 'N3'), ('G', 'N3'), ('G', 'O6'))
+PROT_DONORS_OF_INTEREST = (('A', 'N1'), ('A', 'N3'), ('A', 'N7'), ('C', 'N3'), ('G', 'N3'), ('G', 'N7'))
+ACCEPTORS_OF_INTEREST = (('A', 'N1'), ('A', 'N3'), ('A', 'N7'), ('C', 'O2'), ('C', 'N3'), ('G', 'N3'), ('G', 'O6'),
+                         ('G', 'N7'))
 DEPROT_ACCEPTORS_OF_INTEREST = (('G', 'N1'), ('U', 'N3'))
 
 # define a list of dictionaries that provides information on the canonical protein and RNA/DNA residues
