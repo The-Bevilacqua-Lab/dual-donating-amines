@@ -60,6 +60,14 @@ for residue in const.RESIDUE_LIBRARY:
     for acceptor in residue['acc']:
         acceptor_atoms.append((residue['res'], acceptor[0]))
 
+# add nucleic acid O3' and O5' to the donor lists since they can act as donors if terminal atoms
+nucleic_residues = ['A', 'C', 'G', 'U', 'DA', 'DC', 'DG', 'DT']
+for res in nucleic_residues:
+    donor_atoms.append((res, "O3'"))
+    donor_atoms.append((res, "O5'"))
+    rotatable_donor_atoms.append((res, "O3'"))
+    rotatable_donor_atoms.append((res, "O5'"))
+
 # construct three strings that can be used with PyMOL to select all possible donor, all possible rotatable donor, or
 # all possible acceptor atoms
 donor_string = ''
