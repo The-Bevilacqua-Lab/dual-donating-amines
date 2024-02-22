@@ -153,10 +153,12 @@ for res in expanded_library:
     if res['res'] == 'A':
         res['don'].append(["N1", "N", False, 1, "C2"])
         res['don'].append(["N3", "N", False, 1, "C2"])
+        res['don'].append(["N7", "N", False, 1, "C5"])
     if res['res'] == 'C':
         res['don'].append(["N3", "N", False, 1, "C2"])
     if res['res'] == 'G':
         res['don'].append(["N3", "N", False, 1, "C2"])
+        res['don'].append(["N7", "N", False, 1, "C5"])
         res['acc'].append(["N1", "N", False, -1, "C2"])
     if res['res'] == 'U':
         res['acc'].append(["N3", "N", False, -1, "C2"])
