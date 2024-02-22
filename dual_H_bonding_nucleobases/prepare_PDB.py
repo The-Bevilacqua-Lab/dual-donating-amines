@@ -586,26 +586,12 @@ for acceptor in enumerate(stored.deprot_acceptor_list):
             sys.exit(1)
     deprot_acceptor_h_bonds_amb.append(h_bonds)
 
-# construct a list of all nucleobases containing all donors, protonated donors, and acceptors of interest
+# construct a list of all nucleobases containing donors, protonated donors, acceptors, and deprotonated acceptors of
+# interest
 nucleobase_list = []
-for i in range(len(stored.donor_list)):
-    if (stored.donor_list[i][2] == stored.acceptor_list[i*2][2] == stored.acceptor_list[i*2+1][2] and
-            stored.donor_list[i][3] == stored.acceptor_list[i*2][3] == stored.acceptor_list[i*2+1][3] and
-            stored.donor_list[i][4] == stored.acceptor_list[i*2][4] == stored.acceptor_list[i*2+1][4]):
-        nucleobase_list.append((stored.donor_list[i][2]+stored.donor_list[i][3]+stored.donor_list[i][4],
-                                stored.donor_list[i][0], stored.donor_list[i][1],
-                                stored.acceptor_list[i*2][0], stored.acceptor_list[i*2][1],
-                                stored.acceptor_list[i*2+1][0], stored.acceptor_list[i*2+1][1]))
-    else:
-        print("Error: The code was unable to complete construction of nucleobase_list.")
-        sys.exit(1)
-
-# construct a list of all nucleobases containing all deprotonated acceptors of interest
-deprot_nucleobase_list = []
-for i in range(len(stored.deprot_acceptor_list)):
-    deprot_nucleobase_list.append((stored.deprot_acceptor_list[i][2]+stored.deprot_acceptor_list[i][3]+
-                                   stored.deprot_acceptor_list[i][4], stored.deprot_acceptor_list[i][0],
-                                   stored.deprot_acceptor_list[i][1]))
+nucleobase_list.extend(stored.donor_list)
+nucleobase_list.extend(stored.acceptor_list)
+nucleobase_list.extend(stored.deprot_acceptor_list)
 
 # collect the b-factors of nucleobase atoms within the representative structure
 stored.res_list = []
@@ -655,7 +641,8 @@ nuc_data_dir = os.getcwd() + "/nuc_data"
 if not os.path.isdir(nuc_data_dir):
     os.mkdir(nuc_data_dir)
 
-# write a csv containing all nucleobases that contain all donors, protonated donors, and acceptors of interest
+# write a csv containing all nucleobases that contain donors, protonated donors, acceptors, and deprotonated acceptors
+# of interest
 if not os.path.isfile(f"{nuc_data_dir}/{eq_class[0][0]}_nuc_data.csv"):
     with open(f"{nuc_data_dir}/{eq_class[0][0]}_nuc_data.csv", "w") as csv_file:
         writer = csv.writer(csv_file)
@@ -666,24 +653,6 @@ if not os.path.isfile(f"{nuc_data_dir}/{eq_class[0][0]}_nuc_data.csv"):
             writer.writerow(nuc)
 else:
     print(f"Error: The file named {eq_class[0][0]}_nuc_data.csv already exists.")
-    sys.exit(1)
-
-# check whether a deprot_nuc_data folder exists, and if it does not exist, create the folder
-deprot_nuc_data_dir = os.getcwd() + "/deprot_nuc_data"
-if not os.path.isdir(deprot_nuc_data_dir):
-    os.mkdir(deprot_nuc_data_dir)
-
-# write a csv containing all nucleobases that contain all deprotonated acceptors of interest
-if not os.path.isfile(f"{deprot_nuc_data_dir}/{eq_class[0][0]}_deprot_nuc_data.csv"):
-    with open(f"{deprot_nuc_data_dir}/{eq_class[0][0]}_deprot_nuc_data.csv", "w") as csv_file:
-        writer = csv.writer(csv_file)
-        if commit_hash:
-            writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
-        writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
-        for nuc in deprot_nucleobase_list:
-            writer.writerow(nuc)
-else:
-    print(f"Error: The file named {eq_class[0][0]}_deprot_nuc_data.csv already exists.")
     sys.exit(1)
 
 # check whether a hbond_data folder exists, and if it does not exist, create the folder
