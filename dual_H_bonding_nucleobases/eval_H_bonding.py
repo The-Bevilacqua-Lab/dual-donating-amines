@@ -15,11 +15,7 @@ from pymol import cmd
 from pymol import stored
 
 
-def evaluate(donor_atom, acceptor_atom, pdb, library):
-    # initially assume that the evaluation will complete successfully
-    successful_completion = True
-    # initialize an empty list that can be used to document why an evaluation was not completed successfully
-    notes = []
+def terminal_donor(donor_atom):
     # construct lists containing the names of the canonical protein and nucleic residues
     protein_residues = ['ALA', 'ASP', 'ASN', 'ARG', 'CYS', 'GLU', 'GLN', 'GLY', 'HIS', 'ILE', 'LEU', 'LYS', 'MET',
                         'PHE', 'PRO', 'SER', 'THR', 'TRP', 'TYR', 'VAL']
@@ -44,6 +40,20 @@ def evaluate(donor_atom, acceptor_atom, pdb, library):
             if (donor_atom[1] == "O3'" and stored.bonded_atom == "C3'" and donor_atom[2] in
                     nucleic_residues):
                 terminal_donating_atom = ["O3'", "O", True, 0, "C3'"]
+    return terminal_donating_atom
+
+
+def evaluate(donor_atom, acceptor_atom, pdb, library):
+    # initially assume that the evaluation will complete successfully
+    successful_completion = True
+    # initialize an empty list that can be used to document why an evaluation was not completed successfully
+    notes = []
+    # construct lists containing the names of the canonical protein and nucleic residues
+    protein_residues = ['ALA', 'ASP', 'ASN', 'ARG', 'CYS', 'GLU', 'GLN', 'GLY', 'HIS', 'ILE', 'LEU', 'LYS', 'MET',
+                        'PHE', 'PRO', 'SER', 'THR', 'TRP', 'TYR', 'VAL']
+    nucleic_residues = ['A', 'C', 'G', 'U', 'DA', 'DC', 'DG', 'DT']
+    # determine whether the donor atom is at the end of a chain and is capable of donating an H-bond
+    terminal_donating_atom = terminal_donor(donor_atom)
     # determine whether the donor atom is listed in the residue library
     # if found, collect other information about that atom
     donor_res = ''

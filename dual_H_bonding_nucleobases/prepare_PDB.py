@@ -60,14 +60,6 @@ for residue in const.RESIDUE_LIBRARY:
     for acceptor in residue['acc']:
         acceptor_atoms.append((residue['res'], acceptor[0]))
 
-# add nucleic acid O3' and O5' to the donor lists since they can act as donors if terminal atoms
-nucleic_residues = ['A', 'C', 'G', 'U', 'DA', 'DC', 'DG', 'DT']
-for res in nucleic_residues:
-    donor_atoms.append((res, "O3'"))
-    donor_atoms.append((res, "O5'"))
-    rotatable_donor_atoms.append((res, "O3'"))
-    rotatable_donor_atoms.append((res, "O5'"))
-
 # construct three strings that can be used with PyMOL to select all possible donor, all possible rotatable donor, or
 # all possible acceptor atoms
 donor_string = ''
@@ -375,6 +367,9 @@ for atom_group in enumerate(atoms_near_acceptors):
                 for donor in donor_atoms:
                     if atom[1] == donor[1] and atom[2] == donor[0]:
                         list_of_donors.append(atom)
+                    elif atom[1] == "O3'" or atom[1] == "O5'":
+                        if eval_H_bonding.terminal_donor(atom):
+                            list_of_donors.append(atom)
     donors_near_acceptors.append(list_of_donors)
 
 # acquire the H-bonding geometry measurements for all donors near each acceptor
@@ -457,6 +452,9 @@ for atom_group in enumerate(atoms_near_acceptors_amb):
             for donor in donor_atoms:
                 if atom[1] == donor[1] and atom[2] == donor[0]:
                     list_of_donors.append(atom)
+                elif atom[1] == "O3'" or atom[1] == "O5'":
+                    if eval_H_bonding.terminal_donor(atom):
+                        list_of_donors.append(atom)
     donors_near_acceptors_amb.append(list_of_donors)
 
 # acquire the H-bonding geometry measurements for side chain donor atoms in ASN, GLN, and HIS residues near each
@@ -542,6 +540,9 @@ for atom_group in enumerate(atoms_near_deprot_acceptors):
                 for donor in donor_atoms:
                     if atom[1] == donor[1] and atom[2] == donor[0]:
                         list_of_donors.append(atom)
+                    elif atom[1] == "O3'" or atom[1] == "O5'":
+                        if eval_H_bonding.terminal_donor(atom):
+                            list_of_donors.append(atom)
     donors_near_deprot_acceptors.append(list_of_donors)
 
 # acquire the H-bonding geometry measurements for all donors near each deprotonated acceptor
@@ -577,6 +578,9 @@ for atom_group in enumerate(atoms_near_deprot_acceptors_amb):
             for donor in donor_atoms:
                 if atom[1] == donor[1] and atom[2] == donor[0]:
                     list_of_donors.append(atom)
+                elif atom[1] == "O3'" or atom[1] == "O5'":
+                    if eval_H_bonding.terminal_donor(atom):
+                        list_of_donors.append(atom)
     donors_near_deprot_acceptors_amb.append(list_of_donors)
 
 # acquire the H-bonding geometry measurements for side chain donor atoms in ASN, GLN, and HIS residues near each
