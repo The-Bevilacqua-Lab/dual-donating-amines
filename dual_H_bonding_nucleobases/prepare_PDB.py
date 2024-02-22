@@ -364,11 +364,12 @@ for atom_group in enumerate(atoms_near_acceptors):
                      stored.acceptor_list[atom_group[0]][3] == atom[3] and
                      stored.acceptor_list[atom_group[0]][4] == atom[4] and
                      atom[1] in uracil_nuc_donors)):
-                for donor in donor_atoms:
-                    if atom[1] == donor[1] and atom[2] == donor[0]:
+                if atom[1] == "O3'" or atom[1] == "O5'":
+                    if eval_H_bonding.terminal_donor(atom):
                         list_of_donors.append(atom)
-                    elif atom[1] == "O3'" or atom[1] == "O5'":
-                        if eval_H_bonding.terminal_donor(atom):
+                else:
+                    for donor in donor_atoms:
+                        if atom[1] == donor[1] and atom[2] == donor[0]:
                             list_of_donors.append(atom)
     donors_near_acceptors.append(list_of_donors)
 
@@ -449,11 +450,12 @@ for atom_group in enumerate(atoms_near_acceptors_amb):
     for atom in atom_group[1]:
         # only extract side chain donor atoms in ASN, GLN, and HIS residues
         if atom[1] != "N" and atom[2] in ["ASN", "GLN", "HIS"]:
-            for donor in donor_atoms:
-                if atom[1] == donor[1] and atom[2] == donor[0]:
+            if atom[1] == "O3'" or atom[1] == "O5'":
+                if eval_H_bonding.terminal_donor(atom):
                     list_of_donors.append(atom)
-                elif atom[1] == "O3'" or atom[1] == "O5'":
-                    if eval_H_bonding.terminal_donor(atom):
+            else:
+                for donor in donor_atoms:
+                    if atom[1] == donor[1] and atom[2] == donor[0]:
                         list_of_donors.append(atom)
     donors_near_acceptors_amb.append(list_of_donors)
 
@@ -537,11 +539,12 @@ for atom_group in enumerate(atoms_near_deprot_acceptors):
                      stored.acceptor_list[atom_group[0]][3] == atom[3] and
                      stored.acceptor_list[atom_group[0]][4] == atom[4] and
                      atom[1] in uracil_nuc_donors)):
-                for donor in donor_atoms:
-                    if atom[1] == donor[1] and atom[2] == donor[0]:
+                if atom[1] == "O3'" or atom[1] == "O5'":
+                    if eval_H_bonding.terminal_donor(atom):
                         list_of_donors.append(atom)
-                    elif atom[1] == "O3'" or atom[1] == "O5'":
-                        if eval_H_bonding.terminal_donor(atom):
+                else:
+                    for donor in donor_atoms:
+                        if atom[1] == donor[1] and atom[2] == donor[0]:
                             list_of_donors.append(atom)
     donors_near_deprot_acceptors.append(list_of_donors)
 
@@ -575,11 +578,12 @@ for atom_group in enumerate(atoms_near_deprot_acceptors_amb):
     for atom in atom_group[1]:
         # only extract side chain donor atoms in ASN, GLN, and HIS residues
         if atom[1] != "N" and atom[2] in ["ASN", "GLN", "HIS"]:
-            for donor in donor_atoms:
-                if atom[1] == donor[1] and atom[2] == donor[0]:
+            if atom[1] == "O3'" or atom[1] == "O5'":
+                if eval_H_bonding.terminal_donor(atom):
                     list_of_donors.append(atom)
-                elif atom[1] == "O3'" or atom[1] == "O5'":
-                    if eval_H_bonding.terminal_donor(atom):
+            else:
+                for donor in donor_atoms:
+                    if atom[1] == donor[1] and atom[2] == donor[0]:
                         list_of_donors.append(atom)
     donors_near_deprot_acceptors_amb.append(list_of_donors)
 
@@ -755,4 +759,4 @@ modified_mmCIF_dir = os.getcwd() + "/modified_mmCIF_files"
 if not os.path.isdir(modified_mmCIF_dir):
     os.mkdir(modified_mmCIF_dir)
 
-#     cmd.save(f'{modified_mmCIF_dir}/{eq_class[0][0]}.cif')
+cmd.save(f'{modified_mmCIF_dir}/{eq_class[0][0]}.cif')

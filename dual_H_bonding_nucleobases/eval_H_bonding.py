@@ -39,7 +39,10 @@ def terminal_donor(donor_atom):
             # only an RNA O3' atom at the 3' end of the chain is capable of donating an H-bond
             if (donor_atom[1] == "O3'" and stored.bonded_atom == "C3'" and donor_atom[2] in
                     nucleic_residues):
-                terminal_donating_atom = ["O3'", "O", True, 0, "C3'"]
+                # look for a nearby phosphorus just in case PyMOL is not detecting a bond when there really should be
+                # one (check out PDB ID 1HMH as an example)
+                if cmd.count_atoms(f'elem P within 1.8 of index {donor_atom[0]}') == 0:
+                    terminal_donating_atom = ["O3'", "O", True, 0, "C3'"]
     return terminal_donating_atom
 
 
