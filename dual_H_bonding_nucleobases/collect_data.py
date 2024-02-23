@@ -655,7 +655,7 @@ if not os.path.isfile(f"{b_factor_data_dir}/{eq_class[0][0]}_b_factor_data.csv")
         if commit_hash:
             writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
         writer.writerow([f"# input file: {eq_class_file}"])
-        writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f %Z')}"])
+        writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
         for nuc in nuc_b_factors:
             writer.writerow(nuc)
 else:
@@ -675,7 +675,7 @@ if not os.path.isfile(f"{nuc_data_dir}/{eq_class[0][0]}_nuc_data.csv"):
         if commit_hash:
             writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
         writer.writerow([f"# input file: {eq_class_file}"])
-        writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f %Z')}"])
+        writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
         for nuc in nucleobase_list:
             writer.writerow(nuc)
 else:
@@ -694,7 +694,7 @@ if not os.path.isfile(f"{hbond_data_dir}/{eq_class[0][0]}_hbond_data.csv"):
         if commit_hash:
             writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
         writer.writerow([f"# input file: {eq_class_file}"])
-        writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f %Z')}"])
+        writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
         for i, don in enumerate(donor_h_bonds):
             for j, acc in enumerate(don):
                 for instance in acc[1]:

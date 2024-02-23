@@ -80,7 +80,7 @@ with open(nrlist_file, mode='r') as read_file:
             if commit_hash:
                 writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
             writer.writerow([f"# input file: {nrlist_file}"])
-            writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f %Z')}"])
+            writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
             writer.writerow([line[0]])
             writer.writerow(PDB_ID_list)
             writer.writerow(model_list)
