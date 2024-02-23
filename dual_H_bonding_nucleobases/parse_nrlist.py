@@ -14,7 +14,7 @@ from datetime import datetime
 # of the current git commit. If uncommitted changes have been made, print an error message and exit.
 repo_changes = ""
 commit_hash = ""
-if sys.argv[1] == "inc_commit_hash":
+if "inc_commit_hash" in sys.argv:
     repo_changes = subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"],
                                            cwd=os.path.dirname(os.path.realpath(__file__))).decode('ascii').strip()
     if not repo_changes:
