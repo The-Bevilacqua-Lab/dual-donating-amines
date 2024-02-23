@@ -5,3 +5,7 @@ These scripts make up a computational pipeline to identify nucleobases in struct
 ## Dependencies
 
 PyMOL==2.5.0
+
+## Notes
+
+This repo was designed to work with csv files downloaded from the Representative Sets of RNA 3D Structures database maintained by the RNA group at BGSU.
