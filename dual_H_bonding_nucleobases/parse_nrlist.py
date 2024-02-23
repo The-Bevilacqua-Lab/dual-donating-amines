@@ -1,7 +1,10 @@
 """
 This script iterates through the lines of a representative set file and collects the equivalence class names, PDB IDs,
-model info, and chain info for the representative structures. The info for each representative structure is then written
-to a csv file. The name of the representative set file must be provided as the first argument.
+model info, and chain info for the representative structures. It should be run in a folder dedicated to storing
+representative set files. The info for each representative structure is written to a csv file in a folder named
+eq_class_files housed within the parent folder of the current working directory. The name of the representative set file
+must be provided as the first argument. If commit_hash is provided as an argument, the commit hash of the repo will also
+be written within a commented line to the csv file if no uncommitted changes have been made to the repo.
 """
 
 import sys
@@ -10,11 +13,19 @@ import csv
 import subprocess
 from datetime import datetime
 
-# If inc_commit_hash is supplied as the first argument, check if any changes have been made to the repo and get the hash
+# retrieve the parent directory
+parent_dir = os.path.abspath(os.path.join(os.getcwd(), '../'))
+
+# check whether an original_mmCIF_files folder exists, and if it does not exist, create the folder
+eq_class_dir = parent_dir + "/eq_class_files"
+if not os.path.isdir(eq_class_dir):
+    os.mkdir(eq_class_dir)
+
+# If commit_hash is supplied as the first argument, check if any changes have been made to the repo and get the hash
 # of the current git commit. If uncommitted changes have been made, print an error message and exit.
 repo_changes = ""
 commit_hash = ""
-if "inc_commit_hash" in sys.argv:
+if "commit_hash" in sys.argv:
     repo_changes = subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"],
                                            cwd=os.path.dirname(os.path.realpath(__file__))).decode('ascii').strip()
     if not repo_changes:
@@ -75,7 +86,7 @@ with open(nrlist_file, mode='r') as read_file:
                 print(f"Error: The PDB IDs for the representative structure of equivalence class {line[0]} do not "
                       f"match.")
                 sys.exit(1)
-        with open(f"{line[0]}_info.csv", "w") as write_file:
+        with open(f"{eq_class_dir}/{line[0]}_info.csv", "w") as write_file:
             writer = csv.writer(write_file)
             if commit_hash:
                 writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])

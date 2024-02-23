@@ -1,7 +1,14 @@
 """
-This module reads information on the equivalence classes in the representative set file. For each equivalence class, it
-works with PyMOL to save a mmCIF file of the original structure to the original_mmCIF_files folder and another mmCIF
-file with modifications made (alternative conformations removed and hydrogens added) to the modified_mmCIF_files folder.
+This script reads information from the equivalence class file created by parse_nrlist.py. The name of the equivalence
+class file must be provided as the first argument, and this script should be run within a folder named eq_class_files.
+Files that are created from running this script are saved to folders housed within the parent folder of the
+eq_class_files folder. This script works with PyMOL to save an mmCIF file of the original structure to the
+original_mmCIF_files folder and an mmCIF file of the structure with alternative conformations removed and hydrogens
+added to the modified_mmCIF_files folder. It works with the modified structure to collect data on potential hydrogen
+bonds involving atoms of interest and nucleobase atom b-factors in the representative RNA chains. This data is then
+written to three separate csv files that are saved in three separate folders. If commit_hash is provided as an argument,
+the commit hash of the repo will also be written within a commented line to the data files if no uncommitted changes
+have been made to the repo.
 """
 
 import sys
@@ -39,8 +46,11 @@ with open(eq_class_file, mode='r') as read_file:
         if line[0][0] != "#":
             eq_class.append(line)
 
+# retrieve the parent directory
+parent_dir = os.path.abspath(os.path.join(os.getcwd(), '../'))
+
 # check whether an original_mmCIF_files folder exists, and if it does not exist, create the folder
-original_mmCIF_dir = os.getcwd() + "/original_mmCIF_files"
+original_mmCIF_dir = parent_dir + "/original_mmCIF_files"
 if not os.path.isdir(original_mmCIF_dir):
     os.mkdir(original_mmCIF_dir)
 
@@ -629,11 +639,11 @@ if not stored.check_one == stored.check_two:
     print(f"Error: The indices in PDB ID {eq_class[1][0]} changed.")
     sys.exit(1)
 
-# If inc_commit_hash is supplied as the first argument, check if any changes have been made to the repo and get the hash
+# If commit_hash is supplied as the first argument, check if any changes have been made to the repo and get the hash
 # of the current git commit. If uncommitted changes have been made, print an error message and exit.
 repo_changes = ""
 commit_hash = ""
-if "inc_commit_hash" in sys.argv:
+if "commit_hash" in sys.argv:
     repo_changes = subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"],
                                            cwd=os.path.dirname(os.path.realpath(__file__))).decode('ascii').strip()
     if not repo_changes:
@@ -644,7 +654,7 @@ if "inc_commit_hash" in sys.argv:
         sys.exit(1)
 
 # check whether a b_factor_data folder exists, and if it does not exist, create the folder
-b_factor_data_dir = os.getcwd() + "/b_factor_data"
+b_factor_data_dir = parent_dir + "/b_factor_data"
 if not os.path.isdir(b_factor_data_dir):
     os.mkdir(b_factor_data_dir)
 
@@ -663,7 +673,7 @@ else:
     sys.exit(1)
 
 # check whether a nuc_data folder exists, and if it does not exist, create the folder
-nuc_data_dir = os.getcwd() + "/nuc_data"
+nuc_data_dir = parent_dir + "/nuc_data"
 if not os.path.isdir(nuc_data_dir):
     os.mkdir(nuc_data_dir)
 
@@ -683,7 +693,7 @@ else:
     sys.exit(1)
 
 # check whether a hbond_data folder exists, and if it does not exist, create the folder
-hbond_data_dir = os.getcwd() + "/hbond_data"
+hbond_data_dir = parent_dir + "/hbond_data"
 if not os.path.isdir(hbond_data_dir):
     os.mkdir(hbond_data_dir)
 
@@ -767,7 +777,7 @@ end = datetime.now()
 print(end - start)
 
 # check whether a modified_mmCIF_files folder exists, and if it does not exist, create the folder
-modified_mmCIF_dir = os.getcwd() + "/modified_mmCIF_files"
+modified_mmCIF_dir = parent_dir + "/modified_mmCIF_files"
 if not os.path.isdir(modified_mmCIF_dir):
     os.mkdir(modified_mmCIF_dir)
 
