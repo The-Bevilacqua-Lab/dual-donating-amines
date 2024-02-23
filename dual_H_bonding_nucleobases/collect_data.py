@@ -56,7 +56,7 @@ if not os.path.isdir(original_mmCIF_dir):
 
 # change fetch_path to the original_mmCIF_files folder in the current working directory so that PyMOL drops the mmCIF
 # files into this folder when running fetch
-cmd.set('fetch_path', cmd.exp_path('./original_mmCIF_files'))
+cmd.set('fetch_path', cmd.exp_path(original_mmCIF_dir))
 
 # construct two lists of tuples containing atom and residue names that describe either donor or acceptor atoms
 # additionally, construct a list of tuples containing atom and residue names that describe rotatable donor atoms
