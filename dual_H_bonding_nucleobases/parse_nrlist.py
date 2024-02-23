@@ -7,6 +7,22 @@ to a csv file. The name of the representative set file must be provided as the f
 import sys
 import os
 import csv
+import subprocess
+from datetime import datetime
+
+# If inc_commit_hash is supplied as the first argument, check if any changes have been made to the repo and get the hash
+# of the current git commit. If uncommitted changes have been made, print an error message and exit.
+repo_changes = ""
+commit_hash = ""
+if sys.argv[1] == "inc_commit_hash":
+    repo_changes = subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"],
+                                           cwd=os.path.dirname(os.path.realpath(__file__))).decode('ascii').strip()
+    if not repo_changes:
+        commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"],
+                                              cwd=os.path.dirname(os.path.realpath(__file__))).decode('ascii').strip()
+    else:
+        print(f"Error: Uncommitted changes have been made to the repo.")
+        sys.exit(1)
 
 # check to make sure the representative set file exists
 nrlist_file = ""
@@ -61,6 +77,10 @@ with open(nrlist_file, mode='r') as read_file:
                 sys.exit(1)
         with open(f"{line[0]}_info.csv", "w") as write_file:
             writer = csv.writer(write_file)
+            if commit_hash:
+                writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
+            writer.writerow([f"# input file: {nrlist_file}"])
+            writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f %Z')}"])
             writer.writerow([line[0]])
             writer.writerow(PDB_ID_list)
             writer.writerow(model_list)

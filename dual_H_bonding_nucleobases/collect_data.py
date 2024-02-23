@@ -36,7 +36,8 @@ except IndexError:
 with open(eq_class_file, mode='r') as read_file:
     eq_class = []
     for line in csv.reader(read_file):
-        eq_class.append(line)
+        if line[0][0] != "#":
+            eq_class.append(line)
 
 # check whether an original_mmCIF_files folder exists, and if it does not exist, create the folder
 original_mmCIF_dir = os.getcwd() + "/original_mmCIF_files"
@@ -628,11 +629,19 @@ if not stored.check_one == stored.check_two:
     print(f"Error: The indices in PDB ID {eq_class[1][0]} changed.")
     sys.exit(1)
 
-# if inc_commit_hash is supplied as the first argument, get the hash of the current git commit
+# If inc_commit_hash is supplied as the first argument, check if any changes have been made to the repo and get the hash
+# of the current git commit. If uncommitted changes have been made, print an error message and exit.
+repo_changes = ""
 commit_hash = ""
 if sys.argv[1] == "inc_commit_hash":
-    commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"],
-                                          cwd=os.path.dirname(os.path.realpath(__file__))).decode('ascii').strip()
+    repo_changes = subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"],
+                                           cwd=os.path.dirname(os.path.realpath(__file__))).decode('ascii').strip()
+    if not repo_changes:
+        commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"],
+                                              cwd=os.path.dirname(os.path.realpath(__file__))).decode('ascii').strip()
+    else:
+        print(f"Error: Uncommitted changes have been made to the repo.")
+        sys.exit(1)
 
 # check whether a b_factor_data folder exists, and if it does not exist, create the folder
 b_factor_data_dir = os.getcwd() + "/b_factor_data"
@@ -645,7 +654,8 @@ if not os.path.isfile(f"{b_factor_data_dir}/{eq_class[0][0]}_b_factor_data.csv")
         writer = csv.writer(csv_file)
         if commit_hash:
             writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
-        writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
+        writer.writerow([f"# input file: {eq_class_file}"])
+        writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f %Z')}"])
         for nuc in nuc_b_factors:
             writer.writerow(nuc)
 else:
@@ -664,7 +674,8 @@ if not os.path.isfile(f"{nuc_data_dir}/{eq_class[0][0]}_nuc_data.csv"):
         writer = csv.writer(csv_file)
         if commit_hash:
             writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
-        writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
+        writer.writerow([f"# input file: {eq_class_file}"])
+        writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f %Z')}"])
         for nuc in nucleobase_list:
             writer.writerow(nuc)
 else:
@@ -682,7 +693,8 @@ if not os.path.isfile(f"{hbond_data_dir}/{eq_class[0][0]}_hbond_data.csv"):
         writer = csv.writer(csv_file)
         if commit_hash:
             writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
-        writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
+        writer.writerow([f"# input file: {eq_class_file}"])
+        writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f %Z')}"])
         for i, don in enumerate(donor_h_bonds):
             for j, acc in enumerate(don):
                 for instance in acc[1]:
