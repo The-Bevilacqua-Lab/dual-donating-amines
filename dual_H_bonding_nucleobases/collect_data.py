@@ -1,8 +1,7 @@
 """
 This script reads information from the equivalence class file created by parse_nrlist.py. The name of the equivalence
-class file must be provided as the first argument, and this script should be run within a folder named eq_class_files.
-Files that are created from running this script are saved to folders housed within the parent folder of the
-eq_class_files folder. This script works with PyMOL to save an mmCIF file of the original structure to the
+class file must be provided as the first argument, and this file must exist within a folder named eq_class_files in the
+current working directory. This script works with PyMOL to save an mmCIF file of the original structure to the
 original_mmCIF_files folder and an mmCIF file of the structure with alternative conformations removed and hydrogens
 added to the modified_mmCIF_files folder. It works with the modified structure to collect data on potential hydrogen
 bonds involving atoms of interest and nucleobase atom b-factors in the representative RNA chains. This data is then
@@ -25,32 +24,31 @@ import remove_alt_conf
 
 start = datetime.now()
 
-# check to make sure the representative set file exists
+# check to make sure the folder named eq_class_files and the specified equivalence class file exists
 eq_class_file = ""
 try:
-    if not os.path.isfile(sys.argv[1]):
-        print(f"Error: The file named {sys.argv[1]} was not found in the current working directory.")
+    if not os.path.isdir(os.getcwd() + "/eq_class_files"):
+        print(f"Error: The folder named eq_class_files was not found in the current working directory.")
+        sys.exit(1)
+    elif not os.path.isfile(os.getcwd() + "/eq_class_files/" + sys.argv[1]):
+        print(f"Error: The file named {sys.argv[1]} was not found in the eq_class_files folder.")
         sys.exit(1)
     else:
-        eq_class_file = sys.argv[1]
+        eq_class_file = os.getcwd() + "/eq_class_files/" + sys.argv[1]
 except IndexError:
-    print("Error: The name of the csv file containing info about the representative structure must be provided as the "
-          "first argument.")
+    print("Error: The name of the equivalence class file must be provided as the first argument.")
     sys.exit(1)
 
 # iterate through the lines of the equivalence class file and collect the equivalence class name, PDB ID, model info,
 # and chain info for the representative structure
-with open(eq_class_file, mode='r') as read_file:
+with open("eq_class_files/" + eq_class_file, mode='r') as read_file:
     eq_class = []
     for line in csv.reader(read_file):
         if line[0][0] != "#":
             eq_class.append(line)
 
-# retrieve the parent directory
-parent_dir = os.path.abspath(os.path.join(os.getcwd(), '../'))
-
 # check whether an original_mmCIF_files folder exists, and if it does not exist, create the folder
-original_mmCIF_dir = parent_dir + "/original_mmCIF_files"
+original_mmCIF_dir = os.getcwd() + "/original_mmCIF_files"
 if not os.path.isdir(original_mmCIF_dir):
     os.mkdir(original_mmCIF_dir)
 
@@ -654,7 +652,7 @@ if "commit_hash" in sys.argv:
         sys.exit(1)
 
 # check whether a b_factor_data folder exists, and if it does not exist, create the folder
-b_factor_data_dir = parent_dir + "/b_factor_data"
+b_factor_data_dir = os.getcwd() + "/b_factor_data"
 if not os.path.isdir(b_factor_data_dir):
     os.mkdir(b_factor_data_dir)
 
@@ -673,7 +671,7 @@ else:
     sys.exit(1)
 
 # check whether a nuc_data folder exists, and if it does not exist, create the folder
-nuc_data_dir = parent_dir + "/nuc_data"
+nuc_data_dir = os.getcwd() + "/nuc_data"
 if not os.path.isdir(nuc_data_dir):
     os.mkdir(nuc_data_dir)
 
@@ -693,7 +691,7 @@ else:
     sys.exit(1)
 
 # check whether a hbond_data folder exists, and if it does not exist, create the folder
-hbond_data_dir = parent_dir + "/hbond_data"
+hbond_data_dir = os.getcwd() + "/hbond_data"
 if not os.path.isdir(hbond_data_dir):
     os.mkdir(hbond_data_dir)
 
@@ -777,7 +775,7 @@ end = datetime.now()
 print(end - start)
 
 # check whether a modified_mmCIF_files folder exists, and if it does not exist, create the folder
-modified_mmCIF_dir = parent_dir + "/modified_mmCIF_files"
+modified_mmCIF_dir = os.getcwd() + "/modified_mmCIF_files"
 if not os.path.isdir(modified_mmCIF_dir):
     os.mkdir(modified_mmCIF_dir)
 

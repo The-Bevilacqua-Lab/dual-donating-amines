@@ -1,10 +1,10 @@
 """
 This script iterates through the lines of a representative set file and collects the equivalence class names, PDB IDs,
-model info, and chain info for the representative structures. It should be run in a folder dedicated to storing
-representative set files. The info for each representative structure is written to a csv file in a folder named
-eq_class_files housed within the parent folder of the current working directory. The name of the representative set file
-must be provided as the first argument. If commit_hash is provided as an argument, the commit hash of the repo will also
-be written within a commented line to the csv file if no uncommitted changes have been made to the repo.
+model info, and chain info for the representative structures. The name of the representative set file must be provided
+as the first argument, and this file must exist within a folder named rep_set_files in the current working directory.
+The info for each representative structure is written to a csv file in a folder named eq_class_files. If commit_hash is
+provided as an argument, the commit hash of the repo will also be written within a commented line to the csv file if no
+uncommitted changes have been made to the repo.
 """
 
 import sys
@@ -13,11 +13,8 @@ import csv
 import subprocess
 from datetime import datetime
 
-# retrieve the parent directory
-parent_dir = os.path.abspath(os.path.join(os.getcwd(), '../'))
-
-# check whether an original_mmCIF_files folder exists, and if it does not exist, create the folder
-eq_class_dir = parent_dir + "/eq_class_files"
+# check whether an eq_class_files folder exists, and if it does not exist, create the folder
+eq_class_dir = os.getcwd() + "/eq_class_files"
 if not os.path.isdir(eq_class_dir):
     os.mkdir(eq_class_dir)
 
@@ -35,14 +32,17 @@ if "commit_hash" in sys.argv:
         print(f"Error: Uncommitted changes have been made to the repo.")
         sys.exit(1)
 
-# check to make sure the representative set file exists
+# check to make sure the folder named rep_set_files and the specified representative set file exists
 nrlist_file = ""
 try:
-    if not os.path.isfile(sys.argv[1]):
-        print(f"Error: The file named {sys.argv[1]} was not found in the current working directory.")
+    if not os.path.isdir(os.getcwd() + "/rep_set_files"):
+        print(f"Error: The folder named rep_set_files was not found in the current working directory.")
+        sys.exit(1)
+    elif not os.path.isfile(os.getcwd() + "/rep_set_files/" + sys.argv[1]):
+        print(f"Error: The file named {sys.argv[1]} was not found in the rep_set_files folder.")
         sys.exit(1)
     else:
-        nrlist_file = sys.argv[1]
+        nrlist_file = os.getcwd() + "/rep_set_files/" + sys.argv[1]
 except IndexError:
     print(f"Error: The name of the representative set file must be provided as the first argument.")
     sys.exit(1)
