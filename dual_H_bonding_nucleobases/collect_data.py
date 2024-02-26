@@ -1,13 +1,13 @@
 """
-This script reads information from the equivalence class file created by parse_nrlist.py. The name of the equivalence
-class file must be provided as the first argument, and this file must exist within a folder named eq_class_files in the
-current working directory. This script works with PyMOL to save an mmCIF file of the original structure to the
-original_mmCIF_files folder and an mmCIF file of the structure with alternative conformations removed and hydrogens
-added to the modified_mmCIF_files folder. It works with the modified structure to collect data on potential hydrogen
-bonds involving atoms of interest and nucleobase atom b-factors in the representative RNA chains. This data is then
-written to three separate csv files that are saved in three separate folders. If commit_hash is provided as an argument,
-the commit hash of the repo will also be written within a commented line to the data files if no uncommitted changes
-have been made to the repo.
+This script reads information from the equivalence class file created by parse_nrlist.py. The name of the eq_class_files
+folder and the equivalence class file must be provided as the first argument (e.g.,
+eq_class_files/NR_<identifier>_info.csv). This script works with PyMOL to save an mmCIF file of the original structure
+to the original_mmCIF_files folder and an mmCIF file of the structure with alternative conformations removed and
+hydrogens added to the modified_mmCIF_files folder. It works with the modified structure to collect data on potential
+hydrogen bonds involving atoms of interest and nucleobase atom b-factors in the representative RNA chains. This data is
+then written to three separate csv files that are saved in three separate folders. If commit_hash is provided as an
+argument, the commit hash of the repo will also be written within a commented line to the data files if no uncommitted
+changes have been made to the repo.
 """
 
 import sys
@@ -30,11 +30,11 @@ try:
     if not os.path.isdir(os.getcwd() + "/eq_class_files"):
         print(f"Error: The folder named eq_class_files was not found in the current working directory.")
         sys.exit(1)
-    elif not os.path.isfile(os.getcwd() + "/eq_class_files/" + sys.argv[1]):
-        print(f"Error: The file named {sys.argv[1]} was not found in the eq_class_files folder.")
+    elif not os.path.isfile(os.getcwd() + "/" + sys.argv[1]):
+        print(f"Error: The file named {sys.argv[1]} was not found.")
         sys.exit(1)
     else:
-        eq_class_file = os.getcwd() + "/eq_class_files/" + sys.argv[1]
+        eq_class_file = os.getcwd() + "/" + sys.argv[1]
 except IndexError:
     print("Error: The name of the equivalence class file must be provided as the first argument.")
     sys.exit(1)

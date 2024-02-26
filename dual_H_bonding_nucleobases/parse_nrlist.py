@@ -1,9 +1,9 @@
 """
 This script iterates through the lines of a representative set file and collects the equivalence class names, PDB IDs,
 model info, and chain info for the representative structures. The name of the representative set file must be provided
-as the first argument, and this file must exist within a folder named rep_set_files in the current working directory.
-The info for each representative structure is written to a csv file in a folder named eq_class_files. If commit_hash is
-provided as an argument, the commit hash of the repo will also be written within a commented line to the csv file if no
+as the first argument, along with the folder where it resides (e.g., rep_set_files/nrlist_<identifier>.csv). The info
+for each representative structure is written to a csv file in a folder named eq_class_files. If commit_hash is provided
+as an argument, the commit hash of the repo will also be written within a commented line to the csv file if no
 uncommitted changes have been made to the repo.
 """
 
@@ -32,17 +32,14 @@ if "commit_hash" in sys.argv:
         print(f"Error: Uncommitted changes have been made to the repo.")
         sys.exit(1)
 
-# check to make sure the folder named rep_set_files and the specified representative set file exists
+# check to make sure the specified representative set file exists
 nrlist_file = ""
 try:
-    if not os.path.isdir(os.getcwd() + "/rep_set_files"):
-        print(f"Error: The folder named rep_set_files was not found in the current working directory.")
-        sys.exit(1)
-    elif not os.path.isfile(os.getcwd() + "/rep_set_files/" + sys.argv[1]):
-        print(f"Error: The file named {sys.argv[1]} was not found in the rep_set_files folder.")
+    if not os.path.isfile(os.getcwd() + "/" + sys.argv[1]):
+        print(f"Error: The file named {sys.argv[1]} was not found.")
         sys.exit(1)
     else:
-        nrlist_file = os.getcwd() + "/rep_set_files/" + sys.argv[1]
+        nrlist_file = os.getcwd() + "/" + sys.argv[1]
 except IndexError:
     print(f"Error: The name of the representative set file must be provided as the first argument.")
     sys.exit(1)
