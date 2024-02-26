@@ -41,7 +41,7 @@ except IndexError:
 
 # iterate through the lines of the equivalence class file and collect the equivalence class name, PDB ID, model info,
 # and chain info for the representative structure
-with open("eq_class_files/" + eq_class_file, mode='r') as read_file:
+with open(eq_class_file, mode='r') as read_file:
     eq_class = []
     for line in csv.reader(read_file):
         if line[0][0] != "#":
