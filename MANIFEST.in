@@ -1,7 +1,0 @@
-include README.md
-include LICENSE
-include requirements.txt
-graft dual_H_bonding_nucleobases
-recursive-exclude * *.py[co]
-include versioneer.py
-include dual_H_bonding_nucleobases/_version.py
