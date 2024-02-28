@@ -1,3 +1,5 @@
 # provide the representative set file name
 rep_set_file: nrlist_<id>.csv
+
+# should the commit hash be written to output data files?
 commit_hash: false
