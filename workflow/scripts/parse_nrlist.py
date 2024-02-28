@@ -13,6 +13,14 @@ import csv
 import subprocess
 from datetime import datetime
 
+# redirect stdout and stderr to log files
+stdout = sys.stdout
+stderr = sys.stderr
+stdout_file = open(snakemake.log.stdout, mode='w')
+stderr_file = open(snakemake.log.stderr, mode='w')
+sys.stdout = stdout_file
+sys.stderr = stderr_file
+
 # If commit_hash is supplied as the first argument, check if any changes have been made to the repo and get the hash
 # of the current git commit. If uncommitted changes have been made to anything other than config/config.yaml, print an
 # error message and exit.
@@ -95,3 +103,7 @@ with open(snakemake.output[0], "w") as write_file:
     writer.writerow(PDB_ID_list)
     writer.writerow(model_list)
     writer.writerow(chain_list)
+
+# reset stdout and stderr
+sys.stdout = stdout
+sys.stderr = stderr
