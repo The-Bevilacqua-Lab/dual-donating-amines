@@ -1,0 +1,3 @@
+# provide the representative set file name
+rep_set_file: nrlist_<id>.csv
+commit_hash: false

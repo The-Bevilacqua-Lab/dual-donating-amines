@@ -4,9 +4,7 @@ This module will eventually do something.
 
 import sys
 import os
-import csv
 import pandas as pd
-from datetime import datetime
 import const
 import review_hbonds
 

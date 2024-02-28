@@ -1,0 +1,43 @@
+import csv
+
+configfile: "config/config.yaml"
+
+# compile the list of equivalence classes based on the representative set file
+eq_class_list = []
+with open("data/rep_set_files/" + config["rep_set_file"], mode='r') as read_file:
+    for line in csv.reader(read_file):
+        eq_class_list.append(line[0])
+
+rule all:
+    input:
+        expand("data/modified_mmCIF_files/{eq_class}.cif", eq_class=eq_class_list),
+        expand("data/b_factor_data/{eq_class}_b_factor_data.csv", eq_class=eq_class_list),
+        expand("data/hbond_data/{eq_class}_hbond_data.csv", eq_class=eq_class_list),
+        expand("data/nuc_data/{eq_class}_nuc_data.csv", eq_class=eq_class_list)
+
+rule parse_nrlist:
+    input:
+        "data/rep_set_files/" + config["rep_set_file"]
+    output:
+        expand("data/eq_class_files/{eq_class}_info.csv", eq_class=eq_class_list)
+    log:
+        stout = "data/logs/" + config["rep_set_file"][:-4] + ".stout",
+        sterr = "data/logs/" + config["rep_set_file"][:-4] + ".sterr"
+    script:
+        "scripts/parse_nrlist.py > {log.stout} 2> {log.sterr}"
+
+rule collect_data:
+    input:
+        rules.parse_nrlist.output
+    output:
+        "data/modified_mmCIF_files/{eq_class}.cif",
+        "data/b_factor_data/{eq_class}_b_factor_data.csv",
+        "data/nuc_data/{eq_class}_nuc_data.csv",
+        "data/hbond_data/{eq_class}_hbond_data.csv"
+    log:
+        stout = "data/logs/{eq_class}.stout",
+        sterr = "data/logs/{eq_class}.sterr"
+    benchmark:
+        "benchmark/{eq_class}.tsv"
+    script:
+        "scripts/collect_data.py > {log.stout} 2> {log.sterr}"
