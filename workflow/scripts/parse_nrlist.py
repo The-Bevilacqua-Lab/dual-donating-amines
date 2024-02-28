@@ -104,6 +104,8 @@ with open(snakemake.output[0], "w") as write_file:
     writer.writerow(model_list)
     writer.writerow(chain_list)
 
-# reset stdout and stderr
+# close files and reset stdout and stderr
+stdout_file.close()
+stderr_file.close()
 sys.stdout = stdout
 sys.stderr = stderr
