@@ -22,39 +22,30 @@ import const
 import eval_H_bonding
 import remove_alt_conf
 
-start = datetime.now()
-
-# check to make sure the folder named eq_class_files and the specified equivalence class file exists
-eq_class_file = ""
-try:
-    if not os.path.isdir(os.getcwd() + "/eq_class_files"):
-        print(f"Error: The folder named eq_class_files was not found in the current working directory.")
-        sys.exit(1)
-    elif not os.path.isfile(os.getcwd() + "/" + sys.argv[1]):
-        print(f"Error: The file named {sys.argv[1]} was not found.")
-        sys.exit(1)
-    else:
-        eq_class_file = os.getcwd() + "/" + sys.argv[1]
-except IndexError:
-    print("Error: The name of the equivalence class file must be provided as the first argument.")
-    sys.exit(1)
+# redirect stdout and stderr to log files
+stdout = sys.stdout
+stderr = sys.stderr
+stdout_file = open(snakemake.log.stdout, mode='w')
+stderr_file = open(snakemake.log.stderr, mode='w')
+sys.stdout = stdout_file
+sys.stderr = stderr_file
 
 # iterate through the lines of the equivalence class file and collect the equivalence class name, PDB ID, model info,
 # and chain info for the representative structure
-with open(eq_class_file, mode='r') as read_file:
+with open(snakemake.input[0], mode='r') as read_file:
     eq_class = []
     for line in csv.reader(read_file):
         if line[0][0] != "#":
             eq_class.append(line)
 
-# check whether an original_mmCIF_files folder exists, and if it does not exist, create the folder
-original_mmCIF_dir = os.getcwd() + "/original_mmCIF_files"
-if not os.path.isdir(original_mmCIF_dir):
-    os.mkdir(original_mmCIF_dir)
+# check whether the folder exists for PyMOL to save mmCIF files into that are fetched from the PDB
+# if it does not exist, create the folder
+original_mmcif_dir = snakemake.config["original_mmcif_dir"]
+if not os.path.isdir(original_mmcif_dir):
+    os.mkdir(original_mmcif_dir)
 
-# change fetch_path to the original_mmCIF_files folder in the current working directory so that PyMOL drops the mmCIF
-# files into this folder when running fetch
-cmd.set('fetch_path', cmd.exp_path(original_mmCIF_dir))
+# change fetch_path to original_mmcif_dir so that PyMOL drops the mmCIF files into this folder when running fetch
+cmd.set('fetch_path', cmd.exp_path(original_mmcif_dir))
 
 # construct two lists of tuples containing atom and residue names that describe either donor or acceptor atoms
 # additionally, construct a list of tuples containing atom and residue names that describe rotatable donor atoms
@@ -638,70 +629,48 @@ if not stored.check_one == stored.check_two:
     sys.exit(1)
 
 # If commit_hash is supplied as the first argument, check if any changes have been made to the repo and get the hash
-# of the current git commit. If uncommitted changes have been made, print an error message and exit.
-repo_changes = ""
+# of the current git commit. If uncommitted changes have been made to anything other than config/config.yaml, print an
+# error message and exit.
+repo_changes = []
 commit_hash = ""
-if "commit_hash" in sys.argv:
-    repo_changes = subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"],
-                                           cwd=os.path.dirname(os.path.realpath(__file__))).decode('ascii').strip()
-    if not repo_changes:
+if snakemake.config["commit_hash"]:
+    repo_changes = list(subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"],
+                                                cwd=os.path.dirname(os.path.realpath(__file__)))
+                        .decode('ascii').strip().split("\n"))
+    if repo_changes == [""] or (len(repo_changes) == 1 and "config/config.yaml" in repo_changes[0]):
         commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"],
                                               cwd=os.path.dirname(os.path.realpath(__file__))).decode('ascii').strip()
     else:
         print(f"Error: Uncommitted changes have been made to the repo.")
         sys.exit(1)
 
-# check whether a b_factor_data folder exists, and if it does not exist, create the folder
-b_factor_data_dir = os.getcwd() + "/b_factor_data"
-if not os.path.isdir(b_factor_data_dir):
-    os.mkdir(b_factor_data_dir)
-
 # write a csv containing the b-factors of all nucleobase atoms in the representative structure
-if not os.path.isfile(f"{b_factor_data_dir}/{eq_class[0][0]}_b_factor_data.csv"):
-    with open(f"{b_factor_data_dir}/{eq_class[0][0]}_b_factor_data.csv", "w") as csv_file:
-        writer = csv.writer(csv_file)
-        if commit_hash:
-            writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
-        writer.writerow([f"# input file: {eq_class_file}"])
-        writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
-        for nuc in nuc_b_factors:
-            writer.writerow(nuc)
-else:
-    print(f"Error: The file named {eq_class[0][0]}_b_factor_data.csv already exists.")
-    sys.exit(1)
-
-# check whether a nuc_data folder exists, and if it does not exist, create the folder
-nuc_data_dir = os.getcwd() + "/nuc_data"
-if not os.path.isdir(nuc_data_dir):
-    os.mkdir(nuc_data_dir)
+with open(snakemake.output.b_factor, "w") as csv_file:
+    writer = csv.writer(csv_file)
+    if commit_hash:
+        writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
+    writer.writerow([f"# input file: {snakemake.input[0]}"])
+    writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
+    for nuc in nuc_b_factors:
+        writer.writerow(nuc)
 
 # write a csv containing all nucleobases that contain donors, protonated donors, acceptors, and deprotonated acceptors
 # of interest
-if not os.path.isfile(f"{nuc_data_dir}/{eq_class[0][0]}_nuc_data.csv"):
-    with open(f"{nuc_data_dir}/{eq_class[0][0]}_nuc_data.csv", "w") as csv_file:
+    with open(snakemake.output.nuc, "w") as csv_file:
         writer = csv.writer(csv_file)
         if commit_hash:
             writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
-        writer.writerow([f"# input file: {eq_class_file}"])
+        writer.writerow([f"# input file: {snakemake.input[0]}"])
         writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
         for nuc in nucleobase_list:
             writer.writerow(nuc)
-else:
-    print(f"Error: The file named {eq_class[0][0]}_nuc_data.csv already exists.")
-    sys.exit(1)
-
-# check whether a hbond_data folder exists, and if it does not exist, create the folder
-hbond_data_dir = os.getcwd() + "/hbond_data"
-if not os.path.isdir(hbond_data_dir):
-    os.mkdir(hbond_data_dir)
 
 # write a csv containing all H-bonding information
-if not os.path.isfile(f"{hbond_data_dir}/{eq_class[0][0]}_hbond_data.csv"):
-    with open(f"{hbond_data_dir}/{eq_class[0][0]}_hbond_data.csv", "w") as csv_file:
+    with open(snakemake.output.hbond, "w") as csv_file:
         writer = csv.writer(csv_file)
         if commit_hash:
             writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
-        writer.writerow([f"# input file: {eq_class_file}"])
+        writer.writerow([f"# input file: {snakemake.input[0]}"])
         writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
         for i, don in enumerate(donor_h_bonds):
             for j, acc in enumerate(don):
@@ -767,16 +736,12 @@ if not os.path.isfile(f"{hbond_data_dir}/{eq_class[0][0]}_hbond_data.csv"):
                     row.extend(stored.deprot_acceptor_list[i])
                     row.extend(instance)
                     writer.writerow(row)
-else:
-    print(f"Error: The file named {eq_class[0][0]}_hbond_data.csv already exists.")
-    sys.exit(1)
 
-end = datetime.now()
-print(end - start)
+# save the modified structure
+cmd.save(snakemake.output.modified_mmcif)
 
-# check whether a modified_mmCIF_files folder exists, and if it does not exist, create the folder
-modified_mmCIF_dir = os.getcwd() + "/modified_mmCIF_files"
-if not os.path.isdir(modified_mmCIF_dir):
-    os.mkdir(modified_mmCIF_dir)
-
-cmd.save(f'{modified_mmCIF_dir}/{eq_class[0][0]}.cif')
+# close files and reset stdout and stderr
+stdout_file.close()
+stderr_file.close()
+sys.stdout = stdout
+sys.stderr = stderr
