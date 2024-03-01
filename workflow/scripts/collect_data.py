@@ -243,19 +243,20 @@ if max(stored.h_count) == min(stored.h_count):
                     'stored.h_count.append(cmd.count_atoms(f"(neighbor index {index}) and elem H"))')
         if max(stored.h_count) == min(stored.h_count):
             if stored.h_count[0] != 2:
-                print(f"Error: For PDB ID {eq_class[1][0]}, the ARG(NH2) atoms have the incorrect number of hydrogens "
-                      f"even after attempting to correct.")
+                print(f"Error: For equivalence class {eq_class[0]}, the ARG(NH2) atoms have the incorrect number of "
+                      f"hydrogens even after attempting to correct.")
                 sys.exit(1)
         else:
-            print(f"Error: For PDB ID {eq_class[1][0]}, the ARG(NH2) atoms do not have a consistent number of "
+            print(f"Error: For equivalence class {eq_class[0]}, the ARG(NH2) atoms do not have a consistent number of "
                   f"hydrogens after attempting to correct.")
             sys.exit(1)
     elif stored.h_count[0] != 2:
-        print(f"Error: For PDB ID {eq_class[1][0]}, the ARG(NH2) atoms have the incorrect number of hydrogens (either "
-              f"less than two or more than three each).")
+        print(f"Error: For equivalence class {eq_class[0]}, the ARG(NH2) atoms have the incorrect number of hydrogens "
+              f"(either less than two or more than three each).")
         sys.exit(1)
 else:
-    print(f"Error: For PDB ID {eq_class[1][0]}, the ARG(NH2) atoms do not have a consistent number of hydrogens.")
+    print(f"Error: For equivalence class {eq_class[0]}, the ARG(NH2) atoms do not have a consistent number of "
+          f"hydrogens.")
     sys.exit(1)
 
 # randomly sample 100 atom indices in the structure and record the info of the associated atoms for later comparison
@@ -662,7 +663,7 @@ stored.check_two = []
 for index in indices:
     cmd.iterate(f'index {index}', 'stored.check_two.append((index, name, resn, resi, chain))')
 if not stored.check_one == stored.check_two:
-    print(f"Error: The indices in PDB ID {eq_class[1][0]} changed.")
+    print(f"Error: The indices in equivalence class {eq_class[0]} changed.")
     sys.exit(1)
 
 # If commit_hash is supplied as the first argument, check if any changes have been made to the repo and get the hash
