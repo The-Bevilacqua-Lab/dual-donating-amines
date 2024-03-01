@@ -226,7 +226,7 @@ cmd.h_add(f'(({donor_string} {prot_donors_of_interest_str}) and not ({rotatable_
 # remove the hydrogens, change the formal charge of ARG(NH2) atoms to 0, and add hydrogens again. Print an error
 # message and exit if the correct number of hydrogens cannot be added to ARG(NH2) atoms.
 stored.h_count = []
-cmd.iterate(f'(resn ARG and name NH2) within {search_dist_amb + 3.0} of ({rep_rna})',
+cmd.iterate(f'(resn ARG and name NH2) within {search_dist_amb + 3.0} of (({rep_rna}) and not elem H)',
             'stored.h_count.append(cmd.count_atoms(f"(neighbor index {index}) and elem H"))')
 if max(stored.h_count) == min(stored.h_count):
     if stored.h_count[0] == 3:
@@ -239,23 +239,23 @@ if max(stored.h_count) == min(stored.h_count):
                   f'{search_dist_amb + 3.0} of ({rep_rna})')
         # check the number of hydrogens again
         stored.h_count = []
-        cmd.iterate(f'(resn ARG and name NH2) within {search_dist_amb + 3.0} of ({rep_rna})',
+        cmd.iterate(f'(resn ARG and name NH2) within {search_dist_amb + 3.0} of (({rep_rna}) and not elem H)',
                     'stored.h_count.append(cmd.count_atoms(f"(neighbor index {index}) and elem H"))')
         if max(stored.h_count) == min(stored.h_count):
             if stored.h_count[0] != 2:
-                print(f"Error: For equivalence class {eq_class[0]}, the ARG(NH2) atoms have the incorrect number of "
+                print(f"Error: For equivalence class {eq_class[0][0]}, the ARG(NH2) atoms have the incorrect number of "
                       f"hydrogens even after attempting to correct.")
                 sys.exit(1)
         else:
-            print(f"Error: For equivalence class {eq_class[0]}, the ARG(NH2) atoms do not have a consistent number of "
-                  f"hydrogens after attempting to correct.")
+            print(f"Error: For equivalence class {eq_class[0][0]}, the ARG(NH2) atoms do not have a consistent number "
+                  f"of hydrogens after attempting to correct.")
             sys.exit(1)
     elif stored.h_count[0] != 2:
-        print(f"Error: For equivalence class {eq_class[0]}, the ARG(NH2) atoms have the incorrect number of hydrogens "
-              f"(either less than two or more than three each).")
+        print(f"Error: For equivalence class {eq_class[0][0]}, the ARG(NH2) atoms have the incorrect number of "
+              f"hydrogens (either less than two or more than three each).")
         sys.exit(1)
 else:
-    print(f"Error: For equivalence class {eq_class[0]}, the ARG(NH2) atoms do not have a consistent number of "
+    print(f"Error: For equivalence class {eq_class[0][0]}, the ARG(NH2) atoms do not have a consistent number of "
           f"hydrogens.")
     sys.exit(1)
 
@@ -663,7 +663,7 @@ stored.check_two = []
 for index in indices:
     cmd.iterate(f'index {index}', 'stored.check_two.append((index, name, resn, resi, chain))')
 if not stored.check_one == stored.check_two:
-    print(f"Error: The indices in equivalence class {eq_class[0]} changed.")
+    print(f"Error: The indices in equivalence class {eq_class[0][0]} changed.")
     sys.exit(1)
 
 # If commit_hash is supplied as the first argument, check if any changes have been made to the repo and get the hash
