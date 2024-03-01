@@ -210,16 +210,53 @@ cmd.iterate(f'(resn TYR and name OH) within {search_dist_amb} of ({rep_rna})',
 
 # Change the formal charge on ARG(NH2), TYR(OH), HIS(ND1), A(N1), A(N3), C(N3), and G(N3) to +1. With a formal charge
 # of +1, PyMOL will add hydrogens to these atoms when the following h_add command is used. The NH2 atoms of ARG residues
-# typically have a formal charge of 0. With a formal charge of 0, PyMOL only adds a single hydrogen to these atoms when
-# the h_add command is issued using a script. When the h_add command is issued through the PyMOL GUI, PyMOL correctly
-# adds two hydrogens without needing to increase the formal charge of the NH2 atoms to +1. This must be some sort of bug
-# with PyMOL 2.5.0 Open-Source. Other versions of PyMOL may not have this same behavior.
+# typically have a formal charge of 0. With a formal charge of 0, PyMOL sometimes (e.g., PDB ID 8GLP) only adds a single
+# hydrogen to these atoms when the h_add command is issued using a script. When the h_add command is issued through the
+# PyMOL GUI, PyMOL correctly adds two hydrogens without needing to increase the formal charge of the NH2 atoms to +1.
+# This must be some sort of bug with PyMOL 2.5.0 Open-Source. Other versions of PyMOL may not have this same behavior.
 cmd.alter(f'(resn ARG and name NH2) (resn TYR and name OH) (resn HIS and name ND1) {prot_donors_of_interest_str}',
           'formal_charge=1')
 
 # add hydrogens to non-rotatable donors that are a part of or near the representative RNA
 cmd.h_add(f'(({donor_string} {prot_donors_of_interest_str}) and not ({rotatable_donor_string})) within '
           f'{search_dist_amb + 3.0} of ({rep_rna})')
+
+# Check to make sure the correct number of hydrogens where added to ARG(NH2) atoms. Sometimes increasing the formal
+# charge to +1 causes PyMOL to add one too many hydrogens to ARG(NH2) atoms (e.g., PDB ID 4O26). If this is the case,
+# remove the hydrogens, change the formal charge of ARG(NH2) atoms to 0, and add hydrogens again. Print an error
+# message and exit if the correct number of hydrogens cannot be added to ARG(NH2) atoms.
+stored.h_count = []
+cmd.iterate(f'(resn ARG and name NH2) within {search_dist_amb + 3.0} of ({rep_rna})',
+            'stored.h_count.append(cmd.count_atoms(f"(neighbor index {index}) and elem H"))')
+if max(stored.h_count) == min(stored.h_count):
+    if stored.h_count[0] == 3:
+        # change the formal charge of ARG(NH2) back to 0
+        cmd.alter(f'resn ARG and name NH2', 'formal_charge=0')
+        # remove the hydrogens previously added
+        cmd.remove('elem H')
+        # add hydrogens to non-rotatable donors that are a part of or near the representative RNA
+        cmd.h_add(f'(({donor_string} {prot_donors_of_interest_str}) and not ({rotatable_donor_string})) within '
+                  f'{search_dist_amb + 3.0} of ({rep_rna})')
+        # check the number of hydrogens again
+        stored.h_count = []
+        cmd.iterate(f'(resn ARG and name NH2) within {search_dist_amb + 3.0} of ({rep_rna})',
+                    'stored.h_count.append(cmd.count_atoms(f"(neighbor index {index}) and elem H"))')
+        if max(stored.h_count) == min(stored.h_count):
+            if stored.h_count[0] != 2:
+                print(f"Error: For PDB ID {eq_class[1][0]}, the ARG(NH2) atoms have the incorrect number of hydrogens "
+                      f"even after attempting to correct.")
+                sys.exit(1)
+        else:
+            print(f"Error: For PDB ID {eq_class[1][0]}, the ARG(NH2) atoms do not have a consistent number of "
+                  f"hydrogens after attempting to correct.")
+            sys.exit(1)
+    elif stored.h_count[0] != 2:
+        print(f"Error: For PDB ID {eq_class[1][0]}, the ARG(NH2) atoms have the incorrect number of hydrogens (either "
+              f"less than two or more than three each).")
+        sys.exit(1)
+else:
+    print(f"Error: For PDB ID {eq_class[1][0]}, the ARG(NH2) atoms do not have a consistent number of hydrogens.")
+    sys.exit(1)
 
 # randomly sample 100 atom indices in the structure and record the info of the associated atoms for later comparison
 num_atoms = cmd.count_atoms('all')
