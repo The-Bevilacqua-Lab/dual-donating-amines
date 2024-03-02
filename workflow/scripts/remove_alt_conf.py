@@ -1,5 +1,5 @@
 """
-The remove function in this module removes alternate conformations such that each atom in the resulting PDB file only
+The remove function in this module removes alternate conformations such that each atom in the resulting structure only
 has a single conformation. Alternate conformations that have the highest occupancy factor are kept while the others are
 removed. If a set of alternate conformations have the same occupancy factor, the conformation with the lowest alt ID is
 retained. For instance, if two conformations both have an occupancy factor of 0.5 and have alt IDs A and B, the
@@ -11,7 +11,7 @@ from pymol import cmd
 from pymol import stored
 
 
-def remove(pdb):
+def remove(eq_class):
     # initially assume that the evaluation will complete successfully
     successful_completion = True
     # initialize an empty list that can be used to document why an evaluation was not completed successfully
@@ -30,7 +30,8 @@ def remove(pdb):
                 match = True
         if not match:
             alt_atoms_grouped.append([atom])
-    # determine which atom conformations to keep, prioritizing highest occupancy factor and lowest alt ID, in that order
+    # determine which atom conformations to keep, prioritizing the highest occupancy factor and the lowest alt ID, in
+    # that order
     atoms_to_remove = []
     for group in alt_atoms_grouped:
         keep = []
@@ -44,8 +45,8 @@ def remove(pdb):
             elif atom[5] == keep[5]:
                 if len(atom[4]) != 1 or len(keep[4]) != 1:
                     successful_completion = False
-                    notes.append(f"Error: There is at least one atom in PDB ID {pdb} with an alt ID that does not "
-                                 f"consist of exactly one character.")
+                    notes.append(f"Error: There is at least one atom in equivalence class {eq_class} with an alt ID "
+                                 f"that does not consist of exactly one character.")
                     return [successful_completion, notes]
                 elif atom[4] < keep[4]:
                     remove.append(keep)
@@ -53,7 +54,7 @@ def remove(pdb):
                 elif atom[4] == keep[4]:
                     successful_completion = False
                     notes.append(f"Error: There are multiple atoms with the same alt ID that should have different alt "
-                                 f"IDs in PDB ID {pdb}.")
+                                 f"IDs in equivalence class {eq_class}.")
                     return [successful_completion, notes]
                 elif atom[4] > keep[4]:
                     remove.append(atom)
@@ -67,8 +68,8 @@ def remove(pdb):
         if cmd.count_atoms(f'name {atom[0]} and resn {atom[1]} and resi {atom[2]} and chain {atom[3]} and '
                            f'alt {atom[4]}') != 1:
             successful_completion = False
-            notes.append(f"Error: The info provided for an atom to remove does not account for exactly one atom in PDB "
-                         f"ID {pdb}.")
+            notes.append(f"Error: The info provided for an atom to remove does not account for exactly one atom in "
+                         f"equivalence class {eq_class}.")
             return [successful_completion, notes]
         # check for whether there is any indication that removing the atom will disrupt the connectivity of the atoms
         # that are kept
@@ -86,8 +87,8 @@ def remove(pdb):
                 if not neighbor_in_remove_list:
                     successful_completion = False
                     notes.append(f"Error: Removing the atom {atom[0]} with alt ID {atom[4]} from residue "
-                                 f"{atom[1]}{atom[2]} within chain {atom[3]} of PDB ID {pdb} may disrupt the "
-                                 f"connectivity of the atoms that are kept.")
+                                 f"{atom[1]}{atom[2]} within chain {atom[3]} of equivalence class {eq_class} may "
+                                 f"disrupt the connectivity of the atoms that are kept.")
                     return [successful_completion, notes]
         cmd.remove(f'name {atom[0]} and resn {atom[1]} and resi {atom[2]} and chain {atom[3]} and alt {atom[4]}')
     return [successful_completion, notes]
