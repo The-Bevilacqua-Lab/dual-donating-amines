@@ -645,7 +645,7 @@ nuc_b_factors = []
 for res in stored.res_list:
     stored.b_factors = []
     cmd.iterate(f"(byres index {res[0]}) and sidechain", "stored.b_factors.append(b)")
-    nuc_b_factors.append([f"{res[2]}{res[3]}{res[4]}"])
+    nuc_b_factors.append([res[2], res[3], res[4]])
     nuc_b_factors[-1].extend(stored.b_factors)
 
 # record info on the atoms associated with the previously determined 100 atom indices and check whether there are any
