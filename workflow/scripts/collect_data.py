@@ -487,13 +487,9 @@ for atom_group in enumerate(atoms_near_acceptors_amb):
     for atom in atom_group[1]:
         # only extract side chain donor atoms in ASN, GLN, and HIS residues
         if atom[1] != "N" and atom[2] in ["ASN", "GLN", "HIS"]:
-            if atom[1] == "O3'" or atom[1] == "O5'":
-                if eval_H_bonding.terminal_donor(atom):
+            for donor in donor_atoms:
+                if atom[1] == donor[1] and atom[2] == donor[0]:
                     list_of_donors.append(atom)
-            else:
-                for donor in donor_atoms:
-                    if atom[1] == donor[1] and atom[2] == donor[0]:
-                        list_of_donors.append(atom)
     donors_near_acceptors_amb.append(list_of_donors)
 
 # acquire the H-bonding geometry measurements for side chain donor atoms in ASN, GLN, and HIS residues near each
@@ -615,13 +611,9 @@ for atom_group in enumerate(atoms_near_deprot_acceptors_amb):
     for atom in atom_group[1]:
         # only extract side chain donor atoms in ASN, GLN, and HIS residues
         if atom[1] != "N" and atom[2] in ["ASN", "GLN", "HIS"]:
-            if atom[1] == "O3'" or atom[1] == "O5'":
-                if eval_H_bonding.terminal_donor(atom):
+            for donor in donor_atoms:
+                if atom[1] == donor[1] and atom[2] == donor[0]:
                     list_of_donors.append(atom)
-            else:
-                for donor in donor_atoms:
-                    if atom[1] == donor[1] and atom[2] == donor[0]:
-                        list_of_donors.append(atom)
     donors_near_deprot_acceptors_amb.append(list_of_donors)
 
 # acquire the H-bonding geometry measurements for side chain donor atoms in ASN, GLN, and HIS residues near each
