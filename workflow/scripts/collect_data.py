@@ -190,7 +190,7 @@ if cmd.count_states(eq_class[1][0]) > 1:
     cmd.delete(eq_class[1][0])
 
 # remove atoms representing alternative conformations
-remove_status = remove_alt_conf.remove(eq_class[2][0])
+remove_status = remove_alt_conf.remove(eq_class[0][0])
 successful_completion = remove_status[0]
 if not successful_completion:
     for note in remove_status[1]:
@@ -312,7 +312,7 @@ donor_h_bonds = []
 for donor in enumerate(stored.donor_list):
     h_bonds = []
     for acceptor in acceptors_near_donors[donor[0]]:
-        h_bonds.append(eval_H_bonding.evaluate(donor[1], acceptor, eq_class[1][0], expanded_library))
+        h_bonds.append(eval_H_bonding.evaluate(donor[1], acceptor, eq_class[0][0], expanded_library))
         # if the H-bond evaluation is not successful, print the error message and exit
         successful_completion = h_bonds[-1][0]
         if not successful_completion:
@@ -348,7 +348,7 @@ donor_h_bonds_amb = []
 for donor in enumerate(stored.donor_list):
     h_bonds = []
     for acceptor in acceptors_near_donors_amb[donor[0]]:
-        h_bonds.append(eval_H_bonding.evaluate(donor[1], acceptor, eq_class[1][0], expanded_library))
+        h_bonds.append(eval_H_bonding.evaluate(donor[1], acceptor, eq_class[0][0], expanded_library))
         # if the H-bond evaluation is not successful, print the error message and exit
         successful_completion = h_bonds[-1][0]
         if not successful_completion:
@@ -415,7 +415,7 @@ acceptor_h_bonds = []
 for acceptor in enumerate(stored.acceptor_list):
     h_bonds = []
     for donor in donors_near_acceptors[acceptor[0]]:
-        h_bonds.append(eval_H_bonding.evaluate(donor, acceptor[1], eq_class[1][0], expanded_library))
+        h_bonds.append(eval_H_bonding.evaluate(donor, acceptor[1], eq_class[0][0], expanded_library))
         # if the H-bond evaluation is not successful, print the error message and exit
         successful_completion = h_bonds[-1][0]
         if not successful_completion:
@@ -458,7 +458,7 @@ prot_donor_h_bonds = []
 for donor in enumerate(prot_donor_list):
     h_bonds = []
     for acceptor in acceptors_near_prot_donors[donor[0]]:
-        h_bonds.append(eval_H_bonding.evaluate(donor[1], acceptor, eq_class[1][0], expanded_library))
+        h_bonds.append(eval_H_bonding.evaluate(donor[1], acceptor, eq_class[0][0], expanded_library))
         # if the H-bond evaluation is not successful, print the error message and exit
         successful_completion = h_bonds[-1][0]
         if not successful_completion:
@@ -502,7 +502,7 @@ acceptor_h_bonds_amb = []
 for acceptor in enumerate(stored.acceptor_list):
     h_bonds = []
     for donor in donors_near_acceptors_amb[acceptor[0]]:
-        h_bonds.append(eval_H_bonding.evaluate(donor, acceptor[1], eq_class[1][0], expanded_library))
+        h_bonds.append(eval_H_bonding.evaluate(donor, acceptor[1], eq_class[0][0], expanded_library))
         # if the H-bond evaluation is not successful, print the error message and exit
         successful_completion = h_bonds[-1][0]
         if not successful_completion:
@@ -530,7 +530,7 @@ prot_donor_h_bonds_amb = []
 for donor in enumerate(prot_donor_list):
     h_bonds = []
     for acceptor in acceptors_near_prot_donors_amb[donor[0]]:
-        h_bonds.append(eval_H_bonding.evaluate(donor[1], acceptor, eq_class[1][0], expanded_library))
+        h_bonds.append(eval_H_bonding.evaluate(donor[1], acceptor, eq_class[0][0], expanded_library))
         # if the H-bond evaluation is not successful, print the error message and exit
         successful_completion = h_bonds[-1][0]
         if not successful_completion:
@@ -590,7 +590,7 @@ deprot_acceptor_h_bonds = []
 for acceptor in enumerate(stored.deprot_acceptor_list):
     h_bonds = []
     for donor in donors_near_deprot_acceptors[acceptor[0]]:
-        h_bonds.append(eval_H_bonding.evaluate(donor, acceptor[1], eq_class[1][0], expanded_library))
+        h_bonds.append(eval_H_bonding.evaluate(donor, acceptor[1], eq_class[0][0], expanded_library))
         # if the H-bond evaluation is not successful, print the error message and exit
         successful_completion = h_bonds[-1][0]
         if not successful_completion:
@@ -630,7 +630,7 @@ deprot_acceptor_h_bonds_amb = []
 for acceptor in enumerate(stored.deprot_acceptor_list):
     h_bonds = []
     for donor in donors_near_deprot_acceptors_amb[acceptor[0]]:
-        h_bonds.append(eval_H_bonding.evaluate(donor, acceptor[1], eq_class[1][0], expanded_library))
+        h_bonds.append(eval_H_bonding.evaluate(donor, acceptor[1], eq_class[0][0], expanded_library))
         # if the H-bond evaluation is not successful, print the error message and exit
         successful_completion = h_bonds[-1][0]
         if not successful_completion:
