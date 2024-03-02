@@ -657,9 +657,9 @@ if not stored.check_one == stored.check_two:
     print(f"Error: The indices in equivalence class {eq_class[0][0]} changed.")
     sys.exit(1)
 
-# If commit_hash is supplied as the first argument, check if any changes have been made to the repo and get the hash
-# of the current git commit. If uncommitted changes have been made to anything other than config/config.yaml, print an
-# error message and exit.
+# If commit_hash is set to true in the Snakemake configuration file, check if any changes have been made to the repo and
+# get the hash of the current git commit. If uncommitted changes have been made to anything other than
+# config/config.yaml, print an error message and exit.
 repo_changes = []
 commit_hash = ""
 if snakemake.config["commit_hash"]:
