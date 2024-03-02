@@ -146,7 +146,7 @@ guanine_nuc_acceptors = ["N3", "O6", "N7"]
 uracil_nuc_donors = ["N3"]
 uracil_nuc_acceptors = ["O2", "O4"]
 
-# using the library provided by the const module, create a new library with protonated A, C, and G residues
+# using the library provided by the const module, create a new library including protonated and deprotonated residues
 expanded_library = const.RESIDUE_LIBRARY
 for res in expanded_library:
     if res['res'] == 'A':
