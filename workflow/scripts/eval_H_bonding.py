@@ -1,14 +1,14 @@
 """
-This module contains functions and a residue library that are necessary to evaluate whether an H-bond is identified
-between a potential donor atom and a potential acceptor atom. The function named evaluate should be called by other
-scripts to determine whether an H-bond is identified. The first two arguments should describe the donor and acceptor
-atoms, respectively. For each atom, a tuple containing the atom index, atom name, residue name, residue number, and
-chain ID should be provided in that order. The PDB ID and a residue library should be provided as the third and forth
-arguments. The function assumes 1) that hydrogens have been added to non-rotatable donor atoms, including both
-endocyclic nitrogens in histidine residues and 2) that tyrosine hydroxyl hydrogens are approximately planar with the
-tyrosine side chain rings. When the potential donor or acceptor atom belongs to the side chain of an ASN, GLN, or HIS
-residue, hydrogens must have been added to all the nitrogen atoms on the side chain, even if the potential H-bond does
-not involve these nitrogens.
+This module contains varoius functions that work together and with PyMOL to calculate H-bonding geometry measurements.
+The most notable function is evaluate. This function can be used by other modules or scripts to obtain H-bonding
+geometry measurements involving specified donor and acceptor atoms. The first two arguments should describe the donor
+and acceptor atoms, respectively. For each atom, a tuple containing the atom index, atom name, residue name, residue
+number, and chain ID should be provided in that order. The equivalence class name and a residue library should be
+provided as the third and forth arguments. The function assumes 1) that hydrogens have been added to non-rotatable donor
+atoms, including both endocyclic nitrogens in histidine residues and 2) that tyrosine hydroxyl hydrogens are
+approximately planar with the tyrosine side chain rings. When the potential donor or acceptor atom belongs to the side
+chain of an ASN, GLN, or HIS residue, hydrogens must have been added to all the nitrogen atoms on the side chain, even
+if the potential H-bond does not involve these nitrogens.
 """
 
 from pymol import cmd
@@ -46,7 +46,7 @@ def terminal_donor(donor_atom):
     return terminal_donating_atom
 
 
-def evaluate(donor_atom, acceptor_atom, pdb, library):
+def evaluate(donor_atom, acceptor_atom, eq_class, library):
     # initially assume that the evaluation will complete successfully
     successful_completion = True
     # initialize an empty list that can be used to document why an evaluation was not completed successfully
@@ -78,11 +78,11 @@ def evaluate(donor_atom, acceptor_atom, pdb, library):
     if not donor_res:
         successful_completion = False
         notes.append(f"Residue {donor_atom[2]} of the donor atom was not found in the residue library when "
-                     f"evaluating a potential H-bond in PDB ID {pdb}.")
+                     f"evaluating a potential H-bond in equivalence class {eq_class}.")
     if not donor_info:
         successful_completion = False
         notes.append(f"The donor atom {donor_atom[1]} of residue {donor_atom[2]} was not found in the "
-                     f"residue library when evaluating a potential H-bond in PDB ID {pdb}.")
+                     f"residue library when evaluating a potential H-bond in equivalence class {eq_class}.")
     # determine whether the acceptor atom is listed in the residue library
     # if found, collect other information about that atom
     acceptor_res = ''
@@ -100,11 +100,11 @@ def evaluate(donor_atom, acceptor_atom, pdb, library):
     if not acceptor_res:
         successful_completion = False
         notes.append(f"Residue {acceptor_atom[2]} of the acceptor atom was not found in the residue library "
-                     f"when evaluating a potential H-bond in PDB ID {pdb}.")
+                     f"when evaluating a potential H-bond in equivalence class {eq_class}.")
     if not acceptor_info:
         successful_completion = False
         notes.append(f"The acceptor atom {acceptor_atom[1]} of residue {acceptor_atom[2]} was not found "
-                     f"in the residue library when evaluating a potential H-bond in PDB ID {pdb}.")
+                     f"in the residue library when evaluating a potential H-bond in equivalence class {eq_class}.")
     # if any of the residues of the donor or acceptor atoms or the atoms themselves were not found in the residue
     # library, return a non-successful completion with the relevant notes
     if not successful_completion:
@@ -113,7 +113,7 @@ def evaluate(donor_atom, acceptor_atom, pdb, library):
     if not donor_info[2]:
         vertex = 'hydrogen'
     # if the donor is rotatable, the vertex of the angle calculation will be the donor atom
-    elif donor_info[2]:
+    else:
         vertex = 'donor'
     # check if the donor and/or acceptor residues have side chains that have conformations that may have been
     # ambiguously assigned
@@ -129,7 +129,7 @@ def evaluate(donor_atom, acceptor_atom, pdb, library):
     # donor is not a tyrosine OH atom, the geometry calculation only needs to be performed once
     if not ambiguous_donor and not ambiguous_acceptor and not (donor_atom[1] == "OH" and donor_atom[2] == "TYR"):
         # get the distance and angle values for the donor/acceptor pair
-        geometry = calc_geom(donor_atom, acceptor_atom, donor_info, pdb)
+        geometry = calc_geom(donor_atom, acceptor_atom, donor_info, eq_class)
         # if the geometry calculation was not successful, return an explanation of what went wrong
         successful_completion = geometry[0]
         if not successful_completion:
@@ -163,7 +163,7 @@ def evaluate(donor_atom, acceptor_atom, pdb, library):
     elif (((ambiguous_donor and not ambiguous_acceptor) or (not ambiguous_donor and ambiguous_acceptor)) and not
             (donor_atom[1] == "OH" and donor_atom[2] == "TYR")):
         # get the first set of distance and angle values for the donor/acceptor pair
-        first_geometry = calc_geom(donor_atom, acceptor_atom, donor_info, pdb)
+        first_geometry = calc_geom(donor_atom, acceptor_atom, donor_info, eq_class)
         # if the geometry calculation was not successful, return an explanation of what went wrong
         successful_completion = first_geometry[0]
         if not successful_completion:
@@ -194,19 +194,18 @@ def evaluate(donor_atom, acceptor_atom, pdb, library):
                 h_name = first_geometry[1][2]
                 first_eval = [[distance, angle, 'donor', h_name, 'none']]
         # rotate the ambiguous side chain atoms of the donor or acceptor residue
-        rotated_res = ''
         if ambiguous_donor:
             rotated_res = f'{donor_atom[2]}{donor_atom[3]} {donor_atom[4]}'
-            rotation = rotate_side_chain(donor_atom, pdb)
-        elif ambiguous_acceptor:
+            rotation = rotate_side_chain(donor_atom, eq_class)
+        else:
             rotated_res = f'{acceptor_atom[2]}{acceptor_atom[3]} {acceptor_atom[4]}'
-            rotation = rotate_side_chain(acceptor_atom, pdb)
+            rotation = rotate_side_chain(acceptor_atom, eq_class)
         # if the rotation was not successful, return an explanation of what went wrong
         successful_completion = rotation[0]
         if not successful_completion:
             return rotation
         # get the second set of distance and angle values for the donor/acceptor pair
-        second_geometry = calc_geom(donor_atom, acceptor_atom, donor_info, pdb)
+        second_geometry = calc_geom(donor_atom, acceptor_atom, donor_info, eq_class)
         # if the geometry calculation was not successful, return an explanation of what went wrong
         successful_completion = second_geometry[0]
         if not successful_completion:
@@ -239,9 +238,9 @@ def evaluate(donor_atom, acceptor_atom, pdb, library):
         # rotate the ambiguous side chain atoms of the donor or acceptor residue to get them back to their original
         # conformation
         if ambiguous_donor:
-            rotation = rotate_side_chain(donor_atom, pdb)
+            rotation = rotate_side_chain(donor_atom, eq_class)
         elif ambiguous_acceptor:
-            rotation = rotate_side_chain(acceptor_atom, pdb)
+            rotation = rotate_side_chain(acceptor_atom, eq_class)
         # if the rotation was not successful, return an explanation of what went wrong
         successful_completion = rotation[0]
         if not successful_completion:
@@ -257,17 +256,14 @@ def evaluate(donor_atom, acceptor_atom, pdb, library):
     # the code could be expanded to evaluate whether an H-bond is identified in this situation
     elif ambiguous_donor and ambiguous_acceptor and not (donor_atom[1] == "OH" and donor_atom[2] == "TYR"):
         successful_completion = False
-        print(f"Error: Both the potential H-bonding donor and acceptor atoms belong to the side chains of ASN, GLN, or "
-              f"HIS in PDB ID {pdb}. The code is not capable of evaluating whether an H-bond is identified in this "
-              f"situation.")
         notes.append(f"Error: Both the potential H-bonding donor and acceptor atoms belong to the side chains of ASN, "
-                     f"GLN, or HIS in PDB ID {pdb}. The code is not capable of evaluating whether an H-bond is "
-                     f"identified in this situation.")
+                     f"GLN, or HIS in equivalence class {eq_class}. The code is not capable of evaluating whether an "
+                     f"H-bond is identified in this situation.")
         return [successful_completion, notes]
     elif donor_atom[1] == "OH" and donor_atom[2] == "TYR":
         # get the distance and angle values for the donor/acceptor pair and with the tyrosine OH in the original
         # conformation
-        geometry = calc_geom(donor_atom, acceptor_atom, donor_info, pdb)
+        geometry = calc_geom(donor_atom, acceptor_atom, donor_info, eq_class)
         # if the geometry calculation was not successful, return an explanation of what went wrong
         successful_completion = geometry[0]
         if not successful_completion:
@@ -279,14 +275,14 @@ def evaluate(donor_atom, acceptor_atom, pdb, library):
         original_conformation = [distance, angle, 'hydrogen', h_name, 'none']
         # rotate the tyrosine hydroxyl
         rotated_res = f'{donor_atom[2]}{donor_atom[3]} {donor_atom[4]}'
-        rotation = rotate_side_chain(donor_atom, pdb)
+        rotation = rotate_side_chain(donor_atom, eq_class)
         # if the rotation was not successful, return an explanation of what went wrong
         successful_completion = rotation[0]
         if not successful_completion:
             return rotation
         # get the distance and angle values for the donor/acceptor pair and with the tyrosine OH in the rotated
         # conformation
-        geometry = calc_geom(donor_atom, acceptor_atom, donor_info, pdb)
+        geometry = calc_geom(donor_atom, acceptor_atom, donor_info, eq_class)
         # if the geometry calculation was not successful, return an explanation of what went wrong
         successful_completion = geometry[0]
         if not successful_completion:
@@ -297,7 +293,7 @@ def evaluate(donor_atom, acceptor_atom, pdb, library):
         h_name = geometry[1][2]
         rotated_conformation = [distance, angle, 'hydrogen', h_name, rotated_res]
         # rotate the tyrosine hydroxyl to get it back to its original conformation
-        rotation = rotate_side_chain(donor_atom, pdb)
+        rotation = rotate_side_chain(donor_atom, eq_class)
         # if the rotation was not successful, return an explanation of what went wrong
         successful_completion = rotation[0]
         if not successful_completion:
@@ -308,14 +304,12 @@ def evaluate(donor_atom, acceptor_atom, pdb, library):
     # have missed
     else:
         successful_completion = False
-        print(f"Error: The code was unable to classify the donor and/or acceptor as non-ambiguous, ambiguous, or "
-              f"Tyr(OH).")
         notes.append(f"Error: The code was unable to classify the donor and/or acceptor as non-ambiguous, ambiguous, "
                      f"or Tyr(OH).")
         return [successful_completion, notes]
 
 
-def rotate_side_chain(atom, pdb):
+def rotate_side_chain(atom, eq_class):
     # initially assume that the evaluation will complete successfully
     successful_completion = True
     # initialize an empty list that can be used to document why an evaluation was not completed successfully
@@ -329,10 +323,8 @@ def rotate_side_chain(atom, pdb):
         # ensure that atoms_to_rotate accounts for exactly four atoms
         if cmd.count_atoms(atoms_to_rotate) != 4:
             successful_completion = False
-            print(f"Error: Atoms selected from an ASN residue to rotate do not number to exactly four atoms in PDB ID "
-                  f"{pdb}.")
             notes.append(f"Error: Atoms selected from an ASN residue to rotate do not number to exactly four atoms in "
-                         f"PDB ID {pdb}.")
+                         f"equivalence class {eq_class}.")
             return [successful_completion, notes]
     elif atom[2] == "GLN":
         origin = cmd.get_coords(f'(byres index {atom[0]}) and name CD', state=0)[0]
@@ -342,10 +334,8 @@ def rotate_side_chain(atom, pdb):
         # ensure that atoms_to_rotate accounts for exactly four atoms
         if cmd.count_atoms(atoms_to_rotate) != 4:
             successful_completion = False
-            print(f"Error: Atoms selected from a GLN residue to rotate do not number to exactly four atoms in PDB ID "
-                  f"{pdb}.")
             notes.append(f"Error: Atoms selected from a GLN residue to rotate do not number to exactly four atoms in "
-                         f"PDB ID {pdb}.")
+                         f"equivalence class {eq_class}.")
             return [successful_completion, notes]
     elif atom[2] == "HIS":
         origin = cmd.get_coords(f'(byres index {atom[0]}) and name CG', state=0)[0]
@@ -356,10 +346,8 @@ def rotate_side_chain(atom, pdb):
         # ensure that atoms_to_rotate accounts for exactly six atoms
         if cmd.count_atoms(atoms_to_rotate) != 6:
             successful_completion = False
-            print(f"Error: Atoms selected from a HIS residue to rotate do not number to exactly six atoms in PDB ID "
-                  f"{pdb}.")
             notes.append(f"Error: Atoms selected from a HIS residue to rotate do not number to exactly six atoms in "
-                         f"PDB ID {pdb}.")
+                         f"equivalence class {eq_class}.")
             return [successful_completion, notes]
     elif atom[2] == "TYR":
         origin = cmd.get_coords(f'index {atom[0]}', state=0)[0]
@@ -369,21 +357,19 @@ def rotate_side_chain(atom, pdb):
         # ensure that atoms_to_rotate accounts for exactly two atoms
         if cmd.count_atoms(atoms_to_rotate) != 2:
             successful_completion = False
-            print(f"Error: Atoms selected from a TYR residue to rotate do not number to exactly two atoms in PDB ID "
-                  f"{pdb}.")
             notes.append(f"Error: Atoms selected from a TYR residue to rotate do not number to exactly two atoms in "
-                         f"PDB ID {pdb}.")
+                         f"equivalence class {eq_class}.")
             return [successful_completion, notes]
     else:
         successful_completion = False
-        print(f"Error: The code attempted to rotate a residue in PDB ID {pdb} that is not ASN, GLN, or HIS.")
-        notes.append(f"Error: The code attempted to rotate a residue in PDB ID {pdb} that is not ASN, GLN, or HIS.")
+        notes.append(f"Error: The code attempted to rotate a residue in equivalence class {eq_class} that is not ASN, "
+                     f"GLN, or HIS.")
         return [successful_completion, notes]
     cmd.rotate(axis, 180, selection=atoms_to_rotate, state=0, camera=0, origin=origin)
     return [successful_completion, notes]
 
 
-def calc_geom(donor_atom, acceptor_atom, donor_info, pdb):
+def calc_geom(donor_atom, acceptor_atom, donor_info, eq_class):
     # initially assume that the evaluation will complete successfully
     successful_completion = True
     # initialize an empty list that can be used to document why an evaluation was not completed successfully
@@ -393,12 +379,12 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, pdb):
     if not donor_info[2]:
         # collect the indices of the hydrogens
         stored.hydrogen = []
-        cmd.iterate(f'elem H and neighbor index {donor_atom[0]}', 'stored.hydrogen.append((index, name, resn, resi, chain))')
+        cmd.iterate(f'elem H and neighbor index {donor_atom[0]}', 'stored.hydrogen.append((index, name, resn, resi, '
+                                                                  'chain))')
         # issue an error message if there are no hydrogens
         if len(stored.hydrogen) == 0:
             successful_completion = False
-            print(f"Error: A non-rotatable donor atom has zero hydrogens in PDB ID {pdb}.")
-            notes.append(f"Error: A non-rotatable donor atom has zero hydrogens in PDB ID {pdb}.")
+            notes.append(f"Error: A non-rotatable donor atom has zero hydrogens in equivalence class {eq_class}.")
             return [successful_completion, notes]
         # get the measurements for donors that have one hydrogen
         elif len(stored.hydrogen) == 1:
@@ -421,8 +407,8 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, pdb):
         # issue an error message if there are more than two hydrogens
         elif len(stored.hydrogen) > 2:
             successful_completion = False
-            print(f"Error: A non-rotatable donor atom has more than two hydrogens in PDB ID {pdb}.")
-            notes.append(f"Error: A non-rotatable donor atom has more than two hydrogens in PDB ID {pdb}.")
+            notes.append(f"Error: A non-rotatable donor atom has more than two hydrogens in equivalence class "
+                         f"{eq_class}.")
             return [successful_completion, notes]
     # if the donor is rotatable, use the locations of the donor antecedent, donor, and acceptor atoms to get the
     # distance and angle measurements, then return the values
@@ -434,8 +420,8 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, pdb):
         # issue an error message if no donor antecedent atom was identified
         if len(stored.antecedent) == 0:
             successful_completion = False
-            print(f"Error: No antecedent atoms were identified for a donor atom in PDB ID {pdb}.")
-            notes.append(f"Error: No antecedent atoms were identified for a donor atom in PDB ID {pdb}.")
+            notes.append(f"Error: No antecedent atoms were identified for a donor atom in equivalence class "
+                         f"{eq_class}.")
             return [successful_completion, notes]
         # get the measurements when one donor antecedent atom was identified
         elif len(stored.antecedent) == 1:
@@ -443,10 +429,10 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, pdb):
             angle = cmd.get_angle(f'index {stored.antecedent[0][0]}', f'index {donor_atom[0]}',
                                   f'index {acceptor_atom[0]}')
         # issue an error message if more than one donor antecedent atom was identified
-        elif len(stored.antecedent) > 1:
+        else:
             successful_completion = False
-            print(f"Error: More than one antecedent atom was identified for a donor atom in PDB ID {pdb}.")
-            notes.append(f"Error: More than one antecedent atom was identified for a donor atom in PDB ID {pdb}.")
+            notes.append(f"Error: More than one antecedent atom was identified for a donor atom in equivalence class "
+                         f"{eq_class}.")
             return [successful_completion, notes]
         # return geometry values
         return [successful_completion, [distance, angle, "none"]]
