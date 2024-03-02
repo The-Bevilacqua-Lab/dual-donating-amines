@@ -12,8 +12,8 @@ rule all:
     input:
         expand("data/modified_mmCIF_files/{eq_class}.cif", eq_class=eq_class_list),
         expand("data/b_factor_data/{eq_class}_b_factor_data.csv", eq_class=eq_class_list),
-        expand("data/hbond_data/{eq_class}_hbond_data.csv", eq_class=eq_class_list),
-        expand("data/nuc_data/{eq_class}_nuc_data.csv", eq_class=eq_class_list)
+        expand("data/nuc_data/{eq_class}_nuc_data.csv", eq_class=eq_class_list),
+        expand("data/hbond_data/{eq_class}_hbond_data.csv", eq_class=eq_class_list)
 
 rule parse_nrlist:
     input:
@@ -23,6 +23,8 @@ rule parse_nrlist:
     log:
         stdout = "data/logs/parse_nrlist/{eq_class}.stdout",
         stderr = "data/logs/parse_nrlist/{eq_class}.stderr"
+    conda:
+        "envs/general.yaml"
     script:
         "scripts/parse_nrlist.py"
 
@@ -39,5 +41,7 @@ rule collect_data:
         stderr = "data/logs/collect_data/{eq_class}.stderr"
     benchmark:
         "data/benchmark/{eq_class}.tsv"
+    conda:
+        "envs/general.yaml"
     script:
         "scripts/collect_data.py"
