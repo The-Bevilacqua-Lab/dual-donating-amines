@@ -685,86 +685,86 @@ with open(snakemake.output.b_factor, "w") as csv_file:
 
 # write a csv containing all nucleobases that contain donors, protonated donors, acceptors, and deprotonated acceptors
 # of interest
-    with open(snakemake.output.nuc, "w") as csv_file:
-        writer = csv.writer(csv_file)
-        if commit_hash:
-            writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
-        writer.writerow([f"# input file: {snakemake.input[0]}"])
-        writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
-        for nuc in nucleobase_list:
-            writer.writerow(nuc)
+with open(snakemake.output.nuc, "w") as csv_file:
+    writer = csv.writer(csv_file)
+    if commit_hash:
+        writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
+    writer.writerow([f"# input file: {snakemake.input[0]}"])
+    writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
+    for nuc in nucleobase_list:
+        writer.writerow(nuc)
 
 # write a csv containing all H-bonding information
-    with open(snakemake.output.hbond, "w") as csv_file:
-        writer = csv.writer(csv_file)
-        if commit_hash:
-            writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
-        writer.writerow([f"# input file: {snakemake.input[0]}"])
-        writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
-        for i, don in enumerate(donor_h_bonds):
-            for j, acc in enumerate(don):
-                for instance in acc[1]:
-                    row = []
-                    row.extend(stored.donor_list[i])
-                    row.extend(acceptors_near_donors[i][j])
-                    row.extend(instance)
-                    writer.writerow(row)
-        for i, don in enumerate(donor_h_bonds_amb):
-            for j, acc in enumerate(don):
-                for instance in acc[1]:
-                    row = []
-                    row.extend(stored.donor_list[i])
-                    row.extend(acceptors_near_donors_amb[i][j])
-                    row.extend(instance)
-                    writer.writerow(row)
-        for i, acc in enumerate(acceptor_h_bonds):
-            for j, don in enumerate(acc):
-                for instance in don[1]:
-                    row = []
-                    row.extend(donors_near_acceptors[i][j])
-                    row.extend(stored.acceptor_list[i])
-                    row.extend(instance)
-                    writer.writerow(row)
-        for i, acc in enumerate(acceptor_h_bonds_amb):
-            for j, don in enumerate(acc):
-                for instance in don[1]:
-                    row = []
-                    row.extend(donors_near_acceptors_amb[i][j])
-                    row.extend(stored.acceptor_list[i])
-                    row.extend(instance)
-                    writer.writerow(row)
-        for i, don in enumerate(prot_donor_h_bonds):
-            for j, acc in enumerate(don):
-                for instance in acc[1]:
-                    row = []
-                    row.extend(prot_donor_list[i])
-                    row.extend(acceptors_near_prot_donors[i][j])
-                    row.extend(instance)
-                    writer.writerow(row)
-        for i, don in enumerate(prot_donor_h_bonds_amb):
-            for j, acc in enumerate(don):
-                for instance in acc[1]:
-                    row = []
-                    row.extend(prot_donor_list[i])
-                    row.extend(acceptors_near_prot_donors_amb[i][j])
-                    row.extend(instance)
-                    writer.writerow(row)
-        for i, acc in enumerate(deprot_acceptor_h_bonds):
-            for j, don in enumerate(acc):
-                for instance in don[1]:
-                    row = []
-                    row.extend(donors_near_deprot_acceptors[i][j])
-                    row.extend(stored.deprot_acceptor_list[i])
-                    row.extend(instance)
-                    writer.writerow(row)
-        for i, acc in enumerate(deprot_acceptor_h_bonds_amb):
-            for j, don in enumerate(acc):
-                for instance in don[1]:
-                    row = []
-                    row.extend(donors_near_deprot_acceptors_amb[i][j])
-                    row.extend(stored.deprot_acceptor_list[i])
-                    row.extend(instance)
-                    writer.writerow(row)
+with open(snakemake.output.hbond, "w") as csv_file:
+    writer = csv.writer(csv_file)
+    if commit_hash:
+        writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
+    writer.writerow([f"# input file: {snakemake.input[0]}"])
+    writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
+    for i, don in enumerate(donor_h_bonds):
+        for j, acc in enumerate(don):
+            for instance in acc[1]:
+                row = []
+                row.extend(stored.donor_list[i])
+                row.extend(acceptors_near_donors[i][j])
+                row.extend(instance)
+                writer.writerow(row)
+    for i, don in enumerate(donor_h_bonds_amb):
+        for j, acc in enumerate(don):
+            for instance in acc[1]:
+                row = []
+                row.extend(stored.donor_list[i])
+                row.extend(acceptors_near_donors_amb[i][j])
+                row.extend(instance)
+                writer.writerow(row)
+    for i, acc in enumerate(acceptor_h_bonds):
+        for j, don in enumerate(acc):
+            for instance in don[1]:
+                row = []
+                row.extend(donors_near_acceptors[i][j])
+                row.extend(stored.acceptor_list[i])
+                row.extend(instance)
+                writer.writerow(row)
+    for i, acc in enumerate(acceptor_h_bonds_amb):
+        for j, don in enumerate(acc):
+            for instance in don[1]:
+                row = []
+                row.extend(donors_near_acceptors_amb[i][j])
+                row.extend(stored.acceptor_list[i])
+                row.extend(instance)
+                writer.writerow(row)
+    for i, don in enumerate(prot_donor_h_bonds):
+        for j, acc in enumerate(don):
+            for instance in acc[1]:
+                row = []
+                row.extend(prot_donor_list[i])
+                row.extend(acceptors_near_prot_donors[i][j])
+                row.extend(instance)
+                writer.writerow(row)
+    for i, don in enumerate(prot_donor_h_bonds_amb):
+        for j, acc in enumerate(don):
+            for instance in acc[1]:
+                row = []
+                row.extend(prot_donor_list[i])
+                row.extend(acceptors_near_prot_donors_amb[i][j])
+                row.extend(instance)
+                writer.writerow(row)
+    for i, acc in enumerate(deprot_acceptor_h_bonds):
+        for j, don in enumerate(acc):
+            for instance in don[1]:
+                row = []
+                row.extend(donors_near_deprot_acceptors[i][j])
+                row.extend(stored.deprot_acceptor_list[i])
+                row.extend(instance)
+                writer.writerow(row)
+    for i, acc in enumerate(deprot_acceptor_h_bonds_amb):
+        for j, don in enumerate(acc):
+            for instance in don[1]:
+                row = []
+                row.extend(donors_near_deprot_acceptors_amb[i][j])
+                row.extend(stored.deprot_acceptor_list[i])
+                row.extend(instance)
+                writer.writerow(row)
 
 # save the modified structure
 cmd.save(snakemake.output.modified_mmcif)
