@@ -190,7 +190,7 @@ if cmd.count_states(eq_class[1][0]) > 1:
     cmd.delete(eq_class[1][0])
 
 # remove atoms representing alternative conformations
-remove_status = remove_alt_conf.remove(eq_class[1][0])
+remove_status = remove_alt_conf.remove(eq_class[2][0])
 successful_completion = remove_status[0]
 if not successful_completion:
     for note in remove_status[1]:
