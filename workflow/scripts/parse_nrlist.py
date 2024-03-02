@@ -2,7 +2,7 @@
 This script iterates through the lines of a representative set file, searching for a specific equivalence class, and
 collects the equivalence class name, PDB ID, model info, and chain info of the representative structures for the
 specified equivalence class. The info for each representative structure is written to a csv file. The input file name,
-output file name, and specified equivalence class are provided using Snakemake. If commit_hash is set to true in the
+output file name, and specified equivalence class are provided by the Snakefile. If commit_hash is set to true in the
 Snakemake configuration file, the commit hash of the repo will also be written within a commented line to the csv file
 if no uncommitted changes have been made to the repo.
 """

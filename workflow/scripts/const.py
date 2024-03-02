@@ -1,5 +1,5 @@
 """
-This module contains various constants that are used by other modules in this package.
+This module contains various constants that are used by scripts in this repo.
 """
 
 # construct three tuples of tuples containing atom and residue names that describe either donor, protonated donor
