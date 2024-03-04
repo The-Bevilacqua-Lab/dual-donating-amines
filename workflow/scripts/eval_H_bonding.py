@@ -1,5 +1,5 @@
 """
-This module contains varoius functions that work together and with PyMOL to calculate H-bonding geometry measurements.
+This module contains various functions that work together and with PyMOL to calculate H-bonding geometry measurements.
 The most notable function is evaluate. This function can be used by other modules or scripts to obtain H-bonding
 geometry measurements involving specified donor and acceptor atoms. The first two arguments should describe the donor
 and acceptor atoms, respectively. For each atom, a tuple containing the atom index, atom name, residue name, residue
@@ -8,7 +8,7 @@ provided as the third and forth arguments. The function assumes 1) that hydrogen
 atoms, including both endocyclic nitrogens in histidine residues and 2) that tyrosine hydroxyl hydrogens are
 approximately planar with the tyrosine side chain rings. When the potential donor or acceptor atom belongs to the side
 chain of an ASN, GLN, or HIS residue, hydrogens must have been added to all the nitrogen atoms on the side chain, even
-if the potential H-bond does not involve these nitrogens.
+if the potential H-bond does not involve those nitrogens.
 """
 
 from pymol import cmd
