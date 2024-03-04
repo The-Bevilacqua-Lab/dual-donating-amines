@@ -29,6 +29,7 @@ def terminal_donor(donor_atom):
         # an amino acid N atom at the end of the chain is capable of donating an H-bond
         if donor_atom[1] == "N" and donor_atom[2] in protein_residues:
             terminal_donating_atom = ["N", "N", True, 0, "CA"]
+        # consider O5' and O3' atoms
         else:
             stored.bonded_atom = ''
             cmd.iterate(f'not elem H and neighbor index {donor_atom[0]}', 'stored.bonded_atom = name')
