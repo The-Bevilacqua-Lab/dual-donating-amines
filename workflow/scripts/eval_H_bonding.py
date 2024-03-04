@@ -372,8 +372,8 @@ def rotate_side_chain(atom, eq_class):
             return [successful_completion, notes]
     else:
         successful_completion = False
-        notes.append(f"Error: The code attempted to rotate a residue in equivalence class {eq_class} that is not ASN, "
-                     f"GLN, or HIS.")
+        notes.append(f"Error: The code attempted to rotate atoms in equivalence class {eq_class} that do not belong to "
+                     f"an ASN, GLN, HIS, or TYR.")
         return [successful_completion, notes]
     cmd.rotate(axis, 180, selection=atoms_to_rotate, state=0, camera=0, origin=origin)
     return [successful_completion, notes]
