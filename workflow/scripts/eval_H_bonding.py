@@ -137,7 +137,7 @@ def evaluate(donor_atom, acceptor_atom, eq_class, library):
             return geometry
         # proceed if the geometry calculation was successful
         else:
-            # return whether an H-bond is identified
+            # return the H-bonding geometry measurements
             if vertex == 'hydrogen':
                 if type(geometry[1][0]) is float:
                     distance = geometry[1][0]
@@ -171,7 +171,7 @@ def evaluate(donor_atom, acceptor_atom, eq_class, library):
             return first_geometry
         # proceed if the geometry calculation was successful
         else:
-            # determine whether an H-bond is identified
+            # collect the H-bonding geometry measurements for the first evaluation
             first_eval = []
             if vertex == 'hydrogen':
                 if type(first_geometry[1][0]) is float:
@@ -213,7 +213,7 @@ def evaluate(donor_atom, acceptor_atom, eq_class, library):
             return second_geometry
         # proceed if the geometry calculation was successful
         else:
-            # determine whether an H-bond is identified
+            # collect the H-bonding geometry measurements for the second evaluation
             second_eval = []
             if vertex == 'hydrogen':
                 if type(second_geometry[1][0]) is float:
@@ -250,18 +250,17 @@ def evaluate(donor_atom, acceptor_atom, eq_class, library):
         all_eval = first_eval
         all_eval.extend(second_eval)
         return [successful_completion, all_eval]
-    # if there is ambiguity in the side chain conformations of both donor and acceptor residues, do not calculate any
-    # geometries and return False for successful_completion
-    # this situation should never be encountered in the current study since, at a minimum, an RNA/DNA residue should
-    # always be either the donor or acceptor
-    # the code could be expanded to evaluate whether an H-bond is identified in this situation
+    # If there is ambiguity in the side chain conformations of both donor and acceptor residues, do not calculate any
+    # geometries and return False for successful_completion. This situation should never be encountered in the current
+    # study since, at a minimum, an RNA/DNA residue should always be either the donor or acceptor. The code could be
+    # expanded to return H-bonding geometry measurements in this situation.
     elif ambiguous_donor and ambiguous_acceptor and not (donor_atom[1] == "OH" and donor_atom[2] == "TYR"):
         successful_completion = False
         notes.append(f"Error: Both the potential H-bonding donor and acceptor atoms belong to the side chains of ASN, "
-                     f"GLN, or HIS in equivalence class {eq_class}. The code is not capable of evaluating whether an "
-                     f"H-bond is identified in this situation.")
+                     f"GLN, or HIS in equivalence class {eq_class}. The code is not capable of returning H-bonding "
+                     f"geometry measurements in this situation.")
         return [successful_completion, notes]
-    elif donor_atom[1] == "OH" and donor_atom[2] == "TYR":
+    elif (donor_atom[1] == "OH" and donor_atom[2] == "TYR") and not ambiguous_acceptor:
         # get the distance and angle values for the donor/acceptor pair and with the tyrosine OH in the original
         # conformation
         geometry = calc_geom(donor_atom, acceptor_atom, donor_info, eq_class)
@@ -269,7 +268,7 @@ def evaluate(donor_atom, acceptor_atom, eq_class, library):
         successful_completion = geometry[0]
         if not successful_completion:
             return geometry
-        # determine whether an H-bond is identified
+        # collect the H-bonding geometry measurements for the original conformation
         distance = geometry[1][0]
         angle = geometry[1][1]
         h_name = geometry[1][2]
@@ -288,7 +287,7 @@ def evaluate(donor_atom, acceptor_atom, eq_class, library):
         successful_completion = geometry[0]
         if not successful_completion:
             return geometry
-        # determine whether an H-bond is identified
+        # collect the H-bonding geometry measurements for the rotated conformation
         distance = geometry[1][0]
         angle = geometry[1][1]
         h_name = geometry[1][2]
@@ -301,6 +300,16 @@ def evaluate(donor_atom, acceptor_atom, eq_class, library):
             return rotation
         # return all evaluations
         return [successful_completion, [original_conformation, rotated_conformation]]
+    # If the donor is tyrosine OH and there is ambiguity in the side chain conformations of the acceptor residue, do not
+    # calculate any geometries and return False for successful_completion. This situation should never be encountered in
+    # the current study since, at a minimum, an RNA/DNA residue should always be either the donor or acceptor. The code
+    # could be expanded to return H-bonding geometry measurements in this situation.
+    elif (donor_atom[1] == "OH" and donor_atom[2] == "TYR") and ambiguous_acceptor:
+        successful_completion = False
+        notes.append(f"Error: The potential H-bonding donor is a tyrosine OH atom and the potential H-bonding acceptor "
+                     f"atom belongs to the side chain of an ASN, GLN, or HIS in equivalence class {eq_class}. The code "
+                     f"is not capable of returning H-bonding geometry measurements in this situation.")
+        return [successful_completion, notes]
     # I don't know why the code would ever get to this point, but this will serve as a catch-all for anything that I may
     # have missed
     else:
