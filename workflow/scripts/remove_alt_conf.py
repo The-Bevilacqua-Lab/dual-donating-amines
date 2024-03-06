@@ -77,7 +77,7 @@ def remove(eq_class):
         cmd.iterate(f'neighbor (name {atom[0]} and resn {atom[1]} and resi {atom[2]} and chain {atom[3]} and '
                     f'alt {atom[4]})', 'stored.neighboring_atoms.append((name,resn,resi,chain,alt,q))')
         for neighbor in stored.neighboring_atoms:
-            if neighbor[4] != "" and (atom[4] != neighbor[4] or atom[5] != neighbor[5]):
+            if neighbor[4] != "":
                 neighbor_in_remove_list = False
                 for compare_atom in atoms_to_remove:
                     if (compare_atom[0] == neighbor[0] and compare_atom[1] == neighbor[1] and
