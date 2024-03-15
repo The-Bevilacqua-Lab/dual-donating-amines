@@ -1,5 +1,5 @@
 # provide the representative set file name
-rep_set_file: data/rep_set_files/nrlist_<id>.csv
+rep_set_file: "data/rep_set_files/nrlist_<id>.csv"
 
 # where should PyMOL save mmCIF files fetched from the PDB?
 original_mmcif_dir: "data/original_mmCIF_files/"
