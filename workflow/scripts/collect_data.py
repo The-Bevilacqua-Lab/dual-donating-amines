@@ -227,36 +227,38 @@ cmd.h_add(f'(({donor_string} {prot_donors_of_interest_str}) and not ({rotatable_
 stored.h_count = []
 cmd.iterate(f'(resn ARG and name NH2) within {search_dist_amb + 3.0} of (({rep_rna}) and not elem H)',
             'stored.h_count.append(cmd.count_atoms(f"(neighbor index {index}) and elem H"))')
-if max(stored.h_count) == min(stored.h_count):
-    if stored.h_count[0] == 3:
-        # change the formal charge of ARG(NH2) back to 0
-        cmd.alter(f'resn ARG and name NH2', 'formal_charge=0')
-        # remove the hydrogens previously added
-        cmd.remove('elem H')
-        # add hydrogens to non-rotatable donors that are a part of or near the representative RNA
-        cmd.h_add(f'(({donor_string} {prot_donors_of_interest_str}) and not ({rotatable_donor_string})) within '
-                  f'{search_dist_amb + 3.0} of ({rep_rna})')
-        # check the number of hydrogens again
-        stored.h_count = []
-        cmd.iterate(f'(resn ARG and name NH2) within {search_dist_amb + 3.0} of (({rep_rna}) and not elem H)',
-                    'stored.h_count.append(cmd.count_atoms(f"(neighbor index {index}) and elem H"))')
-        if max(stored.h_count) == min(stored.h_count):
-            if stored.h_count[0] != 2:
-                print(f"Error: For equivalence class {eq_class[0][0]}, the ARG(NH2) atoms have the incorrect number of "
-                      f"hydrogens even after attempting to correct.")
+# only run the check if any ARG residues are close to the representative RNA
+if len(stored.h_count) > 0:
+    if max(stored.h_count) == min(stored.h_count):
+        if stored.h_count[0] == 3:
+            # change the formal charge of ARG(NH2) back to 0
+            cmd.alter(f'resn ARG and name NH2', 'formal_charge=0')
+            # remove the hydrogens previously added
+            cmd.remove('elem H')
+            # add hydrogens to non-rotatable donors that are a part of or near the representative RNA
+            cmd.h_add(f'(({donor_string} {prot_donors_of_interest_str}) and not ({rotatable_donor_string})) within '
+                      f'{search_dist_amb + 3.0} of ({rep_rna})')
+            # check the number of hydrogens again
+            stored.h_count = []
+            cmd.iterate(f'(resn ARG and name NH2) within {search_dist_amb + 3.0} of (({rep_rna}) and not elem H)',
+                        'stored.h_count.append(cmd.count_atoms(f"(neighbor index {index}) and elem H"))')
+            if max(stored.h_count) == min(stored.h_count):
+                if stored.h_count[0] != 2:
+                    print(f"Error: For equivalence class {eq_class[0][0]}, the ARG(NH2) atoms have the incorrect "
+                          f"number of hydrogens even after attempting to correct.")
+                    sys.exit(1)
+            else:
+                print(f"Error: For equivalence class {eq_class[0][0]}, the ARG(NH2) atoms do not have a consistent "
+                      f"number of hydrogens after attempting to correct.")
                 sys.exit(1)
-        else:
-            print(f"Error: For equivalence class {eq_class[0][0]}, the ARG(NH2) atoms do not have a consistent number "
-                  f"of hydrogens after attempting to correct.")
+        elif stored.h_count[0] != 2:
+            print(f"Error: For equivalence class {eq_class[0][0]}, the ARG(NH2) atoms have the incorrect number of "
+                  f"hydrogens (either less than two or more than three each).")
             sys.exit(1)
-    elif stored.h_count[0] != 2:
-        print(f"Error: For equivalence class {eq_class[0][0]}, the ARG(NH2) atoms have the incorrect number of "
-              f"hydrogens (either less than two or more than three each).")
+    else:
+        print(f"Error: For equivalence class {eq_class[0][0]}, the ARG(NH2) atoms do not have a consistent number of "
+              f"hydrogens.")
         sys.exit(1)
-else:
-    print(f"Error: For equivalence class {eq_class[0][0]}, the ARG(NH2) atoms do not have a consistent number of "
-          f"hydrogens.")
-    sys.exit(1)
 
 # randomly sample 100 atom indices in the structure and record the info of the associated atoms for later comparison
 num_atoms = cmd.count_atoms('all')
