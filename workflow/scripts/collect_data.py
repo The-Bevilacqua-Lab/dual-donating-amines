@@ -13,6 +13,7 @@ import sys
 import os
 import csv
 import subprocess
+import time
 from pymol import cmd
 from pymol import stored
 import numpy as np
@@ -41,7 +42,12 @@ with open(snakemake.input[0], mode='r') as read_file:
 # if it does not exist, create the folder
 original_mmcif_dir = snakemake.config["original_mmcif_dir"]
 if not os.path.isdir(original_mmcif_dir):
-    os.mkdir(original_mmcif_dir)
+    try:
+        os.mkdir(original_mmcif_dir)
+    except FileExistsError:
+        time.sleep(5.0)
+        if not os.path.isdir(original_mmcif_dir):
+            os.mkdir(original_mmcif_dir)
 
 # change fetch_path to original_mmcif_dir so that PyMOL drops the mmCIF files into this folder when running fetch
 cmd.set('fetch_path', cmd.exp_path(original_mmcif_dir))
