@@ -564,21 +564,21 @@ for atom_group in enumerate(atoms_near_deprot_acceptors):
         # the side chain donor atoms in ASN, GLN, and HIS residues will be collected separately
         if not (atom[1] != "N" and atom[2] in ["ASN", "GLN", "HIS"]):
             # the donors should not belong to the nucleobase of the acceptor
-            if not ((stored.acceptor_list[atom_group[0]][2] == atom[2] == "A" and
-                     stored.acceptor_list[atom_group[0]][3] == atom[3] and
-                     stored.acceptor_list[atom_group[0]][4] == atom[4] and
+            if not ((stored.deprot_acceptor_list[atom_group[0]][2] == atom[2] == "A" and
+                     stored.deprot_acceptor_list[atom_group[0]][3] == atom[3] and
+                     stored.deprot_acceptor_list[atom_group[0]][4] == atom[4] and
                      atom[1] in adenine_nuc_donors) or
-                    (stored.acceptor_list[atom_group[0]][2] == atom[2] == "C" and
-                     stored.acceptor_list[atom_group[0]][3] == atom[3] and
-                     stored.acceptor_list[atom_group[0]][4] == atom[4] and
+                    (stored.deprot_acceptor_list[atom_group[0]][2] == atom[2] == "C" and
+                     stored.deprot_acceptor_list[atom_group[0]][3] == atom[3] and
+                     stored.deprot_acceptor_list[atom_group[0]][4] == atom[4] and
                      atom[1] in cytosine_nuc_donors) or
-                    (stored.acceptor_list[atom_group[0]][2] == atom[2] == "G" and
-                     stored.acceptor_list[atom_group[0]][3] == atom[3] and
-                     stored.acceptor_list[atom_group[0]][4] == atom[4] and
+                    (stored.deprot_acceptor_list[atom_group[0]][2] == atom[2] == "G" and
+                     stored.deprot_acceptor_list[atom_group[0]][3] == atom[3] and
+                     stored.deprot_acceptor_list[atom_group[0]][4] == atom[4] and
                      atom[1] in guanine_nuc_donors) or
-                    (stored.acceptor_list[atom_group[0]][2] == atom[2] == "U" and
-                     stored.acceptor_list[atom_group[0]][3] == atom[3] and
-                     stored.acceptor_list[atom_group[0]][4] == atom[4] and
+                    (stored.deprot_acceptor_list[atom_group[0]][2] == atom[2] == "U" and
+                     stored.deprot_acceptor_list[atom_group[0]][3] == atom[3] and
+                     stored.deprot_acceptor_list[atom_group[0]][4] == atom[4] and
                      atom[1] in uracil_nuc_donors)):
                 if atom[1] == "O3'" or atom[1] == "O5'":
                     if eval_H_bonding.terminal_donor(atom):
