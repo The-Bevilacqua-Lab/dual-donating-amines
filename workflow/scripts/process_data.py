@@ -8,16 +8,24 @@ import pandas as pd
 import const
 import review_hbonds
 
-os.chdir("/Users/drew/Documents/Research/Dual_H-Bonding/Scratch/")
-pd.set_option("display.width", 1000)
-pd.set_option("display.max_columns", 40)
-pd.set_option("display.max_rows", 1300)
+# specify the working directory and move to that directory
+working_dir = "~/Documents/Research/Dual_H-Bonding/Data/240319/"
+os.chdir(working_dir)
 
 # store a list of arguments provided when running this script
 if len(sys.argv) > 1:
     args = sys.argv[1:]
 else:
     args = []
+
+# create a folder named analysis if it does not exist and if any arguments were provided
+if not os.path.isdir(working_dir + "analysis") and len(args) > 0:
+    os.mkdir("analysis")
+
+os.chdir("/Users/drew/Documents/Research/Dual_H-Bonding/Scratch/")
+pd.set_option("display.width", 1000)
+pd.set_option("display.max_columns", 40)
+pd.set_option("display.max_rows", 1300)
 
 # set the H-bonding criteria
 H_DIST_MAX = 20
@@ -116,33 +124,36 @@ dual_don_exo_amines = pd.Series(don_indices, index=don_indices, name="don index"
     (don_hbonds_nr.groupby("don index")["hydrogen"].nunique() == 2) &
     (don_hbonds_nr.groupby("don index")["acc index"].nunique() >= 2)]
 
-# write H-bond geometry info to a csv file
-# if don_geom is provided as an argument, write info related to don_hbonds_nr excluding certain atom pairs
+# if don_geom is provided as an argument, write H-bond geometry info related to don_hbonds_nr excluding certain atom
+# pairs to a csv file
 if "don_geom" in args:
     don_acc_grp = ["don index", "acc index"]
     (don_hbonds_nr[
-        # do not include hydrogens with smaller D-H...A angle
-         (don_hbonds_nr.groupby(don_acc_grp)["ang"]
-          .transform(lambda grp: [mem == grp.max() for mem in grp])) &
+         # only include hydrogens with smaller D-H...A distances
+         (don_hbonds_nr.groupby(don_acc_grp)["dist"]
+          .transform(lambda grp: [mem == grp.min() for mem in grp])) &
          # do not consider H-bonds found in canonical WCF base pairs
          (~don_hbonds_nr[["don name", "acc resn", "acc name"]].eq(["N6", "U", "O4"]).all(axis='columns')) &
          (~don_hbonds_nr[["don name", "acc resn", "acc name"]].eq(["N4", "G", "O6"]).all(axis='columns')) &
          (~don_hbonds_nr[["don name", "acc resn", "acc name"]].eq(["N2", "C", "O2"]).all(axis='columns'))]
-     .to_csv("don_hbonds.csv", index=False, columns=["dist", "ang"]))
-# if prot_don_geom is provided as an argument, write info related to prot_don_hbonds
+     .to_csv("analysis/don_hbonds.csv", index=False, columns=["dist", "ang"]))
+
+# if prot_don_geom is provided as an argument, write H-bond geometry info related to prot_don_hbonds to a csv file
 if "prot_don_geom" in args:
-    (prot_don_hbonds.to_csv("prot_don_hbonds.csv", index=False, columns=["dist", "ang"]))
+    (prot_don_hbonds.to_csv("analysis/prot_don_hbonds.csv", index=False, columns=["dist", "ang"]))
 
 # if single_don_rev is provided as an argument, create a new python script with PyMOL commands to review the donors
 # included in the single_don_exo_amines dataframe
 if "single_don_rev" in args:
     review_hbonds.create_script("single_don_rev", [don_hbonds_nr, single_don_exo_amines], hbond_file)
+
 # if dual_don_rev is provided as an argument, create a new python script with PyMOL commands to review the donors
 # included in the dual_don_exo_amines dataframe
 if "dual_don_rev" in args:
     review_hbonds.create_script("dual_don_rev", [don_hbonds_nr, dual_don_exo_amines], hbond_file)
-# if dual_don_rev is provided as an argument, create a new python script with PyMOL commands to review the donors
-# included in the dual_don_exo_amines dataframe
+
+# if prot_don_rev is provided as an argument, create a new python script with PyMOL commands to review the donors
+# included in the prot_don_hbonds dataframe
 if "prot_don_rev" in args:
     review_hbonds.create_script("prot_don_rev", [prot_don_hbonds], hbond_file)
 
@@ -155,22 +166,6 @@ if "prot_don_rev" in args:
 
 # # print dual H-bonding nucleobases that also accept H-bonds via their acc of interest
 # print(don_hbonds.merge(dual_don_exo_amines).merge(acc_hbonds_nr, left_on=["don resn", "don resi", "don chain"], right_on=["acc resn", "acc resi", "acc chain"]))
-
-# with open(f"acceptor_of_int_hbond_nonrot.csv", "w") as csv_file:
-#     writer = csv.writer(csv_file)
-#     for acceptor in h_bond_to_acc_nonredundant.keys():
-#         for atom_pair_list in h_bond_to_acc_nonredundant[acceptor].values():
-#             for atom_pair in atom_pair_list:
-#                 if atom_pair["vertex"] == "hydrogen":
-#                     writer.writerow([atom_pair["ang"], atom_pair["dist"]])
-#
-# with open(f"acceptor_of_int_hbond_rot.csv", "w") as csv_file:
-#     writer = csv.writer(csv_file)
-#     for acceptor in h_bond_to_acc_nonredundant.keys():
-#         for atom_pair_list in h_bond_to_acc_nonredundant[acceptor].values():
-#             for atom_pair in atom_pair_list:
-#                 if atom_pair["vertex"] == "donor":
-#                     writer.writerow([atom_pair["ang"], atom_pair["dist"]])
 
 # count = 0
 # for key in h_bond_to_acc_of_int.keys():

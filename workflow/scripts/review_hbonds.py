@@ -10,7 +10,7 @@ import const
 # that 1) specifies the category of hbonds to consider, 2) provides a list of the relevant pandas dataframes, and
 # 3) provides the name of the source file.
 def create_script(cat, df_list, source_file):
-    with open(f"{cat}_{datetime.now().strftime('%y%m%d_%H%M%S_%f')}.py", "w") as file:
+    with open(f"analysis/{cat}_{datetime.now().strftime('%y%m%d_%H%M%S_%f')}.py", "w") as file:
         file.write("# this script is to be used with PyMOL\n")
         file.write(f"# info on interactions came from {source_file}\n\n")
         file.write("from pymol import cmd\n\n")
