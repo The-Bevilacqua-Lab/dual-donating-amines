@@ -5,6 +5,7 @@ This module will eventually do something.
 import sys
 import os
 import pandas as pd
+import csv
 import const
 import review_hbonds
 
@@ -100,25 +101,30 @@ acc_hbonds_nr = (acc_hbonds[(((acc_hbonds["don resn"] != "TYR") &
 # identify nucleobases that donate either one or at least two H-bonds via their exocyclic amines
 # the H-bonds from the latter nucleobases must involve both exocyclic amine hydrogens and at least two different
 # acceptors
-don_indices = list(don_hbonds_nr.groupby("don index").groups.keys())
-single_don_exo_amines = pd.Series(don_indices, index=don_indices, name="don index")[
-    (don_hbonds_nr.groupby("don index")["hydrogen"].nunique() == 1) |
-    (don_hbonds_nr.groupby("don index")["acc index"].nunique() == 1)]
-dual_don_exo_amines = pd.Series(don_indices, index=don_indices, name="don index")[
-    (don_hbonds_nr.groupby("don index")["hydrogen"].nunique() == 2) &
-    (don_hbonds_nr.groupby("don index")["acc index"].nunique() >= 2)]
+if don_hbonds_nr.size > 0:
+    don_indices = list(don_hbonds_nr.groupby("don index").groups.keys())
+    single_don_exo_amines = pd.Series(don_indices, index=don_indices, name="don index")[
+        (don_hbonds_nr.groupby("don index")["hydrogen"].nunique() == 1) |
+        (don_hbonds_nr.groupby("don index")["acc index"].nunique() == 1)]
+    dual_don_exo_amines = pd.Series(don_indices, index=don_indices, name="don index")[
+        (don_hbonds_nr.groupby("don index")["hydrogen"].nunique() == 2) &
+        (don_hbonds_nr.groupby("don index")["acc index"].nunique() >= 2)]
 
 # write H-bond geometry info related to don_hbonds_nr excluding certain atom pairs to a csv file
-don_acc_grp = ["don index", "acc index"]
-(don_hbonds_nr[
-     # only include hydrogens with smaller D-H...A distances
-     (don_hbonds_nr.groupby(don_acc_grp)["dist"]
-      .transform(lambda grp: [mem == grp.min() for mem in grp])) &
-     # do not consider H-bonds found in canonical WCF base pairs
-     (~don_hbonds_nr[["don name", "acc resn", "acc name"]].eq(["N6", "U", "O4"]).all(axis='columns')) &
-     (~don_hbonds_nr[["don name", "acc resn", "acc name"]].eq(["N4", "G", "O6"]).all(axis='columns')) &
-     (~don_hbonds_nr[["don name", "acc resn", "acc name"]].eq(["N2", "C", "O2"]).all(axis='columns'))]
- .to_csv(snakemake.output.don_hbonds, index=False, columns=["dist", "ang"]))
+if don_hbonds_nr.size > 0:
+    don_acc_grp = ["don index", "acc index"]
+    (don_hbonds_nr[
+         # only include hydrogens with smaller D-H...A distances
+         (don_hbonds_nr.groupby(don_acc_grp)["dist"]
+          .transform(lambda grp: [mem == grp.min() for mem in grp])) &
+         # do not consider H-bonds found in canonical WCF base pairs
+         (~don_hbonds_nr[["don name", "acc resn", "acc name"]].eq(["N6", "U", "O4"]).all(axis='columns')) &
+         (~don_hbonds_nr[["don name", "acc resn", "acc name"]].eq(["N4", "G", "O6"]).all(axis='columns')) &
+         (~don_hbonds_nr[["don name", "acc resn", "acc name"]].eq(["N2", "C", "O2"]).all(axis='columns'))]
+     .to_csv(snakemake.output.don_hbonds, index=False, columns=["dist", "ang"]))
+else:
+    with open(snakemake.output.don_hbonds, "w") as write_file:
+        csv.writer(write_file).writerow(["dist", "ang"])
 
 # # write H-bond geometry info related to prot_don_hbonds to a csv file
 # prot_don_hbonds.to_csv(snakemake.output.prot_don_hbonds, index=False, columns=["dist", "ang"])
