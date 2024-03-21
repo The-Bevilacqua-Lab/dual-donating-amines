@@ -8,30 +8,15 @@ import pandas as pd
 import const
 import review_hbonds
 
-# specify the working directory and move to that directory
-working_dir = "~/Documents/Research/Dual_H-Bonding/Data/240319/"
-os.chdir(working_dir)
-
-# store a list of arguments provided when running this script
-if len(sys.argv) > 1:
-    args = sys.argv[1:]
-else:
-    args = []
-
-# create a folder named analysis if it does not exist and if any arguments were provided
-if not os.path.isdir(working_dir + "analysis") and len(args) > 0:
-    os.mkdir("analysis")
-
-os.chdir("/Users/drew/Documents/Research/Dual_H-Bonding/Scratch/")
 pd.set_option("display.width", 1000)
 pd.set_option("display.max_columns", 40)
 pd.set_option("display.max_rows", 1300)
 
 # set the H-bonding criteria
-H_DIST_MAX = 20
-H_ANG_TOL = 1000
-# H_DIST_MAX = 2.0
-# H_ANG_TOL = 30
+# H_DIST_MAX = 20
+# H_ANG_TOL = 1000
+H_DIST_MAX = 2.0
+H_ANG_TOL = 30
 DON_DIST_MAX = 3.5
 DON_ANG_TOL = 45.0
 
@@ -45,17 +30,16 @@ for residue in const.RESIDUE_LIBRARY:
                 don_acc_atoms.append((residue['res'], donor[0]))
 
 # extract the data from the hbond csv file and remove redundant lines
-hbond_file = "NR_3.0_96091.1_hbond_data.csv"
 hbond_col_names = ["don index", "don name", "don resn", "don resi", "don chain", "acc index", "acc name",
                    "acc resn", "acc resi", "acc chain", "dist", "ang", "vertex", "hydrogen",
                    "rotated side chain"]
 unique_col_comb = ["don index", "acc index", "hydrogen", "rotated side chain"]
-hbond_data = pd.read_csv(hbond_file, names=hbond_col_names, comment="#").drop_duplicates(subset=unique_col_comb)
+hbond_data = (pd.read_csv(snakemake.input.hbond, names=hbond_col_names, comment="#")
+              .drop_duplicates(subset=unique_col_comb))
 
 # extract the data from the nuc csv file
-nuc_file = "NR_3.0_08591.1_nuc_test_data.csv"
 nuc_col_names = ["index", "atom name", "resn", "resi", "chain"]
-nuc_data = pd.read_csv(nuc_file, names=nuc_col_names, comment="#")
+nuc_data = pd.read_csv(snakemake.input.nuc, names=nuc_col_names, comment="#")
 
 # identify atom pairs that meet the H-bond criteria and include a donor of interest
 don_hbonds = (hbond_data[(hbond_data["dist"] <= H_DIST_MAX) & (hbond_data["ang"] >= 180.0 - H_ANG_TOL)]
@@ -124,38 +108,29 @@ dual_don_exo_amines = pd.Series(don_indices, index=don_indices, name="don index"
     (don_hbonds_nr.groupby("don index")["hydrogen"].nunique() == 2) &
     (don_hbonds_nr.groupby("don index")["acc index"].nunique() >= 2)]
 
-# if don_geom is provided as an argument, write H-bond geometry info related to don_hbonds_nr excluding certain atom
-# pairs to a csv file
-if "don_geom" in args:
-    don_acc_grp = ["don index", "acc index"]
-    (don_hbonds_nr[
-         # only include hydrogens with smaller D-H...A distances
-         (don_hbonds_nr.groupby(don_acc_grp)["dist"]
-          .transform(lambda grp: [mem == grp.min() for mem in grp])) &
-         # do not consider H-bonds found in canonical WCF base pairs
-         (~don_hbonds_nr[["don name", "acc resn", "acc name"]].eq(["N6", "U", "O4"]).all(axis='columns')) &
-         (~don_hbonds_nr[["don name", "acc resn", "acc name"]].eq(["N4", "G", "O6"]).all(axis='columns')) &
-         (~don_hbonds_nr[["don name", "acc resn", "acc name"]].eq(["N2", "C", "O2"]).all(axis='columns'))]
-     .to_csv("analysis/don_hbonds.csv", index=False, columns=["dist", "ang"]))
+# write H-bond geometry info related to don_hbonds_nr excluding certain atom pairs to a csv file
+don_acc_grp = ["don index", "acc index"]
+(don_hbonds_nr[
+     # only include hydrogens with smaller D-H...A distances
+     (don_hbonds_nr.groupby(don_acc_grp)["dist"]
+      .transform(lambda grp: [mem == grp.min() for mem in grp])) &
+     # do not consider H-bonds found in canonical WCF base pairs
+     (~don_hbonds_nr[["don name", "acc resn", "acc name"]].eq(["N6", "U", "O4"]).all(axis='columns')) &
+     (~don_hbonds_nr[["don name", "acc resn", "acc name"]].eq(["N4", "G", "O6"]).all(axis='columns')) &
+     (~don_hbonds_nr[["don name", "acc resn", "acc name"]].eq(["N2", "C", "O2"]).all(axis='columns'))]
+ .to_csv(snakemake.output.don_hbonds, index=False, columns=["dist", "ang"]))
 
-# if prot_don_geom is provided as an argument, write H-bond geometry info related to prot_don_hbonds to a csv file
-if "prot_don_geom" in args:
-    (prot_don_hbonds.to_csv("analysis/prot_don_hbonds.csv", index=False, columns=["dist", "ang"]))
-
-# if single_don_rev is provided as an argument, create a new python script with PyMOL commands to review the donors
-# included in the single_don_exo_amines dataframe
-if "single_don_rev" in args:
-    review_hbonds.create_script("single_don_rev", [don_hbonds_nr, single_don_exo_amines], hbond_file)
-
-# if dual_don_rev is provided as an argument, create a new python script with PyMOL commands to review the donors
-# included in the dual_don_exo_amines dataframe
-if "dual_don_rev" in args:
-    review_hbonds.create_script("dual_don_rev", [don_hbonds_nr, dual_don_exo_amines], hbond_file)
-
-# if prot_don_rev is provided as an argument, create a new python script with PyMOL commands to review the donors
-# included in the prot_don_hbonds dataframe
-if "prot_don_rev" in args:
-    review_hbonds.create_script("prot_don_rev", [prot_don_hbonds], hbond_file)
+# # write H-bond geometry info related to prot_don_hbonds to a csv file
+# prot_don_hbonds.to_csv(snakemake.output.prot_don_hbonds, index=False, columns=["dist", "ang"])
+#
+# # create a new python script with PyMOL commands to review the donors included in the single_don_exo_amines dataframe
+# review_hbonds.create_script("single_don_rev", [don_hbonds_nr, single_don_exo_amines], snakemake.input.hbond, snakemake.output.single_don_rev)
+#
+# # create a new python script with PyMOL commands to review the donors included in the dual_don_exo_amines dataframe
+# review_hbonds.create_script("dual_don_rev", [don_hbonds_nr, dual_don_exo_amines], snakemake.input.hbond, snakemake.output.dual_don_rev)
+#
+# # create a new python script with PyMOL commands to review the donors included in the prot_don_hbonds dataframe
+# review_hbonds.create_script("prot_don_rev", [prot_don_hbonds], snakemake.input.hbond, snakemake.output.prot_don_rev)
 
 # TODO prot donor should not donate to the same atom the exo amine is donating to (e.g., C788 A5 in 6xu8)
 # TODO keep in mind ["H04", "A", "4212", "L5", "OD1", "ASN", "3", "LT"] in 8GLP
