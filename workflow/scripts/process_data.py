@@ -79,7 +79,7 @@ deprot_acc_hbonds_unfiltered = (hbond_data[((hbond_data["vertex"] == "hydrogen")
                                             (hbond_data["ang"] >= 109.5 - DON_ANG_TOL) &
                                             (hbond_data["ang"] <= 109.5 + DON_ANG_TOL))]
                                 .merge(pd.DataFrame(const.DEPROT_ACCEPTORS_OF_INTEREST,
-                                       columns=["don resn", "don name"]), how='inner')
+                                       columns=["acc resn", "acc name"]), how='inner')
                                 .merge(pd.DataFrame(don_acc_atoms, columns=["don resn", "don name"]), how='left',
                                        indicator=True))
 
