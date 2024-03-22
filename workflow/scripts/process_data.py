@@ -130,6 +130,17 @@ if don_hbonds_nr.size > 0:
     dual_don_exo_amines = pd.Series(don_indices, index=don_indices, name="don index")[
         (don_hbonds_nr.groupby("don index")["hydrogen"].nunique() == 2) &
         (don_hbonds_nr.groupby("don index")["acc index"].nunique() >= 2)]
+else:
+    single_don_exo_amines = pd.Series([])
+    dual_don_exo_amines = pd.Series([])
+
+# write dataframes to csv files
+don_hbonds_nr.to_csv(snakemake.output.don_hbonds_nr)
+prot_don_hbonds.to_csv(snakemake.output.prot_don_hbonds)
+acc_hbonds_nr.to_csv(snakemake.output.acc_hbonds_nr)
+deprot_acc_hbonds.to_csv(snakemake.output.deprot_acc_hbonds)
+single_don_exo_amines.to_csv(snakemake.output.single_don_exo_amines)
+dual_don_exo_amines.to_csv(snakemake.output.dual_don_exo_amines)
 
 # write H-bond geometry info related to don_hbonds_nr excluding certain atom pairs to a csv file
 if don_hbonds_nr.size > 0:
@@ -142,9 +153,9 @@ if don_hbonds_nr.size > 0:
          (~don_hbonds_nr[["don name", "acc resn", "acc name"]].eq(["N6", "U", "O4"]).all(axis='columns')) &
          (~don_hbonds_nr[["don name", "acc resn", "acc name"]].eq(["N4", "G", "O6"]).all(axis='columns')) &
          (~don_hbonds_nr[["don name", "acc resn", "acc name"]].eq(["N2", "C", "O2"]).all(axis='columns'))]
-     .to_csv(snakemake.output.don_hbonds, index=False, columns=["dist", "ang"]))
+     .to_csv(snakemake.output.don_hbonds_geom, index=False, columns=["dist", "ang"]))
 else:
-    with open(snakemake.output.don_hbonds, "w") as write_file:
+    with open(snakemake.output.don_hbonds_geom, "w") as write_file:
         csv.writer(write_file).writerow(["dist", "ang"])
 
 # # write H-bond geometry info related to prot_don_hbonds to a csv file
