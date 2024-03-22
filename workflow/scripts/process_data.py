@@ -71,6 +71,27 @@ acc_hbonds = (hbond_data[((hbond_data["vertex"] == "hydrogen") & (hbond_data["di
                                     (hbond_data["ang"] <= 109.5 + DON_ANG_TOL))]
               .merge(pd.DataFrame(const.ACCEPTORS_OF_INTEREST, columns=["acc resn", "acc name"]), how='inner'))
 
+# identify atom pairs that meet the H-bond criteria and include a deprotonated acceptor of interest
+# values in the _merge column matching left_only indicate donors that cannot typically also accept an H-bond
+deprot_acc_hbonds_unfiltered = (hbond_data[((hbond_data["vertex"] == "hydrogen") & (hbond_data["dist"] <= H_DIST_MAX) &
+                                            (hbond_data["ang"] >= 180.0 - H_ANG_TOL)) |
+                                           ((hbond_data["vertex"] == "donor") & (hbond_data["dist"] <= DON_DIST_MAX) &
+                                            (hbond_data["ang"] >= 109.5 - DON_ANG_TOL) &
+                                            (hbond_data["ang"] <= 109.5 + DON_ANG_TOL))]
+                                .merge(pd.DataFrame(const.DEPROT_ACCEPTORS_OF_INTEREST,
+                                       columns=["don resn", "don name"]), how='inner')
+                                .merge(pd.DataFrame(don_acc_atoms, columns=["don resn", "don name"]), how='left',
+                                       indicator=True))
+
+# Filter deprot_acc_hbonds_unfiltered such that only donors that cannot typically also accept an H-bond are included.
+# Also remove side chain donor atoms from ASN and GLN residues due to ambiguity in side chain conformation.
+deprot_acc_hbonds = (deprot_acc_hbonds_unfiltered[(deprot_acc_hbonds_unfiltered["_merge"] == "left_only") &
+                                                  ~((deprot_acc_hbonds_unfiltered["acc resn"] == "ASN") &
+                                                    (deprot_acc_hbonds_unfiltered["acc name"] == "ND2")) &
+                                                  ~((deprot_acc_hbonds_unfiltered["acc resn"] == "GLN") &
+                                                    (deprot_acc_hbonds_unfiltered["acc name"] == "NE2"))]
+                     .drop(columns="_merge"))
+
 # Create a new list of H-bonding atom pairs involving the donors of interest with redundancy removed such that if
 # multiple atom pairs involve the same donor and an acceptor belonging to different side chain conformations of the same
 # ASN, GLN, or HIS residue, only the atom pairs with the original conformation are kept. There could be situations where
