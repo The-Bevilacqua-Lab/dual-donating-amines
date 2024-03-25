@@ -142,17 +142,25 @@ deprot_acc_hbonds.to_csv(snakemake.output.deprot_acc_hbonds)
 single_don_exo_amines.to_csv(snakemake.output.single_don_exo_amines)
 dual_don_exo_amines.to_csv(snakemake.output.dual_don_exo_amines)
 
-# write H-bond geometry info related to don_hbonds_nr excluding certain atom pairs to a csv file
-if don_hbonds_nr.size > 0:
+# Repeat the steps to prepare don_hbonds_nr but without the filtering using h-bonding criteria to create
+# don_hbonds_geom_nr. This data can be used to look at the distribution of h-bonding geometry measurements.
+acc_grp = ["don index", "acc resn", "acc resi", "acc chain"]
+don_hbonds_geom = hbond_data.merge(pd.DataFrame(const.DONORS_OF_INTEREST, columns=["don resn", "don name"]),
+                                   how='inner')
+don_hbonds_geom_nr = (don_hbonds_geom[don_hbonds_geom.groupby(acc_grp)["rotated side chain"]
+                      .transform(lambda grp: grp.str.fullmatch("none") if any(grp.str.fullmatch("none")) else True)])
+
+# write H-bond geometry info related to don_hbonds_geom_nr excluding certain atom pairs to a csv file
+if don_hbonds_geom_nr.size > 0:
     don_acc_grp = ["don index", "acc index"]
-    (don_hbonds_nr[
+    (don_hbonds_geom_nr[
          # only include hydrogens with smaller D-H...A distances
-         (don_hbonds_nr.groupby(don_acc_grp)["dist"]
+         (don_hbonds_geom_nr.groupby(don_acc_grp)["dist"]
           .transform(lambda grp: [mem == grp.min() for mem in grp])) &
          # do not consider H-bonds found in canonical WCF base pairs
-         (~don_hbonds_nr[["don name", "acc resn", "acc name"]].eq(["N6", "U", "O4"]).all(axis='columns')) &
-         (~don_hbonds_nr[["don name", "acc resn", "acc name"]].eq(["N4", "G", "O6"]).all(axis='columns')) &
-         (~don_hbonds_nr[["don name", "acc resn", "acc name"]].eq(["N2", "C", "O2"]).all(axis='columns'))]
+         (~don_hbonds_geom_nr[["don name", "acc resn", "acc name"]].eq(["N6", "U", "O4"]).all(axis='columns')) &
+         (~don_hbonds_geom_nr[["don name", "acc resn", "acc name"]].eq(["N4", "G", "O6"]).all(axis='columns')) &
+         (~don_hbonds_geom_nr[["don name", "acc resn", "acc name"]].eq(["N2", "C", "O2"]).all(axis='columns'))]
      .to_csv(snakemake.output.don_hbonds_geom, index=False, columns=["dist", "ang"]))
 else:
     with open(snakemake.output.don_hbonds_geom, "w") as write_file:
