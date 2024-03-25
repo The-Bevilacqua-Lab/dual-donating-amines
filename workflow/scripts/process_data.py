@@ -150,20 +150,28 @@ don_hbonds_geom = hbond_data.merge(pd.DataFrame(const.DONORS_OF_INTEREST, column
 don_hbonds_geom_nr = (don_hbonds_geom[don_hbonds_geom.groupby(acc_grp)["rotated side chain"]
                       .transform(lambda grp: grp.str.fullmatch("none") if any(grp.str.fullmatch("none")) else True)])
 
-# write H-bond geometry info related to don_hbonds_geom_nr excluding certain atom pairs to a csv file
+# write H-bond geometry info related to don_hbonds_geom_nr to csv files
 if don_hbonds_geom_nr.size > 0:
     don_acc_grp = ["don index", "acc index"]
     (don_hbonds_geom_nr[
          # only include hydrogens with smaller D-H...A distances
          (don_hbonds_geom_nr.groupby(don_acc_grp)["dist"]
+          .transform(lambda grp: [mem == grp.min() for mem in grp]))]
+     .to_csv(snakemake.output.don_hbonds_geom, index=False, columns=["dist", "ang"]))
+    (don_hbonds_geom_nr[
+         # only include hydrogens with smaller D-H...A distances
+         (don_hbonds_geom_nr.groupby(don_acc_grp)["dist"]
           .transform(lambda grp: [mem == grp.min() for mem in grp])) &
-         # do not consider H-bonds found in canonical WCF base pairs
+         # do not consider A(N6)-U(O4), C(N4)-G(O6), G(N2)-C(O2), and G(N2)-C(N3) atom pairs
          (~don_hbonds_geom_nr[["don name", "acc resn", "acc name"]].eq(["N6", "U", "O4"]).all(axis='columns')) &
          (~don_hbonds_geom_nr[["don name", "acc resn", "acc name"]].eq(["N4", "G", "O6"]).all(axis='columns')) &
-         (~don_hbonds_geom_nr[["don name", "acc resn", "acc name"]].eq(["N2", "C", "O2"]).all(axis='columns'))]
-     .to_csv(snakemake.output.don_hbonds_geom, index=False, columns=["dist", "ang"]))
+         (~don_hbonds_geom_nr[["don name", "acc resn", "acc name"]].eq(["N2", "C", "O2"]).all(axis='columns')) &
+         (~don_hbonds_geom_nr[["don name", "acc resn", "acc name"]].eq(["N2", "C", "N3"]).all(axis='columns'))]
+     .to_csv(snakemake.output.don_hbonds_geom_filtered, index=False, columns=["dist", "ang"]))
 else:
     with open(snakemake.output.don_hbonds_geom, "w") as write_file:
+        csv.writer(write_file).writerow(["dist", "ang"])
+    with open(snakemake.output.don_hbonds_geom_filtered, "w") as write_file:
         csv.writer(write_file).writerow(["dist", "ang"])
 
 # # write H-bond geometry info related to prot_don_hbonds to a csv file
