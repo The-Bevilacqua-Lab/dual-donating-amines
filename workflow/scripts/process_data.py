@@ -39,7 +39,7 @@ hbond_data = (pd.read_csv(snakemake.input.hbond, names=hbond_col_names, comment=
               .drop_duplicates(subset=unique_col_comb))
 
 # extract the data from the nuc csv file
-nuc_col_names = ["index", "atom name", "resn", "resi", "chain"]
+nuc_col_names = ["index", "atom_name", "resn", "resi", "chain"]
 nuc_data = pd.read_csv(snakemake.input.nuc, names=nuc_col_names, comment="#", na_filter=False)
 
 # identify atom pairs that meet the H-bond criteria and include a donor of interest
