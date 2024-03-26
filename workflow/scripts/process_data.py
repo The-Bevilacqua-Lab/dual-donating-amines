@@ -16,10 +16,10 @@ pd.set_option("display.max_rows", 1300)
 # set the H-bonding criteria
 # H_DIST_MAX = 20
 # H_ANG_TOL = 1000
-H_DIST_MAX = 2.0
-H_ANG_TOL = 30.0
-DON_DIST_MAX = 3.0
-DON_ANG_TOL = 30.0
+H_DIST_MAX = 2.3
+H_ANG_TOL = 45.0
+DON_DIST_MAX = 3.3
+DON_ANG_TOL = 45.0
 
 # construct a list of tuples containing atom and residue names that describe atoms capable of both donating and
 # accepting an H-bond
