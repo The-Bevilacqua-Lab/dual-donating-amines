@@ -135,12 +135,12 @@ else:
     dual_don_exo_amines = pd.Series([])
 
 # write dataframes to csv files
-don_hbonds_nr.to_csv(snakemake.output.don_hbonds_nr)
-prot_don_hbonds.to_csv(snakemake.output.prot_don_hbonds)
-acc_hbonds_nr.to_csv(snakemake.output.acc_hbonds_nr)
-deprot_acc_hbonds.to_csv(snakemake.output.deprot_acc_hbonds)
-single_don_exo_amines.to_csv(snakemake.output.single_don_exo_amines)
-dual_don_exo_amines.to_csv(snakemake.output.dual_don_exo_amines)
+don_hbonds_nr.to_csv(snakemake.output.don_hbonds_nr, index=False)
+prot_don_hbonds.to_csv(snakemake.output.prot_don_hbonds, index=False)
+acc_hbonds_nr.to_csv(snakemake.output.acc_hbonds_nr, index=False)
+deprot_acc_hbonds.to_csv(snakemake.output.deprot_acc_hbonds, index=False)
+single_don_exo_amines.to_csv(snakemake.output.single_don_exo_amines, index=False)
+dual_don_exo_amines.to_csv(snakemake.output.dual_don_exo_amines, index=False)
 
 # Repeat the steps to prepare don_hbonds_nr but without the filtering using h-bonding criteria to create
 # don_hbonds_geom_nr. This data can be used to look at the distribution of h-bonding geometry measurements.
@@ -150,6 +150,7 @@ don_hbonds_geom = hbond_data.merge(pd.DataFrame(const.DONORS_OF_INTEREST, column
 don_hbonds_geom_nr = (don_hbonds_geom[don_hbonds_geom.groupby(acc_grp)["rotated side chain"]
                       .transform(lambda grp: grp.str.fullmatch("none") if any(grp.str.fullmatch("none")) else True)])
 
+# TODO consider creating csv file that only include one acceptor with closest D-H...A distance per donor
 # write H-bond geometry info related to don_hbonds_geom_nr to csv files
 if don_hbonds_geom_nr.size > 0:
     don_acc_grp = ["don index", "acc index"]
