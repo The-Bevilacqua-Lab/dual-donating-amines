@@ -141,6 +141,7 @@ acc_hbonds_nr.assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.out
 deprot_acc_hbonds.assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.deprot_acc_hbonds, index=False)
 single_don_exo_amines.to_frame().assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.single_don_exo_amines, index=False)
 dual_don_exo_amines.to_frame().assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.dual_don_exo_amines, index=False)
+nuc_data.assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.nuc_data, index=False)
 
 # Repeat the steps to prepare don_hbonds_nr but without the filtering using h-bonding criteria to create
 # don_hbonds_geom_nr. This data can be used to look at the distribution of h-bonding geometry measurements.
