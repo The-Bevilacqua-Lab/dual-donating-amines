@@ -16,18 +16,18 @@ def create_script(cat, df_list, source_file, output_file):
         file.write("from pymol import cmd\n\n")
         if cat == "single_don_rev" or cat == "dual_don_rev":
             file.write("hbonds = [\n")
-            last_grp = list(df_list[0].merge(df_list[1]).groupby("don index").groups.keys())[-1]
-            for grp, mem in df_list[0].merge(df_list[1]).groupby("don index"):
+            last_grp = list(df_list[0].merge(df_list[1]).groupby("don_index").groups.keys())[-1]
+            for grp, mem in df_list[0].merge(df_list[1]).groupby("don_index"):
                 for i, pair in enumerate(mem.to_dict('index').values()):
                     if i == 0:
-                        file.write(f'    [["{pair["hydrogen"]}", "{pair["don resn"]}", "{pair["don resi"]}", '
-                                   f'"{pair["don chain"]}", "{pair["acc name"]}", "{pair["acc resn"]}", '
-                                   f'"{pair["acc resi"]}", "{pair["acc chain"]}"]')
+                        file.write(f'    [["{pair["hydrogen"]}", "{pair["don_resn"]}", "{pair["don_resi"]}", '
+                                   f'"{pair["don_chain"]}", "{pair["acc_name"]}", "{pair["acc_resn"]}", '
+                                   f'"{pair["acc_resi"]}", "{pair["acc_chain"]}"]')
                     else:
-                        file.write(f', ["{pair["hydrogen"]}", "{pair["don resn"]}", "{pair["don resi"]}", '
-                                   f'"{pair["don chain"]}", "{pair["acc name"]}", "{pair["acc resn"]}", '
-                                   f'"{pair["acc resi"]}", "{pair["acc chain"]}"]')
-                    if i == mem["don index"].size - 1:
+                        file.write(f', ["{pair["hydrogen"]}", "{pair["don_resn"]}", "{pair["don_resi"]}", '
+                                   f'"{pair["don_chain"]}", "{pair["acc_name"]}", "{pair["acc_resn"]}", '
+                                   f'"{pair["acc_resi"]}", "{pair["acc_chain"]}"]')
+                    if i == mem["don_index"].size - 1:
                         if grp != last_grp:
                             file.write(f'],\n')
                         else:
@@ -35,18 +35,18 @@ def create_script(cat, df_list, source_file, output_file):
             file.write("]\n")
         if cat == "prot_don_rev":
             file.write("hbonds = [\n")
-            last_grp = list(df_list[0].groupby("don index").groups.keys())[-1]
-            for grp, mem in df_list[0].groupby("don index"):
+            last_grp = list(df_list[0].groupby("don_index").groups.keys())[-1]
+            for grp, mem in df_list[0].groupby("don_index"):
                 for i, pair in enumerate(mem.to_dict('index').values()):
                     if i == 0:
-                        file.write(f'    [["{pair["hydrogen"]}", "{pair["don resn"]}", "{pair["don resi"]}", '
-                                   f'"{pair["don chain"]}", "{pair["acc name"]}", "{pair["acc resn"]}", '
-                                   f'"{pair["acc resi"]}", "{pair["acc chain"]}"]')
+                        file.write(f'    [["{pair["hydrogen"]}", "{pair["don_resn"]}", "{pair["don_resi"]}", '
+                                   f'"{pair["don_chain"]}", "{pair["acc_name"]}", "{pair["acc_resn"]}", '
+                                   f'"{pair["acc_resi"]}", "{pair["acc_chain"]}"]')
                     else:
-                        file.write(f', ["{pair["hydrogen"]}", "{pair["don resn"]}", "{pair["don resi"]}", '
-                                   f'"{pair["don chain"]}", "{pair["acc name"]}", "{pair["acc resn"]}", '
-                                   f'"{pair["acc resi"]}", "{pair["acc chain"]}"]')
-                    if i == mem["don index"].size - 1:
+                        file.write(f', ["{pair["hydrogen"]}", "{pair["don_resn"]}", "{pair["don_resi"]}", '
+                                   f'"{pair["don_chain"]}", "{pair["acc_name"]}", "{pair["acc_resn"]}", '
+                                   f'"{pair["acc_resi"]}", "{pair["acc_chain"]}"]')
+                    if i == mem["don_index"].size - 1:
                         if grp != last_grp:
                             file.write(f'],\n')
                         else:
