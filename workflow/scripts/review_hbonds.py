@@ -12,8 +12,10 @@ import const
 def create_script(cat, df_list, source_file, output_file):
     with open(output_file, "w") as file:
         file.write("# this script is to be used with PyMOL\n")
-        file.write(f"# info on interactions came from {source_file}\n\n")
-        file.write("from pymol import cmd\n\n")
+        file.write(f"# info on interactions came from {source_file}\n")
+        file.write("# for best results, use with modified .cif file created by collect_data.py\n\n")
+        file.write("from pymol import cmd\n\n\n")
+        file.write("cmd.set('scene_animation_duration', '0.5')\n\n")
         if cat == "single_don_rev" or cat == "dual_don_rev":
             file.write("hbonds = [\n")
             last_grp = list(df_list[0].merge(df_list[1]).groupby("don_index").groups.keys())[-1]
@@ -80,6 +82,10 @@ def create_script(cat, df_list, source_file, output_file):
             file.write("    cmd.hide('labels')\n")
             file.write("    cmd.show('dashes', f'dist_{num}*')\n")
             file.write("    cmd.orient('visible')\n")
+        file.write("\n")
+        file.write("for i in range(len(hbonds)):\n")
+        file.write("    goto(i)\n")
+        file.write("    cmd.scene(str(i), 'store')\n")
         file.write("\n")
         file.write("cmd.extend('num_hbonds', num_hbonds)\n")
         file.write("cmd.extend('goto', goto)\n")
