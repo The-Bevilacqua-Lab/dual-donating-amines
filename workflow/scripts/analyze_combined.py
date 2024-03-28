@@ -82,9 +82,17 @@ gc_bp_dual = (g_dual_all[g_dual_all[["acc_name", "acc_resn"]].eq(["O2", "C"]).al
                      on=["acc_resn", "acc_resi", "acc_chain", "eq_class"],
                      how='inner'))
 
-print(gc_bp_single["eq_class"].size/g_single_all["eq_class"].size)
-print(gc_bp_dual["eq_class"].size/(g_dual_all["eq_class"].size/2))
-
+# # write data on single and dual H-bonding and canonical base pairs to a csv file
+# canonical_bp = pd.DataFrame(
+#     {
+#         "BP_single": [au_bp_single["eq_class"].size, cg_bp_single["eq_class"].size, gc_bp_single["eq_class"].size],
+#         "all_single": [a_single_all["eq_class"].size, c_single_all["eq_class"].size, g_single_all["eq_class"].size],
+#         "BP_dual": [au_bp_dual["eq_class"].size, cg_bp_dual["eq_class"].size, gc_bp_dual["eq_class"].size],
+#         "all_dual": [len(a_dual_all.groupby(["don_index", "eq_class"]).groups.keys()), len(c_dual_all.groupby(["don_index", "eq_class"]).groups.keys()), len(g_dual_all.groupby(["don_index", "eq_class"]).groups.keys())]
+#     },
+#     index=pd.Categorical(["A", "C", "G"])
+# )
+# canonical_bp.to_csv("plots/canonical_bp.csv")
 
 # # P_VALUE PROT DON
 # # TODO take into account that every two entries in dual_all accounts for one residue
