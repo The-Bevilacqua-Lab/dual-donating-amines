@@ -10,15 +10,18 @@ working_dir = os.getcwd()
 
 # create a dictionary that will contain all the data categories and their associated files
 categories = {
+    "nuc_data": [],
     "don_hbonds_nr": [],
     "prot_don_hbonds": [],
     "acc_hbonds_nr": [],
     "deprot_acc_hbonds": [],
     "single_don_exo_amines": [],
     "dual_don_exo_amines": [],
+    "single_acc_carbonyls": [],
+    "dual_acc_carbonyls": [],
+    "tri_acc_carbonyls": [],
     "don_hbonds_geom": [],
-    "don_hbonds_geom_filtered": [],
-    "nuc_data": []
+    "don_hbonds_geom_filtered": []
 }
 
 # prepare a list of files from each category folder to combine
@@ -44,12 +47,15 @@ for cat in categories.keys():
 os.mkdir(working_dir + "/combined")
 
 # create the combined dataframes and write to csv files
+pd.concat([pd.read_csv(file) for file in categories["nuc_data"]]).to_csv("combined/nuc_data_c.csv", index=False)
 pd.concat([pd.read_csv(file) for file in categories["don_hbonds_nr"]]).to_csv("combined/don_hbonds_nr_c.csv", index=False)
 pd.concat([pd.read_csv(file) for file in categories["prot_don_hbonds"]]).to_csv("combined/prot_don_hbonds_c.csv", index=False)
 pd.concat([pd.read_csv(file) for file in categories["acc_hbonds_nr"]]).to_csv("combined/acc_hbonds_nr_c.csv", index=False)
 pd.concat([pd.read_csv(file) for file in categories["deprot_acc_hbonds"]]).to_csv("combined/deprot_acc_hbonds_c.csv", index=False)
 pd.concat([pd.read_csv(file) for file in categories["single_don_exo_amines"]]).to_csv("combined/single_don_exo_amines_c.csv", index=False)
 pd.concat([pd.read_csv(file) for file in categories["dual_don_exo_amines"]]).to_csv("combined/dual_don_exo_amines_c.csv", index=False)
+pd.concat([pd.read_csv(file) for file in categories["single_acc_carbonyls"]]).to_csv("combined/single_acc_carbonyls_c.csv", index=False)
+pd.concat([pd.read_csv(file) for file in categories["dual_acc_carbonyls"]]).to_csv("combined/dual_acc_carbonyls_c.csv", index=False)
+pd.concat([pd.read_csv(file) for file in categories["tri_acc_carbonyls"]]).to_csv("combined/tri_acc_carbonyls_c.csv", index=False)
 pd.concat([pd.read_csv(file) for file in categories["don_hbonds_geom"]]).to_csv("combined/don_hbonds_geom_c.csv", index=False)
 pd.concat([pd.read_csv(file) for file in categories["don_hbonds_geom_filtered"]]).to_csv("combined/don_hbonds_geom_filtered_c.csv", index=False)
-pd.concat([pd.read_csv(file) for file in categories["nuc_data"]]).to_csv("combined/nuc_data_c.csv", index=False)
