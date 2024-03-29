@@ -134,14 +134,36 @@ else:
     single_don_exo_amines = pd.Series([])
     dual_don_exo_amines = pd.Series([])
 
+# identify nucleobases that accept either one, two, or three or more H-bonds via their nucleobase carbonyls
+# these categories must involve one unique donor, two unique donors, or at least three unique donors, respectively
+if acc_hbonds_nr.size > 0:
+    acc_indices = list(acc_hbonds_nr[acc_hbonds_nr["acc_name"].isin(["O2", "O4", "O6"])]
+                       .groupby("acc_index").groups.keys())
+    single_acc_carbonyls = pd.Series(acc_indices, index=acc_indices, name="acc_index")[
+        (acc_hbonds_nr[acc_hbonds_nr["acc_name"].isin(["O2", "O4", "O6"])]
+         .groupby("acc_index")["don_index"].nunique() == 1)]
+    dual_acc_carbonyls = pd.Series(acc_indices, index=acc_indices, name="acc_index")[
+        (acc_hbonds_nr[acc_hbonds_nr["acc_name"].isin(["O2", "O4", "O6"])]
+         .groupby("acc_index")["don_index"].nunique() == 2)]
+    tri_acc_carbonyls = pd.Series(acc_indices, index=acc_indices, name="acc_index")[
+        (acc_hbonds_nr[acc_hbonds_nr["acc_name"].isin(["O2", "O4", "O6"])]
+         .groupby("acc_index")["don_index"].nunique() >= 3)]
+else:
+    single_acc_carbonyls = pd.Series([])
+    dual_acc_carbonyls = pd.Series([])
+    tri_acc_carbonyls = pd.Series([])
+
 # write dataframes to csv files
+nuc_data.assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.nuc_data, index=False)
 don_hbonds_nr.assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.don_hbonds_nr, index=False)
 prot_don_hbonds.assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.prot_don_hbonds, index=False)
 acc_hbonds_nr.assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.acc_hbonds_nr, index=False)
 deprot_acc_hbonds.assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.deprot_acc_hbonds, index=False)
 single_don_exo_amines.to_frame().assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.single_don_exo_amines, index=False)
 dual_don_exo_amines.to_frame().assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.dual_don_exo_amines, index=False)
-nuc_data.assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.nuc_data, index=False)
+single_acc_carbonyls.to_frame().assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.single_acc_carbonyls, index=False)
+dual_acc_carbonyls.to_frame().assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.dual_acc_carbonyls, index=False)
+tri_acc_carbonyls.to_frame().assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.tri_acc_carbonyls, index=False)
 
 # Repeat the steps to prepare don_hbonds_nr but without the filtering using h-bonding criteria to create
 # don_hbonds_geom_nr. This data can be used to look at the distribution of h-bonding geometry measurements.
