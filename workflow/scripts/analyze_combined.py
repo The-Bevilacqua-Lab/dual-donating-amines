@@ -190,7 +190,7 @@ a_n1_acc_a_n6_dual_2 = a_n1_acc_a_n6_dual_1[
     ~((a_n1_acc_a_n6_dual_1["acc_resn_x"] == a_n1_acc_a_n6_dual_1["don_resn_y"]) &
       (a_n1_acc_a_n6_dual_1["acc_resi_x"] == a_n1_acc_a_n6_dual_1["don_resi_y"]) &
       (a_n1_acc_a_n6_dual_1["acc_chain_x"] == a_n1_acc_a_n6_dual_1["don_chain_y"]) &
-      (a_n1_acc_a_n6_single_1["don_name_y"] != "O2'"))]
+      (a_n1_acc_a_n6_dual_1["don_name_y"] != "O2'"))]
 print(a_n1_acc_a_n6_single_2["eq_class"].size / len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()))
 print(a_n1_acc_a_n6_dual_2["eq_class"].size / len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()))
 
