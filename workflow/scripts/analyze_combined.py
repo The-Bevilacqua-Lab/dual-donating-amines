@@ -170,36 +170,51 @@ gc_bp_dual = (g_n2_dual_all[g_n2_dual_all[["acc_name", "acc_resn"]].eq(["O2", "C
 # chi2, p_value, df, acc = scipy.stats.chi2_contingency(acc)
 # print(p_value)
 
-# A(N6) DONATION AND A(N1) ACCEPTATION, DIFFERENT H-BONDING NUCLEOBASES
-a_n1_acc_a_n6_single_1 = (a_n6_single_all.merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
+# A(N6) DONATION AND A(N1) ACCEPTATION
+a_n1_acc_a_n6_single = (a_n6_single_all.merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
                                                 .eq(["N1", "A"]).all(axis='columns')],
                                                 left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
                                                 right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"],
                                                 how='inner'))
-a_n1_acc_a_n6_single_2 = a_n1_acc_a_n6_single_1[
-    ~((a_n1_acc_a_n6_single_1["acc_resn_x"] == a_n1_acc_a_n6_single_1["don_resn_y"]) &
-      (a_n1_acc_a_n6_single_1["acc_resi_x"] == a_n1_acc_a_n6_single_1["don_resi_y"]) &
-      (a_n1_acc_a_n6_single_1["acc_chain_x"] == a_n1_acc_a_n6_single_1["don_chain_y"]) &
-      (a_n1_acc_a_n6_single_1["don_name_y"] != "O2'"))]
-a_n1_acc_a_n6_dual_1 = (a_n6_dual_all.merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
+a_n1_acc_a_n6_dual = (a_n6_dual_all.merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
                                             .eq(["N1", "A"]).all(axis='columns')],
                                             left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
                                             right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"],
                                             how='inner'))
-a_n1_acc_a_n6_dual_2 = a_n1_acc_a_n6_dual_1[
-    ~((a_n1_acc_a_n6_dual_1["acc_resn_x"] == a_n1_acc_a_n6_dual_1["don_resn_y"]) &
-      (a_n1_acc_a_n6_dual_1["acc_resi_x"] == a_n1_acc_a_n6_dual_1["don_resi_y"]) &
-      (a_n1_acc_a_n6_dual_1["acc_chain_x"] == a_n1_acc_a_n6_dual_1["don_chain_y"]) &
-      (a_n1_acc_a_n6_dual_1["don_name_y"] != "O2'"))]
-print(a_n1_acc_a_n6_single_2["eq_class"].size / len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()))
-print(a_n1_acc_a_n6_dual_2["eq_class"].size / len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()))
-
-
-print(a_n1_acc_a_n6_single_2["eq_class"].size)
-print(a_n1_acc_a_n6_dual_2["eq_class"].size)
-
+print(a_n1_acc_a_n6_single["eq_class"].size / len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()))
+print(a_n1_acc_a_n6_dual["eq_class"].size / len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()))
+print(a_n1_acc_a_n6_single["eq_class"].size)
+print(a_n1_acc_a_n6_dual["eq_class"].size)
 print(len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()))
 print(len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()))
+
+# # A(N6) DONATION AND A(N1) ACCEPTATION, DIFFERENT H-BONDING NUCLEOBASES
+# a_n1_acc_a_n6_single_1 = (a_n6_single_all.merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
+#                                                 .eq(["N1", "A"]).all(axis='columns')],
+#                                                 left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
+#                                                 right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"],
+#                                                 how='inner'))
+# a_n1_acc_a_n6_single_2 = a_n1_acc_a_n6_single_1[
+#     ~((a_n1_acc_a_n6_single_1["acc_resn_x"] == a_n1_acc_a_n6_single_1["don_resn_y"]) &
+#       (a_n1_acc_a_n6_single_1["acc_resi_x"] == a_n1_acc_a_n6_single_1["don_resi_y"]) &
+#       (a_n1_acc_a_n6_single_1["acc_chain_x"] == a_n1_acc_a_n6_single_1["don_chain_y"]) &
+#       (a_n1_acc_a_n6_single_1["don_name_y"] != "O2'"))]
+# a_n1_acc_a_n6_dual_1 = (a_n6_dual_all.merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
+#                                             .eq(["N1", "A"]).all(axis='columns')],
+#                                             left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
+#                                             right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"],
+#                                             how='inner'))
+# a_n1_acc_a_n6_dual_2 = a_n1_acc_a_n6_dual_1[
+#     ~((a_n1_acc_a_n6_dual_1["acc_resn_x"] == a_n1_acc_a_n6_dual_1["don_resn_y"]) &
+#       (a_n1_acc_a_n6_dual_1["acc_resi_x"] == a_n1_acc_a_n6_dual_1["don_resi_y"]) &
+#       (a_n1_acc_a_n6_dual_1["acc_chain_x"] == a_n1_acc_a_n6_dual_1["don_chain_y"]) &
+#       (a_n1_acc_a_n6_dual_1["don_name_y"] != "O2'"))]
+# print(a_n1_acc_a_n6_single_2["eq_class"].size / len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()))
+# print(a_n1_acc_a_n6_dual_2["eq_class"].size / len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()))
+# print(a_n1_acc_a_n6_single_2["eq_class"].size)
+# print(a_n1_acc_a_n6_dual_2["eq_class"].size)
+# print(len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()))
+# print(len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()))
 
 # # H-BONDING DISTANCE, CANONICAL BASEPAIR
 # print(au_bp_single["dist_y"].mean())
