@@ -41,22 +41,17 @@ a_n6_dual_all = dual_don_exo_amines_c.merge(don_hbonds_nr_c[don_hbonds_nr_c["don
 # # TODO get a_n6_no_all working such that its size brings the total to the size of a_exo_amines
 # # TODO don_index 32209 eq_class NR_3.0_61825.1 is not present in combined/nuc_data_c.csv?
 # # TODO just so that I don't forget... exo amines listed as single donors can have more than one entry in don_hbonds_nr_c because of the same H donating twice, or the same atom accepting from the different H's
-# a_n6_no_all = (pd.concat([a_n6_single_all,
-#                          a_n6_dual_all,
-#                          a_exo_amines.rename(columns={"index": "don_index", "atom_name": "don_name", "resn": "don_resn",
-#                                                       "resi": "don_resi", "chain": "don_chain"})])
-#                .drop_duplicates(subset=["don_index", "eq_class"], keep=False))
+a_n6_no_all = (pd.concat([a_n6_single_all,
+                         a_n6_dual_all,
+                         a_exo_amines.rename(columns={"index": "don_index", "atom_name": "don_name", "resn": "don_resn",
+                                                      "resi": "don_resi", "chain": "don_chain"})])
+               .drop_duplicates(subset=["don_index", "eq_class"], keep=False))
 
-# # TODO the following two df sizes should matchup, but they are off by a little
-# a = len(don_hbonds_nr_c[don_hbonds_nr_c[["don_name", "don_resn"]].eq(["N6", "A"]).all(axis='columns')].groupby(["don_index", "eq_class"]).groups.keys())
-# print(a)
-# print(a_n6_single_all["eq_class"].size + len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()))
-# print(len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()) + len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()))
+# print(len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()) + len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()) + len(a_n6_no_all.groupby(["don_index", "eq_class"]).groups.keys()))
+# print(a_exo_amines["eq_class"].size)
 
-# print(a_n6_single_all["eq_class"].size)
-# print(a_n6_single_all.drop_duplicates(subset=["don_index", "eq_class"], keep=False)["eq_class"].size)
-# print(a_n6_single_all.value_counts(subset=["don_index", "eq_class"], sort=False))
-# print(a_n6_single_all[a_n6_single_all["don_index"] == " "])
+# print(a_n6_single_all[a_n6_single_all[["don_index", "eq_class"]].eq([32209, "NR_3.0_61825.1"]).all(axis='columns')])
+print(nuc_data_c[nuc_data_c[["index", "eq_class"]].eq([32209, "NR_3.0_61825.1"]).all(axis='columns')])
 
 # prepare a list of single and dual H-bonding A residues that are involved in a canonical AU base pair
 au_bp_single = (a_n6_single_all[a_n6_single_all[["acc_name", "acc_resn"]].eq(["O4", "U"]).all(axis='columns')]
@@ -129,64 +124,74 @@ gc_bp_dual = (g_n2_dual_all[g_n2_dual_all[["acc_name", "acc_resn"]].eq(["O2", "C
 # # write data on single and dual H-bonding and canonical base pairs to a csv file
 # canonical_bp = pd.DataFrame(
 #     {
-#         "BP_single": [au_bp_single["eq_class"].size, cg_bp_single["eq_class"].size, gc_bp_single["eq_class"].size],
-#         "all_single": [a_n6_single_all["eq_class"].size, c_n4_single_all["eq_class"].size, g_n2_single_all["eq_class"].size],
-#         "BP_dual": [au_bp_dual["eq_class"].size, cg_bp_dual["eq_class"].size, gc_bp_dual["eq_class"].size],
-#         "all_dual": [len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()), len(c_n4_dual_all.groupby(["don_index", "eq_class"]).groups.keys()), len(g_n2_dual_all.groupby(["don_index", "eq_class"]).groups.keys())]
+#         "BP_single": [len(au_bp_single.groupby(["don_index_x", "eq_class"]).groups.keys()),
+#                       len(cg_bp_single.groupby(["don_index_x", "eq_class"]).groups.keys()),
+#                       len(gc_bp_single.groupby(["don_index_x", "eq_class"]).groups.keys())],
+#         "all_single": [len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()),
+#                        len(c_n4_single_all.groupby(["don_index", "eq_class"]).groups.keys()),
+#                        len(g_n2_single_all.groupby(["don_index", "eq_class"]).groups.keys())],
+#         "BP_dual": [len(au_bp_dual.groupby(["don_index_x", "eq_class"]).groups.keys()),
+#                     len(cg_bp_dual.groupby(["don_index_x", "eq_class"]).groups.keys()),
+#                     len(gc_bp_dual.groupby(["don_index_x", "eq_class"]).groups.keys())],
+#         "all_dual": [len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()),
+#                      len(c_n4_dual_all.groupby(["don_index", "eq_class"]).groups.keys()),
+#                      len(g_n2_dual_all.groupby(["don_index", "eq_class"]).groups.keys())]
 #     },
 #     index=pd.Categorical(["A", "C", "G"])
 # )
 # canonical_bp.to_csv("plots/canonical_bp.csv")
 
 # # FREQUENCY OF SINGLE/MULTI EXO AMINE DONATION
-# print(a_n6_single_all["eq_class"].size / a_exo_amines["index"].size)
+# print(len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()) / a_exo_amines["index"].size)
 # print(len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()) / a_exo_amines["index"].size)
-# print(c_n4_single_all["eq_class"].size / c_exo_amines["index"].size)
+# print(len(c_n4_single_all.groupby(["don_index", "eq_class"]).groups.keys()) / c_exo_amines["index"].size)
 # print(len(c_n4_dual_all.groupby(["don_index", "eq_class"]).groups.keys()) / c_exo_amines["index"].size)
-# print(g_n2_single_all["eq_class"].size / g_exo_amines["index"].size)
+# print(len(g_n2_single_all.groupby(["don_index", "eq_class"]).groups.keys()) / g_exo_amines["index"].size)
 # print(len(g_n2_dual_all.groupby(["don_index", "eq_class"]).groups.keys()) / g_exo_amines["index"].size)
 
 # # FREQUENCY OF SINGLE/MULTI CARBONYL ACCEPTATION
-# print(c_o2_single_all["eq_class"].size / c_carbonyls["index"].size)
+# print(len(c_o2_single_all.groupby(["acc_index", "eq_class"]).groups.keys()) / c_carbonyls["index"].size)
 # print((len(c_o2_dual_all.groupby(["don_index", "eq_class"]).groups.keys()) +
 #        len(c_o2_tri_all.groupby(["don_index", "eq_class"]).groups.keys())) / c_carbonyls["index"].size)
-# print(g_o6_single_all["eq_class"].size / g_carbonyls["index"].size)
+# print(len(g_o6_single_all.groupby(["acc_index", "eq_class"]).groups.keys()) / g_carbonyls["index"].size)
 # print((len(g_o6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()) +
 #        len(g_o6_tri_all.groupby(["don_index", "eq_class"]).groups.keys())) / g_carbonyls["index"].size)
 
 # # A(N6) DONATION AND A(N3) ACCEPTATION
 # a_n3_acc_a_n6_single = a_n6_single_all.merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]].eq(["N3", "A"]).all(axis='columns')], left_on=["don_resn", "don_resi", "don_chain", "eq_class"], right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"], how='inner')
 # a_n3_acc_a_n6_dual = a_n6_dual_all.merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]].eq(["N3", "A"]).all(axis='columns')], left_on=["don_resn", "don_resi", "don_chain", "eq_class"], right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"], how='inner')
-# print(a_n3_acc_a_n6_single["eq_class"].size / len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()))
-# print(a_n3_acc_a_n6_dual["eq_class"].size / len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()))
-# print(a_n3_acc_a_n6_single["eq_class"].size)
-# print(a_n3_acc_a_n6_dual["eq_class"].size)
+# print(len(a_n3_acc_a_n6_single.groupby(["don_index_x", "eq_class"]).groups.keys()) / len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()))
+# print(len(a_n3_acc_a_n6_dual.groupby(["don_index_x", "eq_class"]).groups.keys()) / len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()))
+# print(len(a_n3_acc_a_n6_single.groupby(["don_index_x", "eq_class"]).groups.keys()))
+# print(len(a_n3_acc_a_n6_dual.groupby(["don_index_x", "eq_class"]).groups.keys()))
 # print(len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()))
 # print(len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()))
-# acc = np.array([[a_n3_acc_a_n6_single["eq_class"].size,
-#                  len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()) - a_n3_acc_a_n6_single["eq_class"].size],
-#                 [a_n3_acc_a_n6_dual["eq_class"].size,
-#                  len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()) - a_n3_acc_a_n6_dual["eq_class"].size]])
+# acc = np.array([[len(a_n3_acc_a_n6_single.groupby(["don_index_x", "eq_class"]).groups.keys()),
+#                  len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()) - len(a_n3_acc_a_n6_single.groupby(["don_index_x", "eq_class"]).groups.keys())],
+#                 [len(a_n3_acc_a_n6_dual.groupby(["don_index_x", "eq_class"]).groups.keys()),
+#                  len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()) - len(a_n3_acc_a_n6_dual.groupby(["don_index_x", "eq_class"]).groups.keys())]])
 # chi2, p_value, df, acc = scipy.stats.chi2_contingency(acc)
 # print(p_value)
 
-# A(N6) DONATION AND A(N1) ACCEPTATION
-a_n1_acc_a_n6_single = (a_n6_single_all.merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
-                                                .eq(["N1", "A"]).all(axis='columns')],
-                                                left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
-                                                right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"],
-                                                how='inner'))
-a_n1_acc_a_n6_dual = (a_n6_dual_all.merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
-                                            .eq(["N1", "A"]).all(axis='columns')],
-                                            left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
-                                            right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"],
-                                            how='inner'))
-print(a_n1_acc_a_n6_single["eq_class"].size / len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()))
-print(a_n1_acc_a_n6_dual["eq_class"].size / len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()))
-print(a_n1_acc_a_n6_single["eq_class"].size)
-print(a_n1_acc_a_n6_dual["eq_class"].size)
-print(len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()))
-print(len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()))
+# # A(N6) DONATION AND A(N1) ACCEPTATION
+# a_n1_acc_a_n6_single = (a_n6_single_all.merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
+#                                               .eq(["N1", "A"]).all(axis='columns')],
+#                                               left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
+#                                               right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"],
+#                                               how='inner'))
+# a_n1_acc_a_n6_dual = (a_n6_dual_all.merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
+#                                           .eq(["N1", "A"]).all(axis='columns')],
+#                                           left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
+#                                           right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"],
+#                                           how='inner'))
+# print(len(a_n1_acc_a_n6_single.groupby(["don_index_x", "eq_class"]).groups.keys()) /
+#       len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()))
+# print(len(a_n1_acc_a_n6_dual.groupby(["don_index_x", "eq_class"]).groups.keys()) /
+#       len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()))
+# print(len(a_n1_acc_a_n6_single.groupby(["don_index_x", "eq_class"]).groups.keys()))
+# print(len(a_n1_acc_a_n6_dual.groupby(["don_index_x", "eq_class"]).groups.keys()))
+# print(len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()))
+# print(len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()))
 
 # # A(N6) DONATION AND A(N1) ACCEPTATION, DIFFERENT H-BONDING NUCLEOBASES
 # a_n1_acc_a_n6_single_1 = (a_n6_single_all.merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
@@ -209,12 +214,20 @@ print(len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()))
 #       (a_n1_acc_a_n6_dual_1["acc_resi_x"] == a_n1_acc_a_n6_dual_1["don_resi_y"]) &
 #       (a_n1_acc_a_n6_dual_1["acc_chain_x"] == a_n1_acc_a_n6_dual_1["don_chain_y"]) &
 #       (a_n1_acc_a_n6_dual_1["don_name_y"] != "O2'"))]
-# print(a_n1_acc_a_n6_single_2["eq_class"].size / len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()))
-# print(a_n1_acc_a_n6_dual_2["eq_class"].size / len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()))
-# print(a_n1_acc_a_n6_single_2["eq_class"].size)
-# print(a_n1_acc_a_n6_dual_2["eq_class"].size)
+# print(len(a_n1_acc_a_n6_single_2.groupby(["don_index_x", "eq_class"]).groups.keys()) /
+#       len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()))
+# print(len(a_n1_acc_a_n6_dual_2.groupby(["don_index_x", "eq_class"]).groups.keys()) /
+#       len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()))
+# print(len(a_n1_acc_a_n6_single_2.groupby(["don_index_x", "eq_class"]).groups.keys()))
+# print(len(a_n1_acc_a_n6_dual_2.groupby(["don_index_x", "eq_class"]).groups.keys()))
 # print(len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()))
 # print(len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()))
+
+# # H-BONDING DISTANCE, NUCLEOBASES NOT INVOLVED IN SINGLE/DUAL DONATION
+# print(a_n1_acc_a_n6_single_2[a_n1_acc_a_n6_single_2["vertex_y"] == "hydrogen"]["dist_y"].mean())
+# print(a_n1_acc_a_n6_dual_2[a_n1_acc_a_n6_dual_2["vertex_y"] == "hydrogen"]["dist_y"].mean())
+# print(a_n1_acc_a_n6_single_2[a_n1_acc_a_n6_single_2["vertex_y"] == "donor"]["dist_y"].mean())
+# print(a_n1_acc_a_n6_dual_2[a_n1_acc_a_n6_dual_2["vertex_y"] == "donor"]["dist_y"].mean())
 
 # # H-BONDING DISTANCE, CANONICAL BASEPAIR
 # print(au_bp_single["dist_y"].mean())
@@ -229,24 +242,5 @@ print(len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()))
 # print(gc_bp_single["dist_y"].std())
 # print(gc_bp_dual["dist_y"].mean())
 # print(gc_bp_dual["dist_y"].std())
-
-# H-BONDING DISTANCE, CANONICAL BASEPAIR, SECOND EXO AMINE H-BOND TO NBO
-au_bp_dual_NBO = (a_n6_dual_all[a_n6_dual_all[["acc_name", "acc_resn"]].eq(["O4", "U"]).all(axis='columns')]
-                  .merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["don_name", "don_resn", "acc_name"]].eq(["N3", "U", "N1"])
-                         .all(axis='columns')],
-                         left_on=["don_resn", "don_resi", "don_chain", "acc_resn", "acc_resi", "acc_chain", "eq_class"],
-                         right_on=["acc_resn", "acc_resi", "acc_chain", "don_resn", "don_resi", "don_chain", "eq_class"],
-                         how='inner'))
-
-
-# bla.loc[:, ["don_resn_x", "don_resi_x", "don_chain_x", "acc_resn_x", "acc_resi_x", "acc_chain_x",
-#                                  "eq_class"]]
-#                         .rename(columns={"don_resn_x": "don_resn", "don_resi_x": "don_resi", "don_chain_x": "don_chain",
-#                                          "acc_resn_x": "acc_resn", "acc_resi_x": "acc_resi",
-#                                          "acc_chain_x": "acc_chain"}))
-
-# unique_col_comb = ["index", "eq_class"]
-# new = df.drop_duplicates(subset=unique_col_comb)
-# .merge(pd.DataFrame(const.DONORS_OF_INTEREST, columns=["don_resn", "don_name"]), how='inner'))
 
 # TODO incorporate b-factor filter
