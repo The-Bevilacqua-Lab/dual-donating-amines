@@ -45,7 +45,7 @@ nuc_data = pd.read_csv(snakemake.input.nuc, names=nuc_col_names, comment="#", na
                        dtype={"chain": "object"})
 
 # extract the data from the equivalence class file
-eq_class_data = pd.read_csv("data/eq_class_files/NR_3.0_61825.1_info.csv", header=None, comment="#",
+eq_class_data = pd.read_csv(snakemake.input.eq_class_data, header=None, comment="#",
                             na_filter=False).set_index(pd.Series(["eq_class", "pdb_id", "model", "chain"])).transpose()
 
 # identify atom pairs that meet the H-bond criteria and include a donor of interest
