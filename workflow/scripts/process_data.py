@@ -45,14 +45,14 @@ nuc_data = pd.read_csv(snakemake.input.nuc_data, names=nuc_col_names, comment="#
                        dtype={"chain": "object"})
 
 # extract the data from the equivalence class file
-eq_class_data = pd.read_csv(snakemake.input.eq_class_data, header=None, comment="#",
-                            na_filter=False).set_index(pd.Series(["eq_class", "pdb_id", "model", "chain"])).transpose()
+eq_class_data = (pd.read_csv(snakemake.input.eq_class_data, header=None, comment="#", skiprows=[3], na_filter=False)
+                 .set_index(pd.Series(["pdb_id", "model", "chain"])).transpose())
 
 # identify atom pairs that meet the H-bond criteria and include a donor of interest
 don_hbonds = (hbond_data[(hbond_data["dist"] <= H_DIST_MAX) & (hbond_data["ang"] >= 180.0 - H_ANG_TOL)]
               .merge(pd.DataFrame(const.DONORS_OF_INTEREST, columns=["don_resn", "don_name"]), how='inner')
               .merge(eq_class_data, left_on="don_chain", right_on="chain", how='inner')
-              .drop(columns=["eq_class", "pdb_id", "model", "chain"]))
+              .drop(columns=["pdb_id", "model", "chain"]))
 
 # identify atom pairs that meet the H-bond criteria and include a protonated donor of interest
 # values in the _merge column matching left_only indicate acceptors that cannot typically also donate an H-bond
@@ -71,7 +71,7 @@ prot_don_hbonds = (prot_don_hbonds_unfiltered[(prot_don_hbonds_unfiltered["_merg
                                                 (prot_don_hbonds_unfiltered["acc_name"] == "OE1"))]
                    .drop(columns="_merge")
                    .merge(eq_class_data, left_on="don_chain", right_on="chain", how='inner')
-                   .drop(columns=["eq_class", "pdb_id", "model", "chain"]))
+                   .drop(columns=["pdb_id", "model", "chain"]))
 
 # identify atom pairs that meet the H-bond criteria and include an acceptor of interest
 acc_hbonds = (hbond_data[((hbond_data["vertex"] == "hydrogen") & (hbond_data["dist"] <= H_DIST_MAX) &
@@ -81,7 +81,7 @@ acc_hbonds = (hbond_data[((hbond_data["vertex"] == "hydrogen") & (hbond_data["di
                                     (hbond_data["ang"] <= 109.5 + DON_ANG_TOL))]
               .merge(pd.DataFrame(const.ACCEPTORS_OF_INTEREST, columns=["acc_resn", "acc_name"]), how='inner')
               .merge(eq_class_data, left_on="acc_chain", right_on="chain", how='inner')
-              .drop(columns=["eq_class", "pdb_id", "model", "chain"]))
+              .drop(columns=["pdb_id", "model", "chain"]))
 
 # identify atom pairs that meet the H-bond criteria and include a deprotonated acceptor of interest
 # values in the _merge column matching left_only indicate donors that cannot typically also accept an H-bond
@@ -104,7 +104,7 @@ deprot_acc_hbonds = (deprot_acc_hbonds_unfiltered[(deprot_acc_hbonds_unfiltered[
                                                     (deprot_acc_hbonds_unfiltered["acc_name"] == "NE2"))]
                      .drop(columns="_merge")
                      .merge(eq_class_data, left_on="acc_chain", right_on="chain", how='inner')
-                     .drop(columns=["eq_class", "pdb_id", "model", "chain"]))
+                     .drop(columns=["pdb_id", "model", "chain"]))
 
 # Create a new list of H-bonding atom pairs involving the donors of interest with redundancy removed such that if
 # multiple atom pairs involve the same donor and an acceptor belonging to different side chain conformations of the same
@@ -181,9 +181,9 @@ else:
 # write dataframes to csv files
 nuc_data.assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.nuc_data, index=False)
 don_hbonds_nr.assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.don_hbonds_nr, index=False)
-prot_don_hbonds_nr.assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.prot_don_hbonds, index=False)
+prot_don_hbonds_nr.assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.prot_don_hbonds_nr, index=False)
 acc_hbonds_nr.assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.acc_hbonds_nr, index=False)
-deprot_acc_hbonds_nr.assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.deprot_acc_hbonds, index=False)
+deprot_acc_hbonds_nr.assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.deprot_acc_hbonds_nr, index=False)
 single_don_exo_amines.to_frame().assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.single_don_exo_amines, index=False)
 dual_don_exo_amines.to_frame().assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.dual_don_exo_amines, index=False)
 single_acc_carbonyls.to_frame().assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.single_acc_carbonyls, index=False)
@@ -196,7 +196,7 @@ acc_grp = ["don_index", "acc_resn", "acc_resi", "acc_chain"]
 don_hbonds_geom = (hbond_data.merge(pd.DataFrame(const.DONORS_OF_INTEREST, columns=["don_resn", "don_name"]),
                                     how='inner')
                    .merge(eq_class_data, left_on="don_chain", right_on="chain", how='inner')
-                   .drop(columns=["eq_class", "pdb_id", "model", "chain"]))
+                   .drop(columns=["pdb_id", "model", "chain"]))
 don_hbonds_geom_nr = (don_hbonds_geom[don_hbonds_geom.groupby(acc_grp)["rotated_side_chain"]
                       .transform(lambda grp: grp.str.fullmatch("none") if any(grp.str.fullmatch("none")) else True)])
 
