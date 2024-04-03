@@ -12,9 +12,9 @@ working_dir = os.getcwd()
 categories = {
     "nuc_data": [],
     "don_hbonds_nr": [],
-    "prot_don_hbonds": [],
+    "prot_don_hbonds_nr": [],
     "acc_hbonds_nr": [],
-    "deprot_acc_hbonds": [],
+    "deprot_acc_hbonds_nr": [],
     "single_don_exo_amines": [],
     "dual_don_exo_amines": [],
     "single_acc_carbonyls": [],
