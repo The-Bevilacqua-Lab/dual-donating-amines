@@ -35,13 +35,13 @@ hbond_col_names = ["don_index", "don_name", "don_resn", "don_resi", "don_chain",
                    "acc_resn", "acc_resi", "acc_chain", "dist", "ang", "vertex", "hydrogen",
                    "rotated_side_chain"]
 unique_col_comb = ["don_index", "acc_index", "hydrogen", "rotated_side_chain"]
-hbond_data = (pd.read_csv(snakemake.input.hbond, names=hbond_col_names, comment="#", na_filter=False,
+hbond_data = (pd.read_csv(snakemake.input.hbond_data, names=hbond_col_names, comment="#", na_filter=False,
                           dtype={"don_chain": "object", "acc_chain": "object"})
               .drop_duplicates(subset=unique_col_comb))
 
 # extract the data from the nuc csv file
 nuc_col_names = ["index", "atom_name", "resn", "resi", "chain"]
-nuc_data = pd.read_csv(snakemake.input.nuc, names=nuc_col_names, comment="#", na_filter=False,
+nuc_data = pd.read_csv(snakemake.input.nuc_data, names=nuc_col_names, comment="#", na_filter=False,
                        dtype={"chain": "object"})
 
 # extract the data from the equivalence class file
