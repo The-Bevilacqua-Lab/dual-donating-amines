@@ -11,17 +11,19 @@ import scipy
 working_dir = os.getcwd()
 
 # # create the combined dataframes
-don_hbonds_nr_c = pd.read_csv(working_dir + "/combined/don_hbonds_nr_c.csv")
-# prot_don_hbonds_c = pd.read_csv(working_dir + "/combined/prot_don_hbonds_c.csv")
-acc_hbonds_nr_c = pd.read_csv(working_dir + "/combined/acc_hbonds_nr_c.csv")
-# deprot_acc_hbonds_c = pd.read_csv(working_dir + "/combined/deprot_acc_hbonds_c.csv")
+don_hbonds_nr_c = pd.read_csv(working_dir + "/combined/don_hbonds_nr_c.csv",
+                              dtype={"don_resi": "object", "acc_resi": "object"})
+prot_don_hbonds_nr_c = pd.read_csv(working_dir + "/combined/prot_don_hbonds_nr_c.csv",
+                                   dtype={"don_resi": "object", "acc_resi": "object"})
+acc_hbonds_nr_c = pd.read_csv(working_dir + "/combined/acc_hbonds_nr_c.csv",
+                              dtype={"don_resi": "object", "acc_resi": "object"})
+deprot_acc_hbonds_nr_c = pd.read_csv(working_dir + "/combined/deprot_acc_hbonds_nr_c.csv",
+                                     dtype={"don_resi": "object", "acc_resi": "object"})
 single_don_exo_amines_c = pd.read_csv(working_dir + "/combined/single_don_exo_amines_c.csv")
 dual_don_exo_amines_c = pd.read_csv(working_dir + "/combined/dual_don_exo_amines_c.csv")
 single_acc_carbonyls_c = pd.read_csv(working_dir + "/combined/single_acc_carbonyls_c.csv")
 dual_acc_carbonyls_c = pd.read_csv(working_dir + "/combined/dual_acc_carbonyls_c.csv")
 tri_acc_carbonyls_c = pd.read_csv(working_dir + "/combined/tri_acc_carbonyls_c.csv")
-# don_hbonds_geom_c = pd.read_csv(working_dir + "/combined/don_hbonds_geom_c.csv")
-# don_hbonds_geom_filtered_c = pd.read_csv(working_dir + "/combined/don_hbonds_geom_filtered_c.csv")
 nuc_data_c = pd.read_csv(working_dir + "/combined/nuc_data_c.csv")
 
 # prepare dataframes of exocyclic amines for each A, C, and G residue
@@ -38,20 +40,11 @@ a_n6_single_all = single_don_exo_amines_c.merge(don_hbonds_nr_c[don_hbonds_nr_c[
                                                 on=["don_index", "eq_class"], how='inner')
 a_n6_dual_all = dual_don_exo_amines_c.merge(don_hbonds_nr_c[don_hbonds_nr_c["don_resn"] == "A"],
                                             on=["don_index", "eq_class"], how='inner')
-# # TODO get a_n6_no_all working such that its size brings the total to the size of a_exo_amines
-# # TODO don_index 32209 eq_class NR_3.0_61825.1 is not present in combined/nuc_data_c.csv?
-# # TODO just so that I don't forget... exo amines listed as single donors can have more than one entry in don_hbonds_nr_c because of the same H donating twice, or the same atom accepting from the different H's
 a_n6_no_all = (pd.concat([a_n6_single_all,
                          a_n6_dual_all,
                          a_exo_amines.rename(columns={"index": "don_index", "atom_name": "don_name", "resn": "don_resn",
                                                       "resi": "don_resi", "chain": "don_chain"})])
                .drop_duplicates(subset=["don_index", "eq_class"], keep=False))
-
-# print(len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()) + len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()) + len(a_n6_no_all.groupby(["don_index", "eq_class"]).groups.keys()))
-# print(a_exo_amines["eq_class"].size)
-
-# print(a_n6_single_all[a_n6_single_all[["don_index", "eq_class"]].eq([32209, "NR_3.0_61825.1"]).all(axis='columns')])
-print(nuc_data_c[nuc_data_c[["index", "eq_class"]].eq([32209, "NR_3.0_61825.1"]).all(axis='columns')])
 
 # prepare a list of single and dual H-bonding A residues that are involved in a canonical AU base pair
 au_bp_single = (a_n6_single_all[a_n6_single_all[["acc_name", "acc_resn"]].eq(["O4", "U"]).all(axis='columns')]
@@ -166,12 +159,6 @@ gc_bp_dual = (g_n2_dual_all[g_n2_dual_all[["acc_name", "acc_resn"]].eq(["O2", "C
 # print(len(a_n3_acc_a_n6_dual.groupby(["don_index_x", "eq_class"]).groups.keys()))
 # print(len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()))
 # print(len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()))
-# acc = np.array([[len(a_n3_acc_a_n6_single.groupby(["don_index_x", "eq_class"]).groups.keys()),
-#                  len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()) - len(a_n3_acc_a_n6_single.groupby(["don_index_x", "eq_class"]).groups.keys())],
-#                 [len(a_n3_acc_a_n6_dual.groupby(["don_index_x", "eq_class"]).groups.keys()),
-#                  len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()) - len(a_n3_acc_a_n6_dual.groupby(["don_index_x", "eq_class"]).groups.keys())]])
-# chi2, p_value, df, acc = scipy.stats.chi2_contingency(acc)
-# print(p_value)
 
 # # A(N6) DONATION AND A(N1) ACCEPTATION
 # a_n1_acc_a_n6_single = (a_n6_single_all.merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
@@ -242,5 +229,13 @@ gc_bp_dual = (g_n2_dual_all[g_n2_dual_all[["acc_name", "acc_resn"]].eq(["O2", "C
 # print(gc_bp_single["dist_y"].std())
 # print(gc_bp_dual["dist_y"].mean())
 # print(gc_bp_dual["dist_y"].std())
+
+# P_VALUE
+# acc = np.array([[len(a_n3_acc_a_n6_single.groupby(["don_index_x", "eq_class"]).groups.keys()),
+#                  len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()) - len(a_n3_acc_a_n6_single.groupby(["don_index_x", "eq_class"]).groups.keys())],
+#                 [len(a_n3_acc_a_n6_dual.groupby(["don_index_x", "eq_class"]).groups.keys()),
+#                  len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()) - len(a_n3_acc_a_n6_dual.groupby(["don_index_x", "eq_class"]).groups.keys())]])
+# chi2, p_value, df, acc = scipy.stats.chi2_contingency(acc)
+# print(p_value)
 
 # TODO incorporate b-factor filter
