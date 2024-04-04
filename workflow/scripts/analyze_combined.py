@@ -150,65 +150,280 @@ gc_bp_dual = (g_n2_dual_all[g_n2_dual_all[["acc_name", "acc_resn"]].eq(["O2", "C
 # print((len(g_o6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()) +
 #        len(g_o6_tri_all.groupby(["don_index", "eq_class"]).groups.keys())) / g_carbonyls["index"].size)
 
-# # A(N6) DONATION AND A(N3) ACCEPTATION
-# a_n3_acc_a_n6_single = a_n6_single_all.merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]].eq(["N3", "A"]).all(axis='columns')], left_on=["don_resn", "don_resi", "don_chain", "eq_class"], right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"], how='inner')
-# a_n3_acc_a_n6_dual = a_n6_dual_all.merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]].eq(["N3", "A"]).all(axis='columns')], left_on=["don_resn", "don_resi", "don_chain", "eq_class"], right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"], how='inner')
-# print(len(a_n3_acc_a_n6_single.groupby(["don_index_x", "eq_class"]).groups.keys()) / len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()))
-# print(len(a_n3_acc_a_n6_dual.groupby(["don_index_x", "eq_class"]).groups.keys()) / len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()))
-# print(len(a_n3_acc_a_n6_single.groupby(["don_index_x", "eq_class"]).groups.keys()))
-# print(len(a_n3_acc_a_n6_dual.groupby(["don_index_x", "eq_class"]).groups.keys()))
-# print(len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()))
-# print(len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()))
+# # A(N6) DONATION AND A(N1), A(N3), and A(N7) ACCEPTATION
+# a_n1_acc_a_n6_no = a_n6_no_all.merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
+#                                      .eq(["N1", "A"]).all(axis='columns')],
+#                                      left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
+#                                      right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"],
+#                                      how='inner')
+# a_n1_acc_a_n6_single = a_n6_single_all.merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
+#                                              .eq(["N1", "A"]).all(axis='columns')],
+#                                              left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
+#                                              right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"],
+#                                              how='inner')
+# a_n1_acc_a_n6_dual = a_n6_dual_all.merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
+#                                          .eq(["N1", "A"]).all(axis='columns')],
+#                                          left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
+#                                          right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"],
+#                                          how='inner')
+# a_n3_acc_a_n6_no = a_n6_no_all.merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
+#                                      .eq(["N3", "A"]).all(axis='columns')],
+#                                      left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
+#                                      right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"],
+#                                      how='inner')
+# a_n3_acc_a_n6_single = a_n6_single_all.merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
+#                                              .eq(["N3", "A"]).all(axis='columns')],
+#                                              left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
+#                                              right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"],
+#                                              how='inner')
+# a_n3_acc_a_n6_dual = a_n6_dual_all.merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
+#                                          .eq(["N3", "A"]).all(axis='columns')],
+#                                          left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
+#                                          right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"],
+#                                          how='inner')
+# a_n7_acc_a_n6_no = a_n6_no_all.merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
+#                                      .eq(["N7", "A"]).all(axis='columns')],
+#                                      left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
+#                                      right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"],
+#                                      how='inner')
+# a_n7_acc_a_n6_single = a_n6_single_all.merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
+#                                              .eq(["N7", "A"]).all(axis='columns')],
+#                                              left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
+#                                              right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"],
+#                                              how='inner')
+# a_n7_acc_a_n6_dual = a_n6_dual_all.merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
+#                                          .eq(["N7", "A"]).all(axis='columns')],
+#                                          left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
+#                                          right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"],
+#                                          how='inner')
+# a_n6_donation = pd.DataFrame({
+#     "Atom": ["A(N1)", "A(N1)", "A(N1)", "A(N3)", "A(N3)", "A(N3)", "A(N7)", "A(N7)", "A(N7)"],
+#     "Type": ["No", "Single", "Dual", "No", "Single", "Dual", "No", "Single", "Dual"],
+#     "Occurrence": [len(a_n1_acc_a_n6_no.groupby(["don_index_x", "eq_class"]).groups.keys()),
+#                    len(a_n1_acc_a_n6_single.groupby(["don_index_x", "eq_class"]).groups.keys()),
+#                    len(a_n1_acc_a_n6_dual.groupby(["don_index_x", "eq_class"]).groups.keys()),
+#                    len(a_n3_acc_a_n6_no.groupby(["don_index_x", "eq_class"]).groups.keys()),
+#                    len(a_n3_acc_a_n6_single.groupby(["don_index_x", "eq_class"]).groups.keys()),
+#                    len(a_n3_acc_a_n6_dual.groupby(["don_index_x", "eq_class"]).groups.keys()),
+#                    len(a_n7_acc_a_n6_no.groupby(["don_index_x", "eq_class"]).groups.keys()),
+#                    len(a_n7_acc_a_n6_single.groupby(["don_index_x", "eq_class"]).groups.keys()),
+#                    len(a_n7_acc_a_n6_dual.groupby(["don_index_x", "eq_class"]).groups.keys())],
+#     "Total": [len(a_n6_no_all.groupby(["don_index", "eq_class"]).groups.keys()),
+#               len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()),
+#               len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()),
+#               len(a_n6_no_all.groupby(["don_index", "eq_class"]).groups.keys()),
+#               len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()),
+#               len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()),
+#               len(a_n6_no_all.groupby(["don_index", "eq_class"]).groups.keys()),
+#               len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()),
+#               len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys())]
+# })
+# a_n6_donation["Ratio"] = a_n6_donation["Occurrence"] / a_n6_donation["Total"]
+# a_n6_donation.to_csv("plots/a_n6_donation.csv", index=False)
 
-# # A(N6) DONATION AND A(N1) ACCEPTATION
-# a_n1_acc_a_n6_single = (a_n6_single_all.merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
-#                                               .eq(["N1", "A"]).all(axis='columns')],
-#                                               left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
-#                                               right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"],
-#                                               how='inner'))
-# a_n1_acc_a_n6_dual = (a_n6_dual_all.merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
-#                                           .eq(["N1", "A"]).all(axis='columns')],
-#                                           left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
-#                                           right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"],
-#                                           how='inner'))
-# print(len(a_n1_acc_a_n6_single.groupby(["don_index_x", "eq_class"]).groups.keys()) /
-#       len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()))
-# print(len(a_n1_acc_a_n6_dual.groupby(["don_index_x", "eq_class"]).groups.keys()) /
-#       len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()))
-# print(len(a_n1_acc_a_n6_single.groupby(["don_index_x", "eq_class"]).groups.keys()))
-# print(len(a_n1_acc_a_n6_dual.groupby(["don_index_x", "eq_class"]).groups.keys()))
-# print(len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()))
-# print(len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()))
+# # A(N6) DONATION AND A(N1), A(N3), and A(N7) ACCEPTATION, DIFFERENT H-BONDING NUCLEOBASES
+# a_n1_acc_a_n6_no_diff = a_n1_acc_a_n6_no[
+#     ~((a_n1_acc_a_n6_no["acc_resn_x"] == a_n1_acc_a_n6_no["don_resn_y"]) &
+#       (a_n1_acc_a_n6_no["acc_resi_x"] == a_n1_acc_a_n6_no["don_resi_y"]) &
+#       (a_n1_acc_a_n6_no["acc_chain_x"] == a_n1_acc_a_n6_no["don_chain_y"]) &
+#       (a_n1_acc_a_n6_no["don_name_y"] != "O2'"))]
+# a_n1_acc_a_n6_single_diff = a_n1_acc_a_n6_single[
+#     ~((a_n1_acc_a_n6_single["acc_resn_x"] == a_n1_acc_a_n6_single["don_resn_y"]) &
+#       (a_n1_acc_a_n6_single["acc_resi_x"] == a_n1_acc_a_n6_single["don_resi_y"]) &
+#       (a_n1_acc_a_n6_single["acc_chain_x"] == a_n1_acc_a_n6_single["don_chain_y"]) &
+#       (a_n1_acc_a_n6_single["don_name_y"] != "O2'"))]
+# a_n1_acc_a_n6_dual_diff = a_n1_acc_a_n6_dual[
+#     ~((a_n1_acc_a_n6_dual["acc_resn_x"] == a_n1_acc_a_n6_dual["don_resn_y"]) &
+#       (a_n1_acc_a_n6_dual["acc_resi_x"] == a_n1_acc_a_n6_dual["don_resi_y"]) &
+#       (a_n1_acc_a_n6_dual["acc_chain_x"] == a_n1_acc_a_n6_dual["don_chain_y"]) &
+#       (a_n1_acc_a_n6_dual["don_name_y"] != "O2'"))]
+# a_n3_acc_a_n6_no_diff = a_n3_acc_a_n6_no[
+#     ~((a_n3_acc_a_n6_no["acc_resn_x"] == a_n3_acc_a_n6_no["don_resn_y"]) &
+#       (a_n3_acc_a_n6_no["acc_resi_x"] == a_n3_acc_a_n6_no["don_resi_y"]) &
+#       (a_n3_acc_a_n6_no["acc_chain_x"] == a_n3_acc_a_n6_no["don_chain_y"]) &
+#       (a_n3_acc_a_n6_no["don_name_y"] != "O2'"))]
+# a_n3_acc_a_n6_single_diff = a_n3_acc_a_n6_single[
+#     ~((a_n3_acc_a_n6_single["acc_resn_x"] == a_n3_acc_a_n6_single["don_resn_y"]) &
+#       (a_n3_acc_a_n6_single["acc_resi_x"] == a_n3_acc_a_n6_single["don_resi_y"]) &
+#       (a_n3_acc_a_n6_single["acc_chain_x"] == a_n3_acc_a_n6_single["don_chain_y"]) &
+#       (a_n3_acc_a_n6_single["don_name_y"] != "O2'"))]
+# a_n3_acc_a_n6_dual_diff = a_n3_acc_a_n6_dual[
+#     ~((a_n3_acc_a_n6_dual["acc_resn_x"] == a_n3_acc_a_n6_dual["don_resn_y"]) &
+#       (a_n3_acc_a_n6_dual["acc_resi_x"] == a_n3_acc_a_n6_dual["don_resi_y"]) &
+#       (a_n3_acc_a_n6_dual["acc_chain_x"] == a_n3_acc_a_n6_dual["don_chain_y"]) &
+#       (a_n3_acc_a_n6_dual["don_name_y"] != "O2'"))]
+# a_n7_acc_a_n6_no_diff = a_n7_acc_a_n6_no[
+#     ~((a_n7_acc_a_n6_no["acc_resn_x"] == a_n7_acc_a_n6_no["don_resn_y"]) &
+#       (a_n7_acc_a_n6_no["acc_resi_x"] == a_n7_acc_a_n6_no["don_resi_y"]) &
+#       (a_n7_acc_a_n6_no["acc_chain_x"] == a_n7_acc_a_n6_no["don_chain_y"]) &
+#       (a_n7_acc_a_n6_no["don_name_y"] != "O2'"))]
+# a_n7_acc_a_n6_single_diff = a_n7_acc_a_n6_single[
+#     ~((a_n7_acc_a_n6_single["acc_resn_x"] == a_n7_acc_a_n6_single["don_resn_y"]) &
+#       (a_n7_acc_a_n6_single["acc_resi_x"] == a_n7_acc_a_n6_single["don_resi_y"]) &
+#       (a_n7_acc_a_n6_single["acc_chain_x"] == a_n7_acc_a_n6_single["don_chain_y"]) &
+#       (a_n7_acc_a_n6_single["don_name_y"] != "O2'"))]
+# a_n7_acc_a_n6_dual_diff = a_n7_acc_a_n6_dual[
+#     ~((a_n7_acc_a_n6_dual["acc_resn_x"] == a_n7_acc_a_n6_dual["don_resn_y"]) &
+#       (a_n7_acc_a_n6_dual["acc_resi_x"] == a_n7_acc_a_n6_dual["don_resi_y"]) &
+#       (a_n7_acc_a_n6_dual["acc_chain_x"] == a_n7_acc_a_n6_dual["don_chain_y"]) &
+#       (a_n7_acc_a_n6_dual["don_name_y"] != "O2'"))]
+# a_n6_donation_diff = pd.DataFrame({
+#     "Atom": ["A(N1)", "A(N1)", "A(N1)", "A(N3)", "A(N3)", "A(N3)", "A(N7)", "A(N7)", "A(N7)"],
+#     "Type": ["No", "Single", "Dual", "No", "Single", "Dual", "No", "Single", "Dual"],
+#     "Occurrence": [len(a_n1_acc_a_n6_no_diff.groupby(["don_index_x", "eq_class"]).groups.keys()),
+#                    len(a_n1_acc_a_n6_single_diff.groupby(["don_index_x", "eq_class"]).groups.keys()),
+#                    len(a_n1_acc_a_n6_dual_diff.groupby(["don_index_x", "eq_class"]).groups.keys()),
+#                    len(a_n3_acc_a_n6_no_diff.groupby(["don_index_x", "eq_class"]).groups.keys()),
+#                    len(a_n3_acc_a_n6_single_diff.groupby(["don_index_x", "eq_class"]).groups.keys()),
+#                    len(a_n3_acc_a_n6_dual_diff.groupby(["don_index_x", "eq_class"]).groups.keys()),
+#                    len(a_n7_acc_a_n6_no_diff.groupby(["don_index_x", "eq_class"]).groups.keys()),
+#                    len(a_n7_acc_a_n6_single_diff.groupby(["don_index_x", "eq_class"]).groups.keys()),
+#                    len(a_n7_acc_a_n6_dual_diff.groupby(["don_index_x", "eq_class"]).groups.keys())],
+#     "Total": [len(a_n6_no_all.groupby(["don_index", "eq_class"]).groups.keys()),
+#               len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()),
+#               len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()),
+#               len(a_n6_no_all.groupby(["don_index", "eq_class"]).groups.keys()),
+#               len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()),
+#               len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()),
+#               len(a_n6_no_all.groupby(["don_index", "eq_class"]).groups.keys()),
+#               len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()),
+#               len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys())]
+# })
+# a_n6_donation_diff["Ratio"] = a_n6_donation_diff["Occurrence"] / a_n6_donation_diff["Total"]
+# a_n6_donation_diff.to_csv("plots/a_n6_donation_diff.csv", index=False)
 
-# # A(N6) DONATION AND A(N1) ACCEPTATION, DIFFERENT H-BONDING NUCLEOBASES
-# a_n1_acc_a_n6_single_1 = (a_n6_single_all.merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
-#                                                 .eq(["N1", "A"]).all(axis='columns')],
-#                                                 left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
-#                                                 right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"],
-#                                                 how='inner'))
-# a_n1_acc_a_n6_single_2 = a_n1_acc_a_n6_single_1[
-#     ~((a_n1_acc_a_n6_single_1["acc_resn_x"] == a_n1_acc_a_n6_single_1["don_resn_y"]) &
-#       (a_n1_acc_a_n6_single_1["acc_resi_x"] == a_n1_acc_a_n6_single_1["don_resi_y"]) &
-#       (a_n1_acc_a_n6_single_1["acc_chain_x"] == a_n1_acc_a_n6_single_1["don_chain_y"]) &
-#       (a_n1_acc_a_n6_single_1["don_name_y"] != "O2'"))]
-# a_n1_acc_a_n6_dual_1 = (a_n6_dual_all.merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
-#                                             .eq(["N1", "A"]).all(axis='columns')],
-#                                             left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
-#                                             right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"],
-#                                             how='inner'))
-# a_n1_acc_a_n6_dual_2 = a_n1_acc_a_n6_dual_1[
-#     ~((a_n1_acc_a_n6_dual_1["acc_resn_x"] == a_n1_acc_a_n6_dual_1["don_resn_y"]) &
-#       (a_n1_acc_a_n6_dual_1["acc_resi_x"] == a_n1_acc_a_n6_dual_1["don_resi_y"]) &
-#       (a_n1_acc_a_n6_dual_1["acc_chain_x"] == a_n1_acc_a_n6_dual_1["don_chain_y"]) &
-#       (a_n1_acc_a_n6_dual_1["don_name_y"] != "O2'"))]
-# print(len(a_n1_acc_a_n6_single_2.groupby(["don_index_x", "eq_class"]).groups.keys()) /
-#       len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()))
-# print(len(a_n1_acc_a_n6_dual_2.groupby(["don_index_x", "eq_class"]).groups.keys()) /
-#       len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()))
-# print(len(a_n1_acc_a_n6_single_2.groupby(["don_index_x", "eq_class"]).groups.keys()))
-# print(len(a_n1_acc_a_n6_dual_2.groupby(["don_index_x", "eq_class"]).groups.keys()))
-# print(len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()))
-# print(len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()))
+# A(N6) DONATION AND A(N1), A(N3), and A(N7) DONATION
+a_n1_don_a_n6_no = a_n6_no_all.merge(prot_don_hbonds_nr_c[prot_don_hbonds_nr_c[["don_name", "don_resn"]]
+                                     .eq(["N1", "A"]).all(axis='columns')],
+                                     on=["don_resn", "don_resi", "don_chain", "eq_class"],
+                                     how='inner')
+a_n1_don_a_n6_single = a_n6_single_all.merge(prot_don_hbonds_nr_c[prot_don_hbonds_nr_c[["don_name", "don_resn"]]
+                                             .eq(["N1", "A"]).all(axis='columns')],
+                                             on=["don_resn", "don_resi", "don_chain", "eq_class"],
+                                             how='inner')
+a_n1_don_a_n6_dual = a_n6_dual_all.merge(prot_don_hbonds_nr_c[prot_don_hbonds_nr_c[["don_name", "don_resn"]]
+                                         .eq(["N1", "A"]).all(axis='columns')],
+                                         on=["don_resn", "don_resi", "don_chain", "eq_class"],
+                                         how='inner')
+a_n3_don_a_n6_no = a_n6_no_all.merge(prot_don_hbonds_nr_c[prot_don_hbonds_nr_c[["don_name", "don_resn"]]
+                                     .eq(["N3", "A"]).all(axis='columns')],
+                                     on=["don_resn", "don_resi", "don_chain", "eq_class"],
+                                     how='inner')
+a_n3_don_a_n6_single = a_n6_single_all.merge(prot_don_hbonds_nr_c[prot_don_hbonds_nr_c[["don_name", "don_resn"]]
+                                             .eq(["N3", "A"]).all(axis='columns')],
+                                             on=["don_resn", "don_resi", "don_chain", "eq_class"],
+                                             how='inner')
+a_n3_don_a_n6_dual = a_n6_dual_all.merge(prot_don_hbonds_nr_c[prot_don_hbonds_nr_c[["don_name", "don_resn"]]
+                                         .eq(["N3", "A"]).all(axis='columns')],
+                                         on=["don_resn", "don_resi", "don_chain", "eq_class"],
+                                         how='inner')
+a_n7_don_a_n6_no = a_n6_no_all.merge(prot_don_hbonds_nr_c[prot_don_hbonds_nr_c[["don_name", "don_resn"]]
+                                     .eq(["N7", "A"]).all(axis='columns')],
+                                     on=["don_resn", "don_resi", "don_chain", "eq_class"],
+                                     how='inner')
+a_n7_don_a_n6_single = a_n6_single_all.merge(prot_don_hbonds_nr_c[prot_don_hbonds_nr_c[["don_name", "don_resn"]]
+                                             .eq(["N7", "A"]).all(axis='columns')],
+                                             on=["don_resn", "don_resi", "don_chain", "eq_class"],
+                                             how='inner')
+a_n7_don_a_n6_dual = a_n6_dual_all.merge(prot_don_hbonds_nr_c[prot_don_hbonds_nr_c[["don_name", "don_resn"]]
+                                         .eq(["N7", "A"]).all(axis='columns')],
+                                         on=["don_resn", "don_resi", "don_chain", "eq_class"],
+                                         how='inner')
+a_n6_donation_prot = pd.DataFrame({
+    "Atom": ["A(N1)", "A(N1)", "A(N1)", "A(N3)", "A(N3)", "A(N3)", "A(N7)", "A(N7)", "A(N7)"],
+    "Type": ["No", "Single", "Dual", "No", "Single", "Dual", "No", "Single", "Dual"],
+    "Occurrence": [len(a_n1_don_a_n6_no.groupby(["don_index_x", "eq_class"]).groups.keys()),
+                   len(a_n1_don_a_n6_single.groupby(["don_index_x", "eq_class"]).groups.keys()),
+                   len(a_n1_don_a_n6_dual.groupby(["don_index_x", "eq_class"]).groups.keys()),
+                   len(a_n3_don_a_n6_no.groupby(["don_index_x", "eq_class"]).groups.keys()),
+                   len(a_n3_don_a_n6_single.groupby(["don_index_x", "eq_class"]).groups.keys()),
+                   len(a_n3_don_a_n6_dual.groupby(["don_index_x", "eq_class"]).groups.keys()),
+                   len(a_n7_don_a_n6_no.groupby(["don_index_x", "eq_class"]).groups.keys()),
+                   len(a_n7_don_a_n6_single.groupby(["don_index_x", "eq_class"]).groups.keys()),
+                   len(a_n7_don_a_n6_dual.groupby(["don_index_x", "eq_class"]).groups.keys())],
+    "Total": [len(a_n6_no_all.groupby(["don_index", "eq_class"]).groups.keys()),
+              len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()),
+              len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()),
+              len(a_n6_no_all.groupby(["don_index", "eq_class"]).groups.keys()),
+              len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()),
+              len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()),
+              len(a_n6_no_all.groupby(["don_index", "eq_class"]).groups.keys()),
+              len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()),
+              len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys())]
+})
+a_n6_donation_prot["Ratio"] = a_n6_donation_prot["Occurrence"] / a_n6_donation_prot["Total"]
+# a_n6_donation_prot.to_csv("plots/a_n6_donation_prot.csv", index=False)
+
+# A(N6) DONATION AND A(N1), A(N3), and A(N7) DONATION, DIFFERENT H-BONDING NUCLEOBASES
+a_n1_don_a_n6_no_diff = a_n1_don_a_n6_no[
+    ~((a_n1_don_a_n6_no["acc_resn_x"] == a_n1_don_a_n6_no["acc_resn_y"]) &
+      (a_n1_don_a_n6_no["acc_resi_x"] == a_n1_don_a_n6_no["acc_resi_y"]) &
+      (a_n1_don_a_n6_no["acc_chain_x"] == a_n1_don_a_n6_no["acc_chain_y"]) &
+      ~(a_n1_don_a_n6_no["acc_name_y"].isin(["O2'", "O3'", "O4'", "O5'", "OP1", "OP2"])))]
+a_n1_don_a_n6_single_diff = a_n1_don_a_n6_single[
+    ~((a_n1_don_a_n6_single["acc_resn_x"] == a_n1_don_a_n6_single["acc_resn_y"]) &
+      (a_n1_don_a_n6_single["acc_resi_x"] == a_n1_don_a_n6_single["acc_resi_y"]) &
+      (a_n1_don_a_n6_single["acc_chain_x"] == a_n1_don_a_n6_single["acc_chain_y"]) &
+      ~(a_n1_don_a_n6_single["acc_name_y"].isin(["O2'", "O3'", "O4'", "O5'", "OP1", "OP2"])))]
+a_n1_don_a_n6_dual_diff = a_n1_don_a_n6_dual[
+    ~((a_n1_don_a_n6_dual["acc_resn_x"] == a_n1_don_a_n6_dual["acc_resn_y"]) &
+      (a_n1_don_a_n6_dual["acc_resi_x"] == a_n1_don_a_n6_dual["acc_resi_y"]) &
+      (a_n1_don_a_n6_dual["acc_chain_x"] == a_n1_don_a_n6_dual["acc_chain_y"]) &
+      ~(a_n1_don_a_n6_dual["acc_name_y"].isin(["O2'", "O3'", "O4'", "O5'", "OP1", "OP2"])))]
+a_n3_don_a_n6_no_diff = a_n3_don_a_n6_no[
+    ~((a_n3_don_a_n6_no["acc_resn_x"] == a_n3_don_a_n6_no["acc_resn_y"]) &
+      (a_n3_don_a_n6_no["acc_resi_x"] == a_n3_don_a_n6_no["acc_resi_y"]) &
+      (a_n3_don_a_n6_no["acc_chain_x"] == a_n3_don_a_n6_no["acc_chain_y"]) &
+      ~(a_n3_don_a_n6_no["acc_name_y"].isin(["O2'", "O3'", "O4'", "O5'", "OP1", "OP2"])))]
+a_n3_don_a_n6_single_diff = a_n3_don_a_n6_single[
+    ~((a_n3_don_a_n6_single["acc_resn_x"] == a_n3_don_a_n6_single["acc_resn_y"]) &
+      (a_n3_don_a_n6_single["acc_resi_x"] == a_n3_don_a_n6_single["acc_resi_y"]) &
+      (a_n3_don_a_n6_single["acc_chain_x"] == a_n3_don_a_n6_single["acc_chain_y"]) &
+      ~(a_n3_don_a_n6_single["acc_name_y"].isin(["O2'", "O3'", "O4'", "O5'", "OP1", "OP2"])))]
+a_n3_don_a_n6_dual_diff = a_n3_don_a_n6_dual[
+    ~((a_n3_don_a_n6_dual["acc_resn_x"] == a_n3_don_a_n6_dual["acc_resn_y"]) &
+      (a_n3_don_a_n6_dual["acc_resi_x"] == a_n3_don_a_n6_dual["acc_resi_y"]) &
+      (a_n3_don_a_n6_dual["acc_chain_x"] == a_n3_don_a_n6_dual["acc_chain_y"]) &
+      ~(a_n3_don_a_n6_dual["acc_name_y"].isin(["O2'", "O3'", "O4'", "O5'", "OP1", "OP2"])))]
+a_n7_don_a_n6_no_diff = a_n7_don_a_n6_no[
+    ~((a_n7_don_a_n6_no["acc_resn_x"] == a_n7_don_a_n6_no["acc_resn_y"]) &
+      (a_n7_don_a_n6_no["acc_resi_x"] == a_n7_don_a_n6_no["acc_resi_y"]) &
+      (a_n7_don_a_n6_no["acc_chain_x"] == a_n7_don_a_n6_no["acc_chain_y"]) &
+      ~(a_n7_don_a_n6_no["acc_name_y"].isin(["O2'", "O3'", "O4'", "O5'", "OP1", "OP2"])))]
+a_n7_don_a_n6_single_diff = a_n7_don_a_n6_single[
+    ~((a_n7_don_a_n6_single["acc_resn_x"] == a_n7_don_a_n6_single["acc_resn_y"]) &
+      (a_n7_don_a_n6_single["acc_resi_x"] == a_n7_don_a_n6_single["acc_resi_y"]) &
+      (a_n7_don_a_n6_single["acc_chain_x"] == a_n7_don_a_n6_single["acc_chain_y"]) &
+      ~(a_n7_don_a_n6_single["acc_name_y"].isin(["O2'", "O3'", "O4'", "O5'", "OP1", "OP2"])))]
+a_n7_don_a_n6_dual_diff = a_n7_don_a_n6_dual[
+    ~((a_n7_don_a_n6_dual["acc_resn_x"] == a_n7_don_a_n6_dual["acc_resn_y"]) &
+      (a_n7_don_a_n6_dual["acc_resi_x"] == a_n7_don_a_n6_dual["acc_resi_y"]) &
+      (a_n7_don_a_n6_dual["acc_chain_x"] == a_n7_don_a_n6_dual["acc_chain_y"]) &
+      ~(a_n7_don_a_n6_dual["acc_name_y"].isin(["O2'", "O3'", "O4'", "O5'", "OP1", "OP2"])))]
+a_n6_donation_prot_diff = pd.DataFrame({
+    "Atom": ["A(N1)", "A(N1)", "A(N1)", "A(N3)", "A(N3)", "A(N3)", "A(N7)", "A(N7)", "A(N7)"],
+    "Type": ["No", "Single", "Dual", "No", "Single", "Dual", "No", "Single", "Dual"],
+    "Occurrence": [len(a_n1_don_a_n6_no_diff.groupby(["don_index_x", "eq_class"]).groups.keys()),
+                   len(a_n1_don_a_n6_single_diff.groupby(["don_index_x", "eq_class"]).groups.keys()),
+                   len(a_n1_don_a_n6_dual_diff.groupby(["don_index_x", "eq_class"]).groups.keys()),
+                   len(a_n3_don_a_n6_no_diff.groupby(["don_index_x", "eq_class"]).groups.keys()),
+                   len(a_n3_don_a_n6_single_diff.groupby(["don_index_x", "eq_class"]).groups.keys()),
+                   len(a_n3_don_a_n6_dual_diff.groupby(["don_index_x", "eq_class"]).groups.keys()),
+                   len(a_n7_don_a_n6_no_diff.groupby(["don_index_x", "eq_class"]).groups.keys()),
+                   len(a_n7_don_a_n6_single_diff.groupby(["don_index_x", "eq_class"]).groups.keys()),
+                   len(a_n7_don_a_n6_dual_diff.groupby(["don_index_x", "eq_class"]).groups.keys())],
+    "Total": [len(a_n6_no_all.groupby(["don_index", "eq_class"]).groups.keys()),
+              len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()),
+              len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()),
+              len(a_n6_no_all.groupby(["don_index", "eq_class"]).groups.keys()),
+              len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()),
+              len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys()),
+              len(a_n6_no_all.groupby(["don_index", "eq_class"]).groups.keys()),
+              len(a_n6_single_all.groupby(["don_index", "eq_class"]).groups.keys()),
+              len(a_n6_dual_all.groupby(["don_index", "eq_class"]).groups.keys())]
+})
+a_n6_donation_prot_diff["Ratio"] = a_n6_donation_prot_diff["Occurrence"] / a_n6_donation_prot_diff["Total"]
+# a_n6_donation_prot_diff.to_csv("plots/a_n6_donation_prot_diff.csv", index=False)
 
 # # H-BONDING DISTANCE, NUCLEOBASES NOT INVOLVED IN SINGLE/DUAL DONATION
 # print(a_n1_acc_a_n6_single_2[a_n1_acc_a_n6_single_2["vertex_y"] == "hydrogen"]["dist_y"].mean())
