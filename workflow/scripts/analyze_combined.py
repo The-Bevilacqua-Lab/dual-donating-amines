@@ -3,6 +3,7 @@ This script will eventually do something.
 """
 
 import os
+import re
 import pandas as pd
 import numpy as np
 import scipy
@@ -439,14 +440,99 @@ a_n6_donation_a_n1_acc_no_ol_hbond_to_n1 = pd.DataFrame({
 a_n6_donation_a_n1_acc_no_ol_hbond_to_n1.to_csv("plots/a_n6_donation_a_n1_acc_no_ol_hbond_to_n1.csv",
                                                 index=False)
 
-# prepare dataframes of single and dual H-bonding A(N6) that also accept at N1 and which include H-bond information
-# related to the N6 H-bond donation
-a_n6_single_a_n1_acc_hbond_from_n6 = (a_n6_single_a_n1_acc_res
-                                      .rename(columns={"resn": "don_resn", "resi": "don_resi", "chain": "don_chain"})
-                                      .merge(a_n6_single_hbond, how='inner'))
-a_n6_dual_a_n1_acc_hbond_from_n6 = (a_n6_dual_a_n1_acc_res
-                                    .rename(columns={"resn": "don_resn", "resi": "don_resi", "chain": "don_chain"})
-                                    .merge(a_n6_dual_hbond, how='inner'))
+# Prepare dataframes of single and dual H-bonding A(N6) residues that only donate to OD1 or OD2 of Asp, OE1 or OE2 of
+# Glu, or OP1 or OP2 of nucleic acids and that accept an H-bond at the N1. The dataframes include H-bond information
+# related to the N6 H-bond donation.
+find_neg_single = a_n6_single_a_n1_acc_hbond_from_n6
+find_neg_single["neg_acc"] = pd.Series((a_n6_single_a_n1_acc_hbond_from_n6["acc_resn"].isin(neg_acc_resn)) &
+                                       (a_n6_single_a_n1_acc_hbond_from_n6["acc_name"].isin(neg_acc_name)))
+a_n6_single_a_n1_acc_hbond_from_n6_neg = (find_neg_single[find_neg_single.groupby(["don_index", "eq_class"])["neg_acc"]
+                                          .transform("all")].drop(columns=["neg_acc"]))
+find_neg_dual = a_n6_dual_a_n1_acc_hbond_from_n6
+find_neg_dual["neg_acc"] = pd.Series((a_n6_dual_a_n1_acc_hbond_from_n6["acc_resn"].isin(neg_acc_resn)) &
+                                     (a_n6_dual_a_n1_acc_hbond_from_n6["acc_name"].isin(neg_acc_name)))
+a_n6_dual_a_n1_acc_hbond_from_n6_neg = (find_neg_dual[find_neg_dual.groupby(["don_index", "eq_class"])["neg_acc"]
+                                        .transform("all")].drop(columns=["neg_acc"]))
+
+a_n6_single_a_n1_acc_res_neg = ((a_n6_single_a_n1_acc_hbond_from_n6_neg
+                                .loc[:, ["eq_class", "don_resn", "don_resi", "don_chain"]]
+                                .drop_duplicates())
+                                .rename(columns={"don_resn": "resn", "don_resi": "resi", "don_chain": "chain"}))
+a_n6_dual_a_n1_acc_res_neg = ((a_n6_dual_a_n1_acc_hbond_from_n6_neg
+                              .loc[:, ["eq_class", "don_resn", "don_resi", "don_chain"]]
+                              .drop_duplicates())
+                              .rename(columns={"don_resn": "resn", "don_resi": "resi", "don_chain": "chain"}))
+
+# Prepare dataframes of single and dual H-bonding A(N6) residues that only donate to OD1 or OD2 of Asp, OE1 or OE2 of
+# Glu, or OP1 or OP2 of nucleic acids and that accept an H-bond at the N1. The dataframes include H-bond information
+# related to the N6 H-bond donation and the N1 H-bond acceptation.
+a_n6_single_a_n1_acc_match_neg = (a_n6_single_a_n1_acc_hbond_from_n6_neg
+                                  .merge(a_n6_single_a_n1_acc_hbond_to_n1,
+                                         left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
+                                         right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"], how='inner'))
+a_n6_dual_a_n1_acc_match_neg = (a_n6_dual_a_n1_acc_hbond_from_n6_neg
+                                .merge(a_n6_dual_a_n1_acc_hbond_to_n1,
+                                       left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
+                                       right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"], how='inner'))
+
+# Prepare dataframes with just residue information of single and dual H-bonding A(N6) that also accepts an H-bond at the
+# N1, N3, or N7. The N6 only donates to OD1 or OD2 of Asp, OE1 or OE2 of Glu, or OP1 or OP2 of nucleic acids.
+# Additionally, there is overlap in the identity of the partner nucleobase, amino acid residue backbone, or amino acid
+# residue side chain, where the N6 donates an H-bond and the N1, N3, or N7 accepts an H-bond from the same partner
+# entity.
+a_n6_single_a_n1_acc_ol_neg = (a_n6_single_a_n1_acc_match_neg[
+    (((a_n6_single_a_n1_acc_match_neg["acc_resn_x"] == a_n6_single_a_n1_acc_match_neg["don_resn_y"]) &
+      (a_n6_single_a_n1_acc_match_neg["acc_resi_x"] == a_n6_single_a_n1_acc_match_neg["don_resi_y"]) &
+      (a_n6_single_a_n1_acc_match_neg["acc_chain_x"] == a_n6_single_a_n1_acc_match_neg["don_chain_y"]) &
+      ~(a_n6_single_a_n1_acc_match_neg["acc_name_x"].isin(["O2'", "O3'", "O4'", "O5'", "OP1", "OP2", "O"])) &
+      ~(a_n6_single_a_n1_acc_match_neg["don_name_y"].isin(["O2'", "N"]))) |
+     ((a_n6_single_a_n1_acc_match_neg["acc_resn_x"] == a_n6_single_a_n1_acc_match_neg["don_resn_y"]) &
+      (a_n6_single_a_n1_acc_match_neg["acc_resi_x"] == a_n6_single_a_n1_acc_match_neg["don_resi_y"]) &
+      (a_n6_single_a_n1_acc_match_neg["acc_chain_x"] == a_n6_single_a_n1_acc_match_neg["don_chain_y"]) &
+      ~(a_n6_single_a_n1_acc_match_neg["acc_name_x"].isin(["O2'", "O3'", "O4'", "O5'", "OP1", "OP2"])) &
+      ~(a_n6_single_a_n1_acc_match_neg["don_name_y"].isin(["O2'"])) &
+      (a_n6_single_a_n1_acc_match_neg["acc_name_x"].isin(["O"])) &
+      (a_n6_single_a_n1_acc_match_neg["don_name_y"].isin(["N"]))))]
+                           .loc[:, ["eq_class", "don_resn_x", "don_resi_x", "don_chain_x"]]
+                           .rename(columns={"don_resn_x": "resn", "don_resi_x": "resi", "don_chain_x": "chain"})
+                           .drop_duplicates())
+a_n6_dual_a_n1_acc_ol_neg = (a_n6_dual_a_n1_acc_match_neg[
+    (((a_n6_dual_a_n1_acc_match_neg["acc_resn_x"] == a_n6_dual_a_n1_acc_match_neg["don_resn_y"]) &
+      (a_n6_dual_a_n1_acc_match_neg["acc_resi_x"] == a_n6_dual_a_n1_acc_match_neg["don_resi_y"]) &
+      (a_n6_dual_a_n1_acc_match_neg["acc_chain_x"] == a_n6_dual_a_n1_acc_match_neg["don_chain_y"]) &
+      ~(a_n6_dual_a_n1_acc_match_neg["acc_name_x"].isin(["O2'", "O3'", "O4'", "O5'", "OP1", "OP2", "O"])) &
+      ~(a_n6_dual_a_n1_acc_match_neg["don_name_y"].isin(["O2'", "N"]))) |
+     ((a_n6_dual_a_n1_acc_match_neg["acc_resn_x"] == a_n6_dual_a_n1_acc_match_neg["don_resn_y"]) &
+      (a_n6_dual_a_n1_acc_match_neg["acc_resi_x"] == a_n6_dual_a_n1_acc_match_neg["don_resi_y"]) &
+      (a_n6_dual_a_n1_acc_match_neg["acc_chain_x"] == a_n6_dual_a_n1_acc_match_neg["don_chain_y"]) &
+      ~(a_n6_dual_a_n1_acc_match_neg["acc_name_x"].isin(["O2'", "O3'", "O4'", "O5'", "OP1", "OP2"])) &
+      ~(a_n6_dual_a_n1_acc_match_neg["don_name_y"].isin(["O2'"])) &
+      (a_n6_dual_a_n1_acc_match_neg["acc_name_x"].isin(["O"])) &
+      (a_n6_dual_a_n1_acc_match_neg["don_name_y"].isin(["N"]))))]
+                           .loc[:, ["eq_class", "don_resn_x", "don_resi_x", "don_chain_x"]]
+                           .rename(columns={"don_resn_x": "resn", "don_resi_x": "resi", "don_chain_x": "chain"})
+                           .drop_duplicates())
+
+# Prepare dataframes with just residue information of single and dual H-bonding A(N6) that also accepts an H-bond at the
+# N1, N3, or N7. The N6 only donates to OD1 or OD2 of Asp, OE1 or OE2 of Glu, or OP1 or OP2 of nucleic acids.
+# Additionally, there is no overlap in the identity of the partner nucleobase, amino acid residue backbone, or amino
+# acid residue side chain. In other words, the acceptor for the N6 H-bond donation and the donor for the N1, N3, or N7
+# H-bond acceptation belong to different partner entities.
+a_n6_single_a_n1_acc_no_ol_neg = pd.concat([a_n6_single_a_n1_acc_res_neg, a_n6_single_a_n1_acc_ol_neg]).drop_duplicates(keep=False)
+a_n6_dual_a_n1_acc_no_ol_neg = pd.concat([a_n6_dual_a_n1_acc_res_neg, a_n6_dual_a_n1_acc_ol_neg]).drop_duplicates(keep=False)
+
+# Prepare dataframes of A(N6) donors that also accept via the N1, N3, or N7 while only considering partner entities that
+# do not overlap and which includes H-bond information related to the N1, N3, or N7 H-bond acceptation. The N6 only
+# donates to OD1 or OD2 of Asp, OE1 or OE2 of Glu, or OP1 or OP2 of nucleic acids.
+a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg = (a_n6_single_a_n1_acc_no_ol_neg
+                                              .rename(columns={"resn": "acc_resn", "resi": "acc_resi", "chain": "acc_chain"})
+                                              .merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]].eq(["N1", "A"])
+                                                     .all(axis='columns')], how='inner'))
+a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg = (a_n6_dual_a_n1_acc_no_ol_neg
+                                            .rename(columns={"resn": "acc_resn", "resi": "acc_resi", "chain": "acc_chain"})
+                                            .merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]].eq(["N1", "A"])
+                                                   .all(axis='columns')], how='inner'))
+
 
 # # H-BONDING DISTANCE, HYDROGEN VERTEX, NUCLEOBASES NOT INVOLVED IN SINGLE/DUAL DONATION
 # print(a_n1_acc_a_n6_single_diff[a_n1_acc_a_n6_single_diff["vertex_y"] == "hydrogen"]["dist_y"].mean())
