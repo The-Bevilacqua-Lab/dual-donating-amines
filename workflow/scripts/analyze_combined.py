@@ -6,9 +6,34 @@ import os
 import pandas as pd
 import numpy as np
 import scipy
+import const
 
 # the working directory should house the combined/ folder
 working_dir = os.getcwd()
+
+# prepare a list of acceptor residue names and atom names that have substantially greater negative charge
+neg_acc_resn = []
+neg_acc_name = []
+for residue in const.RESIDUE_LIBRARY:
+    for acceptor in residue['acc']:
+        if acceptor[3] < 0:
+            neg_acc_resn.append(residue['res'])
+            neg_acc_name.append(acceptor[0])
+        elif residue['res'] == 'ASP' and acceptor[0] == 'OD1':
+            neg_acc_resn.append(residue['res'])
+            neg_acc_name.append(acceptor[0])
+        elif residue['res'] == 'GLU' and acceptor[0] == 'OE1':
+            neg_acc_resn.append(residue['res'])
+            neg_acc_name.append(acceptor[0])
+        elif residue['res'] in ['A', 'C', 'G', 'U', 'DA', 'DC', 'DG', 'DT'] and acceptor[0] == 'OP1':
+            neg_acc_resn.append(residue['res'])
+            neg_acc_name.append(acceptor[0])
+
+# prepare a dataframe of acceptors that have substantially negative charges
+neg_acceptors = pd.DataFrame({
+    "acc_resn": neg_acc_resn,
+    "acc_name": neg_acc_name
+})
 
 # create the combined dataframes
 don_hbonds_nr_c = pd.read_csv(working_dir + "/combined/don_hbonds_nr_c.csv",
@@ -20,17 +45,22 @@ acc_hbonds_nr_c = pd.read_csv(working_dir + "/combined/acc_hbonds_nr_c.csv",
 deprot_acc_hbonds_nr_c = pd.read_csv(working_dir + "/combined/deprot_acc_hbonds_nr_c.csv",
                                      dtype={"don_resi": "object", "acc_resi": "object"})
 nuc_data_c = pd.read_csv(working_dir + "/combined/nuc_data_c.csv")
-single_don_exo_amines_c = pd.read_csv(working_dir + "/combined/single_don_exo_amines_c.csv")
-dual_don_exo_amines_c = pd.read_csv(working_dir + "/combined/dual_don_exo_amines_c.csv")
+
+# Identify nucleobases that donate either one or at least two H-bonds via their exocyclic amines. The H-bonds from the
+# latter nucleobases must involve both exocyclic amine hydrogens and at least two different acceptors.
+single_don_hbonds = don_hbonds_nr_c[
+    (don_hbonds_nr_c.groupby(["don_index", "eq_class"])["hydrogen"].transform("nunique") == 1) |
+    (don_hbonds_nr_c.groupby(["don_index", "eq_class"])["acc_index"].transform("nunique") == 1)]
+dual_don_hbonds = don_hbonds_nr_c[
+    (don_hbonds_nr_c.groupby(["don_index", "eq_class"])["hydrogen"].transform("nunique") == 2) &
+    (don_hbonds_nr_c.groupby(["don_index", "eq_class"])["acc_index"].transform("nunique") >= 2)]
 
 # prepare dataframes of exocyclic amines for each A, C, and G residue
 a_exo_amines = nuc_data_c[nuc_data_c["atom_name"] == "N6"]
 
 # prepare dataframes of single and dual H-bonding A(N6) with H-bond information
-a_n6_single_hbond = single_don_exo_amines_c.merge(don_hbonds_nr_c[don_hbonds_nr_c["don_resn"] == "A"],
-                                                on=["don_index", "eq_class"], how='inner')
-a_n6_dual_hbond = dual_don_exo_amines_c.merge(don_hbonds_nr_c[don_hbonds_nr_c["don_resn"] == "A"],
-                                            on=["don_index", "eq_class"], how='inner')
+a_n6_single_hbond = single_don_hbonds[single_don_hbonds["don_resn"] == "A"]
+a_n6_dual_hbond = dual_don_hbonds[dual_don_hbonds["don_resn"] == "A"]
 
 # prepare dataframes of no, single, and dual H-bonding A(N6) with just residue information
 a_n6_single_res = (a_n6_single_hbond.loc[:, ["eq_class", "don_resn", "don_resi", "don_chain"]]
@@ -354,6 +384,69 @@ a_n6_donation_no_ol = pd.DataFrame({
 })
 a_n6_donation_no_ol["Ratio"] = a_n6_donation_no_ol["Occurrence"] / a_n6_donation_no_ol["Total"]
 a_n6_donation_no_ol.to_csv("plots/a_n6_donation_no_ol.csv", index=False)
+
+# prepare dataframes of A(N6) donors that also accept via the N1, N3, or N7 while only considering partner entities that
+# do not overlap and which includes H-bond information related to the N1, N3, or N7 H-bond acceptation
+a_n6_single_a_n1_acc_no_ol_hbond_to_n1 = (a_n6_single_a_n1_acc_no_ol
+                                          .rename(columns={"resn": "acc_resn", "resi": "acc_resi", "chain": "acc_chain"})
+                                          .merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]].eq(["N1", "A"])
+                                                 .all(axis='columns')], how='inner'))
+a_n6_dual_a_n1_acc_no_ol_hbond_to_n1 = (a_n6_dual_a_n1_acc_no_ol
+                                        .rename(columns={"resn": "acc_resn", "resi": "acc_resi", "chain": "acc_chain"})
+                                        .merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]].eq(["N1", "A"])
+                                               .all(axis='columns')], how='inner'))
+
+# print(len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1[a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"].groupby(["acc_index", "eq_class"]).groups.keys()))
+# print(len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1[a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"].groupby(["acc_index", "eq_class"]).groups.keys()))
+# print(len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1[a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"].groupby(["acc_index", "eq_class"]).groups.keys()))
+# print(len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1[a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"].groupby(["acc_index", "eq_class"]).groups.keys()))
+
+# print(a_n6_single_a_n1_acc_no_ol_hbond_to_n1[a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].mean())
+# print(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1[a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].mean())
+# print(a_n6_single_a_n1_acc_no_ol_hbond_to_n1[a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].mean())
+# print(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1[a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].mean())
+
+# write data on H-bond distance for donors to the N1, N3, or N7 of A residues that also donate via their N6 with no
+# overlap in partner entity
+a_n6_donation_a_n1_acc_no_ol_hbond_to_n1 = pd.DataFrame({
+    "Donor": (["Non-Rotatable"] * len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1
+                                      [a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"]
+                                      .to_list()) +
+              ["Non-Rotatable"] * len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1
+                                      [a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"]
+                                      .to_list()) +
+              ["Rotatable"] * len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1
+                                  [a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list()) +
+              ["Rotatable"] * len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1
+                                  [a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list())),
+    "Type": (["Single"] * len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1
+                              [a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list()) +
+             ["Dual"] * len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1
+                            [a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list()) +
+             ["Single"] * len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1
+                              [a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list()) +
+             ["Dual"] * len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1
+                            [a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list())),
+    "Distance": (a_n6_single_a_n1_acc_no_ol_hbond_to_n1[
+                     a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list() +
+                 a_n6_dual_a_n1_acc_no_ol_hbond_to_n1[
+                     a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list() +
+                 a_n6_single_a_n1_acc_no_ol_hbond_to_n1[
+                     a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list() +
+                 a_n6_dual_a_n1_acc_no_ol_hbond_to_n1[
+                     a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list())
+})
+a_n6_donation_a_n1_acc_no_ol_hbond_to_n1.to_csv("plots/a_n6_donation_a_n1_acc_no_ol_hbond_to_n1.csv",
+                                                index=False)
+
+# prepare dataframes of single and dual H-bonding A(N6) that also accept at N1 and which include H-bond information
+# related to the N6 H-bond donation
+a_n6_single_a_n1_acc_hbond_from_n6 = (a_n6_single_a_n1_acc_res
+                                      .rename(columns={"resn": "don_resn", "resi": "don_resi", "chain": "don_chain"})
+                                      .merge(a_n6_single_hbond, how='inner'))
+a_n6_dual_a_n1_acc_hbond_from_n6 = (a_n6_dual_a_n1_acc_res
+                                    .rename(columns={"resn": "don_resn", "resi": "don_resi", "chain": "don_chain"})
+                                    .merge(a_n6_dual_hbond, how='inner'))
 
 # # H-BONDING DISTANCE, HYDROGEN VERTEX, NUCLEOBASES NOT INVOLVED IN SINGLE/DUAL DONATION
 # print(a_n1_acc_a_n6_single_diff[a_n1_acc_a_n6_single_diff["vertex_y"] == "hydrogen"]["dist_y"].mean())
