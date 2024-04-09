@@ -144,21 +144,6 @@ deprot_acc_hbonds_nr = (deprot_acc_hbonds[(((deprot_acc_hbonds["don_resn"] != "T
                                             (deprot_acc_hbonds.groupby(don_grp)["dist"]
                                              .transform(lambda grp: [mem == grp.min() for mem in grp]))))])
 
-# identify nucleobases that donate either one or at least two H-bonds via their exocyclic amines
-# the H-bonds from the latter nucleobases must involve both exocyclic amine hydrogens and at least two different
-# acceptors
-if don_hbonds_nr.size > 0:
-    don_indices = list(don_hbonds_nr.groupby("don_index").groups.keys())
-    single_don_exo_amines = pd.Series(don_indices, index=don_indices, name="don_index")[
-        (don_hbonds_nr.groupby("don_index")["hydrogen"].nunique() == 1) |
-        (don_hbonds_nr.groupby("don_index")["acc_index"].nunique() == 1)]
-    dual_don_exo_amines = pd.Series(don_indices, index=don_indices, name="don_index")[
-        (don_hbonds_nr.groupby("don_index")["hydrogen"].nunique() == 2) &
-        (don_hbonds_nr.groupby("don_index")["acc_index"].nunique() >= 2)]
-else:
-    single_don_exo_amines = pd.Series([])
-    dual_don_exo_amines = pd.Series([])
-
 # identify nucleobases that accept either one, two, or three or more H-bonds via their nucleobase carbonyls
 # these categories must involve one unique donor, two unique donors, or at least three unique donors, respectively
 if acc_hbonds_nr.size > 0:
@@ -184,8 +169,6 @@ don_hbonds_nr.assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.out
 prot_don_hbonds_nr.assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.prot_don_hbonds_nr, index=False)
 acc_hbonds_nr.assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.acc_hbonds_nr, index=False)
 deprot_acc_hbonds_nr.assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.deprot_acc_hbonds_nr, index=False)
-single_don_exo_amines.to_frame().assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.single_don_exo_amines, index=False)
-dual_don_exo_amines.to_frame().assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.dual_don_exo_amines, index=False)
 single_acc_carbonyls.to_frame().assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.single_acc_carbonyls, index=False)
 dual_acc_carbonyls.to_frame().assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.dual_acc_carbonyls, index=False)
 tri_acc_carbonyls.to_frame().assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.tri_acc_carbonyls, index=False)
