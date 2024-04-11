@@ -44,9 +44,8 @@ nuc_col_names = ["index", "atom_name", "resn", "resi", "chain"]
 nuc_data = pd.read_csv(snakemake.input.nuc_data, names=nuc_col_names, comment="#", na_filter=False,
                        dtype={"chain": "object"})
 
-# Create a dictionary based on the file containing information on nucleobase b-factors. Then, create a dataframe base on
-# this dictionary.
-with open(snakemake.input.b_factors, mode='r') as read_file:
+# Create a dictionary based on the file containing information on nucleobase b-factors.
+with open(snakemake.input.b_factor_data, mode='r') as read_file:
     b_factors_dict = {
         "resn": [],
         "resi": [],
@@ -60,7 +59,7 @@ with open(snakemake.input.b_factors, mode='r') as read_file:
                 b_factors_dict["resi"].append(line[1])
                 b_factors_dict["chain"].append(line[2])
                 b_factors_dict["b"].append(line[i + 3])
-b_factors = pd.DataFrame(b_factors_dict)
+b_factor_data = pd.DataFrame(b_factors_dict)
 
 # extract the data from the equivalence class file
 eq_class_data = (pd.read_csv(snakemake.input.eq_class_data, header=None, comment="#", skiprows=[3], na_filter=False)
@@ -190,7 +189,7 @@ deprot_acc_hbonds_nr.assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakem
 single_acc_carbonyls.to_frame().assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.single_acc_carbonyls, index=False)
 dual_acc_carbonyls.to_frame().assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.dual_acc_carbonyls, index=False)
 tri_acc_carbonyls.to_frame().assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.tri_acc_carbonyls, index=False)
-b_factors.assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.b_factors, index=False)
+b_factor_data.assign(eq_class=snakemake.wildcards.eq_class).to_csv(snakemake.output.b_factor_data, index=False)
 
 # Repeat the steps to prepare don_hbonds_nr but without the filtering using h-bonding criteria to create
 # don_hbonds_geom_nr. This data can be used to look at the distribution of h-bonding geometry measurements.
