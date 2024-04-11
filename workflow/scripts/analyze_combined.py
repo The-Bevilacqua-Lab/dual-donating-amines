@@ -37,27 +37,27 @@ neg_acceptors = pd.DataFrame({
 })
 
 # create the combined dataframes
-don_hbonds_nr_c = pd.read_csv(working_dir + "/combined/don_hbonds_nr_c.csv",
-                              dtype={"don_resi": "object", "acc_resi": "object"})
-prot_don_hbonds_nr_c = pd.read_csv(working_dir + "/combined/prot_don_hbonds_nr_c.csv",
+don_hbonds_nr = pd.read_csv(working_dir + "/combined/don_hbonds_nr.csv",
+                            dtype={"don_resi": "object", "acc_resi": "object"})
+prot_don_hbonds_nr = pd.read_csv(working_dir + "/combined/prot_don_hbonds_nr.csv",
+                                 dtype={"don_resi": "object", "acc_resi": "object"})
+acc_hbonds_nr = pd.read_csv(working_dir + "/combined/acc_hbonds_nr.csv",
+                            dtype={"don_resi": "object", "acc_resi": "object"})
+deprot_acc_hbonds_nr = pd.read_csv(working_dir + "/combined/deprot_acc_hbonds_nr.csv",
                                    dtype={"don_resi": "object", "acc_resi": "object"})
-acc_hbonds_nr_c = pd.read_csv(working_dir + "/combined/acc_hbonds_nr_c.csv",
-                              dtype={"don_resi": "object", "acc_resi": "object"})
-deprot_acc_hbonds_nr_c = pd.read_csv(working_dir + "/combined/deprot_acc_hbonds_nr_c.csv",
-                                     dtype={"don_resi": "object", "acc_resi": "object"})
-nuc_data_c = pd.read_csv(working_dir + "/combined/nuc_data_c.csv")
+nuc_data = pd.read_csv(working_dir + "/combined/nuc_data.csv")
 
 # Identify nucleobases that donate either one or at least two H-bonds via their exocyclic amines. The H-bonds from the
 # latter nucleobases must involve both exocyclic amine hydrogens and at least two different acceptors.
-single_don_hbonds = don_hbonds_nr_c[
-    (don_hbonds_nr_c.groupby(["don_index", "eq_class"])["hydrogen"].transform("nunique") == 1) |
-    (don_hbonds_nr_c.groupby(["don_index", "eq_class"])["acc_index"].transform("nunique") == 1)]
-dual_don_hbonds = don_hbonds_nr_c[
-    (don_hbonds_nr_c.groupby(["don_index", "eq_class"])["hydrogen"].transform("nunique") == 2) &
-    (don_hbonds_nr_c.groupby(["don_index", "eq_class"])["acc_index"].transform("nunique") >= 2)]
+single_don_hbonds = don_hbonds_nr[
+    (don_hbonds_nr.groupby(["don_index", "eq_class"])["hydrogen"].transform("nunique") == 1) |
+    (don_hbonds_nr.groupby(["don_index", "eq_class"])["acc_index"].transform("nunique") == 1)]
+dual_don_hbonds = don_hbonds_nr[
+    (don_hbonds_nr.groupby(["don_index", "eq_class"])["hydrogen"].transform("nunique") == 2) &
+    (don_hbonds_nr.groupby(["don_index", "eq_class"])["acc_index"].transform("nunique") >= 2)]
 
 # prepare dataframes of exocyclic amines for each A, C, and G residue
-a_exo_amines = nuc_data_c[nuc_data_c["atom_name"] == "N6"]
+a_exo_amines = nuc_data[nuc_data["atom_name"] == "N6"]
 
 # prepare dataframes of single and dual H-bonding A(N6) with H-bond information
 a_n6_single_hbond = single_don_hbonds[single_don_hbonds["don_resn"] == "A"]
@@ -76,26 +76,26 @@ a_n6_no_res = (pd.concat([a_n6_single_res,
 # TODO re-evaluate the following two variables at some point if I am going to keep them
 # prepare a list of single and dual H-bonding A residues that are involved in a canonical AU base pair
 au_bp_single = (a_n6_single_hbond[a_n6_single_hbond[["acc_name", "acc_resn"]].eq(["O4", "U"]).all(axis='columns')]
-                .merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["don_name", "don_resn", "acc_name"]].eq(["N3", "U", "N1"])
+                .merge(acc_hbonds_nr[acc_hbonds_nr[["don_name", "don_resn", "acc_name"]].eq(["N3", "U", "N1"])
                        .all(axis='columns')],
                        left_on=["don_resn", "don_resi", "don_chain", "acc_resn", "acc_resi", "acc_chain", "eq_class"],
                        right_on=["acc_resn", "acc_resi", "acc_chain", "don_resn", "don_resi", "don_chain", "eq_class"],
                        how='inner'))
 au_bp_dual = (a_n6_dual_hbond[a_n6_dual_hbond[["acc_name", "acc_resn"]].eq(["O4", "U"]).all(axis='columns')]
-              .merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["don_name", "don_resn", "acc_name"]].eq(["N3", "U", "N1"])
+              .merge(acc_hbonds_nr[acc_hbonds_nr[["don_name", "don_resn", "acc_name"]].eq(["N3", "U", "N1"])
                      .all(axis='columns')],
                      left_on=["don_resn", "don_resi", "don_chain", "acc_resn", "acc_resi", "acc_chain", "eq_class"],
                      right_on=["acc_resn", "acc_resi", "acc_chain", "don_resn", "don_resi", "don_chain", "eq_class"],
                      how='inner'))
 
 # prepare dataframes with just residue information of A residues that accept H-bonds at their N1, N3, or N7
-a_n1_acc_res = (acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]].eq(["N1", "A"]).all(axis='columns')]
+a_n1_acc_res = (acc_hbonds_nr[acc_hbonds_nr[["acc_name", "acc_resn"]].eq(["N1", "A"]).all(axis='columns')]
                 .loc[:, ["eq_class", "acc_resn", "acc_resi", "acc_chain"]].drop_duplicates()
                 .rename(columns={"acc_resn": "resn", "acc_resi": "resi", "acc_chain": "chain"}))
-a_n3_acc_res = (acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]].eq(["N3", "A"]).all(axis='columns')]
+a_n3_acc_res = (acc_hbonds_nr[acc_hbonds_nr[["acc_name", "acc_resn"]].eq(["N3", "A"]).all(axis='columns')]
                 .loc[:, ["eq_class", "acc_resn", "acc_resi", "acc_chain"]].drop_duplicates()
                 .rename(columns={"acc_resn": "resn", "acc_resi": "resi", "acc_chain": "chain"}))
-a_n7_acc_res = (acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]].eq(["N7", "A"]).all(axis='columns')]
+a_n7_acc_res = (acc_hbonds_nr[acc_hbonds_nr[["acc_name", "acc_resn"]].eq(["N7", "A"]).all(axis='columns')]
                 .loc[:, ["eq_class", "acc_resn", "acc_resi", "acc_chain"]].drop_duplicates()
                 .rename(columns={"acc_resn": "resn", "acc_resi": "resi", "acc_chain": "chain"}))
 
@@ -145,33 +145,33 @@ a_n6_dual_a_n7_acc_hbond_from_n6 = (a_n6_dual_a_n7_acc_res
 # related to the N1 H-bond acceptation
 a_n6_single_a_n1_acc_hbond_to_n1 = (a_n6_single_a_n1_acc_res
                                     .rename(columns={"resn": "acc_resn", "resi": "acc_resi", "chain": "acc_chain"})
-                                    .merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]].eq(["N1", "A"])
+                                    .merge(acc_hbonds_nr[acc_hbonds_nr[["acc_name", "acc_resn"]].eq(["N1", "A"])
                                            .all(axis='columns')], how='inner'))
 a_n6_dual_a_n1_acc_hbond_to_n1 = (a_n6_dual_a_n1_acc_res
                                   .rename(columns={"resn": "acc_resn", "resi": "acc_resi", "chain": "acc_chain"})
-                                  .merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]].eq(["N1", "A"])
+                                  .merge(acc_hbonds_nr[acc_hbonds_nr[["acc_name", "acc_resn"]].eq(["N1", "A"])
                                          .all(axis='columns')], how='inner'))
 
 # prepare dataframes of single and dual H-bonding A(N6) that also accept at N3 and which include H-bond information
 # related to the N3 H-bond acceptation
 a_n6_single_a_n3_acc_hbond_to_n3 = (a_n6_single_a_n3_acc_res
                                     .rename(columns={"resn": "acc_resn", "resi": "acc_resi", "chain": "acc_chain"})
-                                    .merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]].eq(["N3", "A"])
+                                    .merge(acc_hbonds_nr[acc_hbonds_nr[["acc_name", "acc_resn"]].eq(["N3", "A"])
                                            .all(axis='columns')], how='inner'))
 a_n6_dual_a_n3_acc_hbond_to_n3 = (a_n6_dual_a_n3_acc_res
                                   .rename(columns={"resn": "acc_resn", "resi": "acc_resi", "chain": "acc_chain"})
-                                  .merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]].eq(["N3", "A"])
+                                  .merge(acc_hbonds_nr[acc_hbonds_nr[["acc_name", "acc_resn"]].eq(["N3", "A"])
                                          .all(axis='columns')], how='inner'))
 
 # prepare dataframes of single and dual H-bonding A(N6) that also accept at N7 and which include H-bond information
 # related to the N7 H-bond acceptation
 a_n6_single_a_n7_acc_hbond_to_n7 = (a_n6_single_a_n7_acc_res
                                     .rename(columns={"resn": "acc_resn", "resi": "acc_resi", "chain": "acc_chain"})
-                                    .merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]].eq(["N7", "A"])
+                                    .merge(acc_hbonds_nr[acc_hbonds_nr[["acc_name", "acc_resn"]].eq(["N7", "A"])
                                            .all(axis='columns')], how='inner'))
 a_n6_dual_a_n7_acc_hbond_to_n7 = (a_n6_dual_a_n7_acc_res
                                   .rename(columns={"resn": "acc_resn", "resi": "acc_resi", "chain": "acc_chain"})
-                                  .merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]].eq(["N7", "A"])
+                                  .merge(acc_hbonds_nr[acc_hbonds_nr[["acc_name", "acc_resn"]].eq(["N7", "A"])
                                          .all(axis='columns')], how='inner'))
 
 # prepare dataframes of single and dual H-bonding A(N6) that also accept at N1 and which include H-bond information
@@ -390,15 +390,15 @@ a_n6_donation_no_ol.to_csv("plots/a_n6_donation_no_ol.csv", index=False)
 # H-bond information related to the N1, N3, or N7 H-bond acceptation.
 a_n6_no_a_n1_acc_hbond_to_n1 = (a_n6_no_a_n1_acc_res
                                 .rename(columns={"resn": "acc_resn", "resi": "acc_resi", "chain": "acc_chain"})
-                                .merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]].eq(["N1", "A"])
+                                .merge(acc_hbonds_nr[acc_hbonds_nr[["acc_name", "acc_resn"]].eq(["N1", "A"])
                                        .all(axis='columns')], how='inner'))
 a_n6_no_a_n3_acc_hbond_to_n3 = (a_n6_no_a_n3_acc_res
                                 .rename(columns={"resn": "acc_resn", "resi": "acc_resi", "chain": "acc_chain"})
-                                .merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]].eq(["N3", "A"])
+                                .merge(acc_hbonds_nr[acc_hbonds_nr[["acc_name", "acc_resn"]].eq(["N3", "A"])
                                        .all(axis='columns')], how='inner'))
 a_n6_no_a_n7_acc_hbond_to_n7 = (a_n6_no_a_n7_acc_res
                                 .rename(columns={"resn": "acc_resn", "resi": "acc_resi", "chain": "acc_chain"})
-                                .merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]].eq(["N7", "A"])
+                                .merge(acc_hbonds_nr[acc_hbonds_nr[["acc_name", "acc_resn"]].eq(["N7", "A"])
                                        .all(axis='columns')], how='inner'))
 
 # Prepare dataframes of A(N6) donors that also accept via the N1, N3, or N7 while only considering partner entities that
@@ -406,32 +406,32 @@ a_n6_no_a_n7_acc_hbond_to_n7 = (a_n6_no_a_n7_acc_res
 a_n6_single_a_n1_acc_no_ol_hbond_to_n1 = (a_n6_single_a_n1_acc_no_ol
                                           .rename(columns={"resn": "acc_resn", "resi": "acc_resi",
                                                            "chain": "acc_chain"})
-                                          .merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
+                                          .merge(acc_hbonds_nr[acc_hbonds_nr[["acc_name", "acc_resn"]]
                                                  .eq(["N1", "A"])
                                                  .all(axis='columns')], how='inner'))
 a_n6_dual_a_n1_acc_no_ol_hbond_to_n1 = (a_n6_dual_a_n1_acc_no_ol
                                         .rename(columns={"resn": "acc_resn", "resi": "acc_resi", "chain": "acc_chain"})
-                                        .merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]].eq(["N1", "A"])
+                                        .merge(acc_hbonds_nr[acc_hbonds_nr[["acc_name", "acc_resn"]].eq(["N1", "A"])
                                                .all(axis='columns')], how='inner'))
 a_n6_single_a_n3_acc_no_ol_hbond_to_n3 = (a_n6_single_a_n3_acc_no_ol
                                           .rename(columns={"resn": "acc_resn", "resi": "acc_resi",
                                                            "chain": "acc_chain"})
-                                          .merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
+                                          .merge(acc_hbonds_nr[acc_hbonds_nr[["acc_name", "acc_resn"]]
                                                  .eq(["N3", "A"])
                                                  .all(axis='columns')], how='inner'))
 a_n6_dual_a_n3_acc_no_ol_hbond_to_n3 = (a_n6_dual_a_n3_acc_no_ol
                                         .rename(columns={"resn": "acc_resn", "resi": "acc_resi", "chain": "acc_chain"})
-                                        .merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]].eq(["N3", "A"])
+                                        .merge(acc_hbonds_nr[acc_hbonds_nr[["acc_name", "acc_resn"]].eq(["N3", "A"])
                                                .all(axis='columns')], how='inner'))
 a_n6_single_a_n7_acc_no_ol_hbond_to_n7 = (a_n6_single_a_n7_acc_no_ol
                                           .rename(columns={"resn": "acc_resn", "resi": "acc_resi",
                                                            "chain": "acc_chain"})
-                                          .merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
+                                          .merge(acc_hbonds_nr[acc_hbonds_nr[["acc_name", "acc_resn"]]
                                                  .eq(["N7", "A"])
                                                  .all(axis='columns')], how='inner'))
 a_n6_dual_a_n7_acc_no_ol_hbond_to_n7 = (a_n6_dual_a_n7_acc_no_ol
                                         .rename(columns={"resn": "acc_resn", "resi": "acc_resi", "chain": "acc_chain"})
-                                        .merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]].eq(["N7", "A"])
+                                        .merge(acc_hbonds_nr[acc_hbonds_nr[["acc_name", "acc_resn"]].eq(["N7", "A"])
                                                .all(axis='columns')], how='inner'))
 
 # print(len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1[a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"].groupby(["acc_index", "eq_class"]).groups.keys()))
@@ -817,37 +817,37 @@ a_n6_dual_a_n7_acc_no_ol_neg = (pd.concat([a_n6_dual_a_n7_acc_res_neg, a_n6_dual
 a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg = (a_n6_single_a_n1_acc_no_ol_neg
                                               .rename(columns={"resn": "acc_resn", "resi": "acc_resi",
                                                                "chain": "acc_chain"})
-                                              .merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
+                                              .merge(acc_hbonds_nr[acc_hbonds_nr[["acc_name", "acc_resn"]]
                                                      .eq(["N1", "A"])
                                                      .all(axis='columns')], how='inner'))
 a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg = (a_n6_dual_a_n1_acc_no_ol_neg
                                             .rename(columns={"resn": "acc_resn", "resi": "acc_resi",
                                                              "chain": "acc_chain"})
-                                            .merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
+                                            .merge(acc_hbonds_nr[acc_hbonds_nr[["acc_name", "acc_resn"]]
                                                    .eq(["N1", "A"])
                                                    .all(axis='columns')], how='inner'))
 a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg = (a_n6_single_a_n3_acc_no_ol_neg
                                               .rename(columns={"resn": "acc_resn", "resi": "acc_resi",
                                                                "chain": "acc_chain"})
-                                              .merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
+                                              .merge(acc_hbonds_nr[acc_hbonds_nr[["acc_name", "acc_resn"]]
                                                      .eq(["N3", "A"])
                                                      .all(axis='columns')], how='inner'))
 a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg = (a_n6_dual_a_n3_acc_no_ol_neg
                                             .rename(columns={"resn": "acc_resn", "resi": "acc_resi",
                                                              "chain": "acc_chain"})
-                                            .merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
+                                            .merge(acc_hbonds_nr[acc_hbonds_nr[["acc_name", "acc_resn"]]
                                                    .eq(["N3", "A"])
                                                    .all(axis='columns')], how='inner'))
 a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg = (a_n6_single_a_n7_acc_no_ol_neg
                                               .rename(columns={"resn": "acc_resn", "resi": "acc_resi",
                                                                "chain": "acc_chain"})
-                                              .merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
+                                              .merge(acc_hbonds_nr[acc_hbonds_nr[["acc_name", "acc_resn"]]
                                                      .eq(["N7", "A"])
                                                      .all(axis='columns')], how='inner'))
 a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg = (a_n6_dual_a_n7_acc_no_ol_neg
                                             .rename(columns={"resn": "acc_resn", "resi": "acc_resi",
                                                              "chain": "acc_chain"})
-                                            .merge(acc_hbonds_nr_c[acc_hbonds_nr_c[["acc_name", "acc_resn"]]
+                                            .merge(acc_hbonds_nr[acc_hbonds_nr[["acc_name", "acc_resn"]]
                                                    .eq(["N7", "A"])
                                                    .all(axis='columns')], how='inner'))
 
