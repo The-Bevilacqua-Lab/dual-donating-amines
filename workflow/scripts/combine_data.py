@@ -11,6 +11,7 @@ working_dir = os.getcwd()
 # create a dictionary that will contain all the data categories and their associated files
 categories = {
     "nuc_data": [],
+    "b_factor_data": [],
     "don_hbonds_nr": [],
     "prot_don_hbonds_nr": [],
     "acc_hbonds_nr": [],
@@ -48,6 +49,7 @@ os.mkdir(working_dir + "/combined")
 
 # create the combined dataframes and write to csv files
 pd.concat([pd.read_csv(file) for file in categories["nuc_data"]]).to_csv("combined/nuc_data_c.csv", index=False)
+pd.concat([pd.read_csv(file) for file in categories["b_factor_data"]]).to_csv("combined/b_factor_data_c.csv", index=False)
 pd.concat([pd.read_csv(file) for file in categories["don_hbonds_nr"]]).to_csv("combined/don_hbonds_nr_c.csv", index=False)
 pd.concat([pd.read_csv(file) for file in categories["prot_don_hbonds_nr"]]).to_csv("combined/prot_don_hbonds_nr_c.csv", index=False)
 pd.concat([pd.read_csv(file) for file in categories["acc_hbonds_nr"]]).to_csv("combined/acc_hbonds_nr_c.csv", index=False)
