@@ -50,7 +50,7 @@ with open(snakemake.input.b_factor_data, mode='r') as read_file:
         "resn": [],
         "resi": [],
         "chain": [],
-        "b": []
+        "b_atom": []
     }
     for line in csv.reader(read_file):
         if line[0][0] != "#":
@@ -59,7 +59,7 @@ with open(snakemake.input.b_factor_data, mode='r') as read_file:
                 b_factors_dict["resi"].append(line[1])
                 b_factors_dict["chain"].append(line[2])
                 b_factors_dict["b_atom"].append(line[i + 3])
-b_factor_data = pd.DataFrame(b_factors_dict)
+b_factor_data = pd.DataFrame(b_factors_dict).astype({"b_atom": "float64"})
 b_factor_data["b_mean"] = b_factor_data.groupby(["resn", "resi", "chain"])["b_atom"].transform("mean")
 b_factor_data = b_factor_data.drop_duplicates(subset=["resn", "resi", "chain"]).drop(columns=["b_atom"])
 
