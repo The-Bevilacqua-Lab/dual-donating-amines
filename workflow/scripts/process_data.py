@@ -58,8 +58,10 @@ with open(snakemake.input.b_factor_data, mode='r') as read_file:
                 b_factors_dict["resn"].append(line[0])
                 b_factors_dict["resi"].append(line[1])
                 b_factors_dict["chain"].append(line[2])
-                b_factors_dict["b"].append(line[i + 3])
+                b_factors_dict["b_atom"].append(line[i + 3])
 b_factor_data = pd.DataFrame(b_factors_dict)
+b_factor_data["b_mean"] = b_factor_data.groupby(["resn", "resi", "chain"])["b_atom"].transform("mean")
+b_factor_data = b_factor_data.drop_duplicates(subset=["resn", "resi", "chain"]).drop(columns=["b_atom"])
 
 # extract the data from the equivalence class file
 eq_class_data = (pd.read_csv(snakemake.input.eq_class_data, header=None, comment="#", skiprows=[3], na_filter=False)
