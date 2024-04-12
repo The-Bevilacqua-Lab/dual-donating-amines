@@ -489,6 +489,30 @@ a_n6_donation_a_n1_acc_no_ol_hbond_to_n1 = pd.DataFrame({
                               [a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list()) +
              ["Dual"] * len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1
                             [a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list())),
+    "Count": ([len(a_n6_no_a_n1_acc_hbond_to_n1[
+                       a_n6_no_a_n1_acc_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list())] *
+              len(a_n6_no_a_n1_acc_hbond_to_n1[
+                      a_n6_no_a_n1_acc_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list()) +
+              [len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1[
+                       a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list())] *
+              len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1[
+                      a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list()) +
+              [len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1[
+                       a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list())] *
+              len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1[
+                      a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list()) +
+              [len(a_n6_no_a_n1_acc_hbond_to_n1[
+                       a_n6_no_a_n1_acc_hbond_to_n1["vertex"] == "donor"]["dist"].to_list())] *
+              len(a_n6_no_a_n1_acc_hbond_to_n1[
+                      a_n6_no_a_n1_acc_hbond_to_n1["vertex"] == "donor"]["dist"].to_list()) +
+              [len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1[
+                       a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list())] *
+              len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1[
+                      a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list()) +
+              [len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1[
+                       a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list())] *
+              len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1[
+                      a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list())),
     "Distance": (a_n6_no_a_n1_acc_hbond_to_n1[
                      a_n6_no_a_n1_acc_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list() +
                  a_n6_single_a_n1_acc_no_ol_hbond_to_n1[
@@ -532,6 +556,30 @@ a_n6_donation_a_n3_acc_no_ol_hbond_to_n3 = pd.DataFrame({
                               [a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"].to_list()) +
              ["Dual"] * len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3
                             [a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"].to_list())),
+    "Count": ([len(a_n6_no_a_n3_acc_hbond_to_n3[
+                       a_n6_no_a_n3_acc_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list())] *
+              len(a_n6_no_a_n3_acc_hbond_to_n3[
+                      a_n6_no_a_n3_acc_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list()) +
+              [len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3[
+                       a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list())] *
+              len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3[
+                      a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list()) +
+              [len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3[
+                       a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list())] *
+              len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3[
+                      a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list()) +
+              [len(a_n6_no_a_n3_acc_hbond_to_n3[
+                       a_n6_no_a_n3_acc_hbond_to_n3["vertex"] == "donor"]["dist"].to_list())] *
+              len(a_n6_no_a_n3_acc_hbond_to_n3[
+                      a_n6_no_a_n3_acc_hbond_to_n3["vertex"] == "donor"]["dist"].to_list()) +
+              [len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3[
+                       a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"].to_list())] *
+              len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3[
+                      a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"].to_list()) +
+              [len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3[
+                       a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"].to_list())] *
+              len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3[
+                      a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"].to_list())),
     "Distance": (a_n6_no_a_n3_acc_hbond_to_n3[
                      a_n6_no_a_n3_acc_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list() +
                  a_n6_single_a_n3_acc_no_ol_hbond_to_n3[
@@ -575,6 +623,30 @@ a_n6_donation_a_n7_acc_no_ol_hbond_to_n7 = pd.DataFrame({
                               [a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"].to_list()) +
              ["Dual"] * len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7
                             [a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"].to_list())),
+    "Count": ([len(a_n6_no_a_n7_acc_hbond_to_n7[
+                       a_n6_no_a_n7_acc_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list())] *
+              len(a_n6_no_a_n7_acc_hbond_to_n7[
+                      a_n6_no_a_n7_acc_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list()) +
+              [len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7[
+                       a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list())] *
+              len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7[
+                      a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list()) +
+              [len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7[
+                       a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list())] *
+              len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7[
+                      a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list()) +
+              [len(a_n6_no_a_n7_acc_hbond_to_n7[
+                       a_n6_no_a_n7_acc_hbond_to_n7["vertex"] == "donor"]["dist"].to_list())] *
+              len(a_n6_no_a_n7_acc_hbond_to_n7[
+                      a_n6_no_a_n7_acc_hbond_to_n7["vertex"] == "donor"]["dist"].to_list()) +
+              [len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7[
+                       a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"].to_list())] *
+              len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7[
+                      a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"].to_list()) +
+              [len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7[
+                       a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"].to_list())] *
+              len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7[
+                      a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"].to_list())),
     "Distance": (a_n6_no_a_n7_acc_hbond_to_n7[
                      a_n6_no_a_n7_acc_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list() +
                  a_n6_single_a_n7_acc_no_ol_hbond_to_n7[
@@ -887,6 +959,22 @@ a_n6_donation_a_n1_acc_no_ol_hbond_to_n1_neg = pd.DataFrame({
                               [a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"].to_list()) +
              ["Dual"] * len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg
                             [a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"].to_list())),
+    "Count": ([len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg[
+                       a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "hydrogen"]["dist"].to_list())] *
+              len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg[
+                      a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "hydrogen"]["dist"].to_list()) +
+              [len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg[
+                       a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "hydrogen"]["dist"].to_list())] *
+              len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg[
+                      a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "hydrogen"]["dist"].to_list()) +
+              [len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg[
+                       a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"].to_list())] *
+              len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg[
+                      a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"].to_list()) +
+              [len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg[
+                       a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"].to_list())] *
+              len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg[
+                      a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"].to_list())),
     "Distance": (a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg[
                      a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "hydrogen"]["dist"].to_list() +
                  a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg[
@@ -917,6 +1005,22 @@ a_n6_donation_a_n3_acc_no_ol_hbond_to_n3_neg = pd.DataFrame({
                               [a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"].to_list()) +
              ["Dual"] * len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg
                             [a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"].to_list())),
+    "Count": ([len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg[
+                       a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "hydrogen"]["dist"].to_list())] *
+              len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg[
+                      a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "hydrogen"]["dist"].to_list()) +
+              [len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg[
+                       a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "hydrogen"]["dist"].to_list())] *
+              len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg[
+                      a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "hydrogen"]["dist"].to_list()) +
+              [len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg[
+                       a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"].to_list())] *
+              len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg[
+                      a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"].to_list()) +
+              [len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg[
+                       a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"].to_list())] *
+              len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg[
+                      a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"].to_list())),
     "Distance": (a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg[
                      a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "hydrogen"]["dist"].to_list() +
                  a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg[
@@ -947,6 +1051,22 @@ a_n6_donation_a_n7_acc_no_ol_hbond_to_n7_neg = pd.DataFrame({
                               [a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"].to_list()) +
              ["Dual"] * len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg
                             [a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"].to_list())),
+    "Count": ([len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg[
+                       a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "hydrogen"]["dist"].to_list())] *
+              len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg[
+                      a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "hydrogen"]["dist"].to_list()) +
+              [len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg[
+                       a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "hydrogen"]["dist"].to_list())] *
+              len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg[
+                      a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "hydrogen"]["dist"].to_list()) +
+              [len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg[
+                       a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"].to_list())] *
+              len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg[
+                      a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"].to_list()) +
+              [len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg[
+                       a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"].to_list())] *
+              len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg[
+                      a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"].to_list())),
     "Distance": (a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg[
                      a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "hydrogen"]["dist"].to_list() +
                  a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg[
@@ -992,6 +1112,22 @@ a_n6_donation_a_n1_acc_no_ol_hbond_to_n1_all_neg_h = pd.DataFrame({
               ["Dual-Negative"] * len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg
                                       [a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "hydrogen"]["dist"]
                                       .to_list())),
+    "Count": ([len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1[
+                       a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list())] *
+              len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1[
+                      a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list()) +
+              [len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1[
+                       a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list())] *
+              len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1[
+                      a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list()) +
+              [len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg[
+                       a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "hydrogen"]["dist"].to_list())] *
+              len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg[
+                      a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "hydrogen"]["dist"].to_list()) +
+              [len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg[
+                       a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "hydrogen"]["dist"].to_list())] *
+              len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg[
+                      a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "hydrogen"]["dist"].to_list())),
     "Distance": (a_n6_single_a_n1_acc_no_ol_hbond_to_n1[
                      a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list() +
                  a_n6_dual_a_n1_acc_no_ol_hbond_to_n1[
@@ -1033,6 +1169,22 @@ a_n6_donation_a_n3_acc_no_ol_hbond_to_n3_all_neg_h = pd.DataFrame({
               ["Dual-Negative"] * len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg
                                       [a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "hydrogen"]["dist"]
                                       .to_list())),
+    "Count": ([len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3[
+                       a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list())] *
+              len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3[
+                      a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list()) +
+              [len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3[
+                       a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list())] *
+              len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3[
+                      a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list()) +
+              [len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg[
+                       a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "hydrogen"]["dist"].to_list())] *
+              len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg[
+                      a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "hydrogen"]["dist"].to_list()) +
+              [len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg[
+                       a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "hydrogen"]["dist"].to_list())] *
+              len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg[
+                      a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "hydrogen"]["dist"].to_list())),
     "Distance": (a_n6_single_a_n3_acc_no_ol_hbond_to_n3[
                      a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list() +
                  a_n6_dual_a_n3_acc_no_ol_hbond_to_n3[
@@ -1074,6 +1226,22 @@ a_n6_donation_a_n7_acc_no_ol_hbond_to_n7_all_neg_h = pd.DataFrame({
               ["Dual-Negative"] * len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg
                                       [a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "hydrogen"]["dist"]
                                       .to_list())),
+    "Count": ([len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7[
+                       a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list())] *
+              len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7[
+                      a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list()) +
+              [len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7[
+                       a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list())] *
+              len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7[
+                      a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list()) +
+              [len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg[
+                       a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "hydrogen"]["dist"].to_list())] *
+              len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg[
+                      a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "hydrogen"]["dist"].to_list()) +
+              [len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg[
+                       a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "hydrogen"]["dist"].to_list())] *
+              len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg[
+                      a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "hydrogen"]["dist"].to_list())),
     "Distance": (a_n6_single_a_n7_acc_no_ol_hbond_to_n7[
                      a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list() +
                  a_n6_dual_a_n7_acc_no_ol_hbond_to_n7[
@@ -1119,6 +1287,22 @@ a_n6_donation_a_n1_acc_no_ol_hbond_to_n1_all_neg_d = pd.DataFrame({
               ["Dual-Negative"] * len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg
                                       [a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"]
                                       .to_list())),
+    "Count": ([len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1[
+                       a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list())] *
+              len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1[
+                      a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list()) +
+              [len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1[
+                       a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list())] *
+              len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1[
+                      a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list()) +
+              [len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg[
+                       a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"].to_list())] *
+              len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg[
+                      a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"].to_list()) +
+              [len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg[
+                       a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"].to_list())] *
+              len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg[
+                      a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"].to_list())),
     "Distance": (a_n6_single_a_n1_acc_no_ol_hbond_to_n1[
                      a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list() +
                  a_n6_dual_a_n1_acc_no_ol_hbond_to_n1[
@@ -1160,6 +1344,22 @@ a_n6_donation_a_n3_acc_no_ol_hbond_to_n3_all_neg_d = pd.DataFrame({
               ["Dual-Negative"] * len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg
                                       [a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"]
                                       .to_list())),
+    "Count": ([len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3[
+                       a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"].to_list())] *
+              len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3[
+                      a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"].to_list()) +
+              [len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3[
+                       a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"].to_list())] *
+              len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3[
+                      a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"].to_list()) +
+              [len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg[
+                       a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"].to_list())] *
+              len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg[
+                      a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"].to_list()) +
+              [len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg[
+                       a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"].to_list())] *
+              len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg[
+                      a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"].to_list())),
     "Distance": (a_n6_single_a_n3_acc_no_ol_hbond_to_n3[
                      a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"].to_list() +
                  a_n6_dual_a_n3_acc_no_ol_hbond_to_n3[
@@ -1201,6 +1401,22 @@ a_n6_donation_a_n7_acc_no_ol_hbond_to_n7_all_neg_d = pd.DataFrame({
               ["Dual-Negative"] * len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg
                                       [a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"]
                                       .to_list())),
+    "Count": ([len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7[
+                       a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"].to_list())] *
+              len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7[
+                      a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"].to_list()) +
+              [len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7[
+                       a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"].to_list())] *
+              len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7[
+                      a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"].to_list()) +
+              [len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg[
+                       a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"].to_list())] *
+              len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg[
+                      a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"].to_list()) +
+              [len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg[
+                       a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"].to_list())] *
+              len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg[
+                      a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"].to_list())),
     "Distance": (a_n6_single_a_n7_acc_no_ol_hbond_to_n7[
                      a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"].to_list() +
                  a_n6_dual_a_n7_acc_no_ol_hbond_to_n7[
