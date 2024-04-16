@@ -19,7 +19,8 @@ pd.set_option("display.max_rows", 1300)
 H_DIST_MAX = 2.3
 H_ANG_TOL = 45.0
 DON_DIST_MAX = 3.3
-DON_ANG_TOL = 45.0
+DON_ANG_MIN = 100
+DON_ANG_MAX = 145
 
 # construct a list of tuples containing atom and residue names that describe atoms capable of both donating and
 # accepting an H-bond
@@ -96,8 +97,8 @@ prot_don_hbonds = (prot_don_hbonds_unfiltered[(prot_don_hbonds_unfiltered["_merg
 acc_hbonds = (hbond_data[((hbond_data["vertex"] == "hydrogen") & (hbond_data["dist"] <= H_DIST_MAX) &
                           (hbond_data["ang"] >= 180.0 - H_ANG_TOL)) |
                          ((hbond_data["vertex"] == "donor") & (hbond_data["dist"] <= DON_DIST_MAX) &
-                                    (hbond_data["ang"] >= 109.5 - DON_ANG_TOL) &
-                                    (hbond_data["ang"] <= 109.5 + DON_ANG_TOL))]
+                                    (hbond_data["ang"] >= DON_ANG_MIN) &
+                                    (hbond_data["ang"] <= DON_ANG_MAX))]
               .merge(pd.DataFrame(const.ACCEPTORS_OF_INTEREST, columns=["acc_resn", "acc_name"]), how='inner')
               .merge(eq_class_data, left_on="acc_chain", right_on="chain", how='inner')
               .drop(columns=["pdb_id", "model", "chain"]))
@@ -107,8 +108,8 @@ acc_hbonds = (hbond_data[((hbond_data["vertex"] == "hydrogen") & (hbond_data["di
 deprot_acc_hbonds_unfiltered = (hbond_data[((hbond_data["vertex"] == "hydrogen") & (hbond_data["dist"] <= H_DIST_MAX) &
                                             (hbond_data["ang"] >= 180.0 - H_ANG_TOL)) |
                                            ((hbond_data["vertex"] == "donor") & (hbond_data["dist"] <= DON_DIST_MAX) &
-                                            (hbond_data["ang"] >= 109.5 - DON_ANG_TOL) &
-                                            (hbond_data["ang"] <= 109.5 + DON_ANG_TOL))]
+                                            (hbond_data["ang"] >= DON_ANG_MIN) &
+                                            (hbond_data["ang"] <= DON_ANG_MAX))]
                                 .merge(pd.DataFrame(const.DEPROT_ACCEPTORS_OF_INTEREST,
                                        columns=["acc_resn", "acc_name"]), how='inner')
                                 .merge(pd.DataFrame(don_acc_atoms, columns=["don_resn", "don_name"]), how='left',
