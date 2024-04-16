@@ -21,8 +21,7 @@ categories = {
     "single_acc_carbonyls": [],
     "dual_acc_carbonyls": [],
     "tri_acc_carbonyls": [],
-    "don_hbonds_geom": [],
-    "don_hbonds_geom_filtered": []
+    "hbond_data": []
 }
 
 # prepare a list of files from each category folder to combine
@@ -59,5 +58,4 @@ pd.concat([pd.read_csv(file) for file in categories["dual_don_exo_amines"]]).to_
 pd.concat([pd.read_csv(file) for file in categories["single_acc_carbonyls"]]).to_csv("combined/single_acc_carbonyls_c.csv", index=False)
 pd.concat([pd.read_csv(file) for file in categories["dual_acc_carbonyls"]]).to_csv("combined/dual_acc_carbonyls_c.csv", index=False)
 pd.concat([pd.read_csv(file) for file in categories["tri_acc_carbonyls"]]).to_csv("combined/tri_acc_carbonyls_c.csv", index=False)
-pd.concat([pd.read_csv(file) for file in categories["don_hbonds_geom"]]).to_csv("combined/don_hbonds_geom_c.csv", index=False)
-pd.concat([pd.read_csv(file) for file in categories["don_hbonds_geom_filtered"]]).to_csv("combined/don_hbonds_geom_filtered_c.csv", index=False)
+pd.concat([pd.read_csv(file) for file in categories["hbond_data"]]).to_csv("combined/hbond_data_c.csv", index=False)
