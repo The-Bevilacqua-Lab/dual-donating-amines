@@ -16,11 +16,9 @@ categories = {
     "prot_don_hbonds_nr": [],
     "acc_hbonds_nr": [],
     "deprot_acc_hbonds_nr": [],
-    "single_don_exo_amines": [],
-    "dual_don_exo_amines": [],
-    "single_acc_carbonyls": [],
-    "dual_acc_carbonyls": [],
-    "tri_acc_carbonyls": [],
+    # "single_acc_carbonyls": [],
+    # "dual_acc_carbonyls": [],
+    # "tri_acc_carbonyls": [],
     "hbond_data": []
 }
 
@@ -53,9 +51,7 @@ pd.concat([pd.read_csv(file) for file in categories["don_hbonds_nr"]]).to_csv("c
 pd.concat([pd.read_csv(file) for file in categories["prot_don_hbonds_nr"]]).to_csv("combined/prot_don_hbonds_nr_c.csv", index=False)
 pd.concat([pd.read_csv(file) for file in categories["acc_hbonds_nr"]]).to_csv("combined/acc_hbonds_nr_c.csv", index=False)
 pd.concat([pd.read_csv(file) for file in categories["deprot_acc_hbonds_nr"]]).to_csv("combined/deprot_acc_hbonds_nr_c.csv", index=False)
-pd.concat([pd.read_csv(file) for file in categories["single_don_exo_amines"]]).to_csv("combined/single_don_exo_amines_c.csv", index=False)
-pd.concat([pd.read_csv(file) for file in categories["dual_don_exo_amines"]]).to_csv("combined/dual_don_exo_amines_c.csv", index=False)
-pd.concat([pd.read_csv(file) for file in categories["single_acc_carbonyls"]]).to_csv("combined/single_acc_carbonyls_c.csv", index=False)
-pd.concat([pd.read_csv(file) for file in categories["dual_acc_carbonyls"]]).to_csv("combined/dual_acc_carbonyls_c.csv", index=False)
-pd.concat([pd.read_csv(file) for file in categories["tri_acc_carbonyls"]]).to_csv("combined/tri_acc_carbonyls_c.csv", index=False)
+# pd.concat([pd.read_csv(file) for file in categories["single_acc_carbonyls"]]).to_csv("combined/single_acc_carbonyls_c.csv", index=False)
+# pd.concat([pd.read_csv(file) for file in categories["dual_acc_carbonyls"]]).to_csv("combined/dual_acc_carbonyls_c.csv", index=False)
+# pd.concat([pd.read_csv(file) for file in categories["tri_acc_carbonyls"]]).to_csv("combined/tri_acc_carbonyls_c.csv", index=False)
 pd.concat([pd.read_csv(file) for file in categories["hbond_data"]]).to_csv("combined/hbond_data_c.csv", index=False)
