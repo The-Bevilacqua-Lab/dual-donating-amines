@@ -105,29 +105,6 @@ don_acc_grp = ["don_index", "acc_index", "eq_class"]
      # only consider non-rotatable donors
      (hbonds_geom_nr["vertex"] == "donor")]
  .to_csv("plots/geom/hbonds_geom_nr_rot.csv", index=False, columns=["dist", "ang"]))
-(hbonds_geom_nr[
-     # only include hydrogens with smaller D-H...A distances
-     (hbonds_geom_nr.groupby(don_acc_grp)["dist"]
-      .transform(lambda grp: [mem == grp.min() for mem in grp])) &
-     # only consider non-rotatable donors
-     (hbonds_geom_nr["vertex"] == "donor") &
-     # do not consider A(N6)-U(O4), C(N4)-G(O6), G(N2)-C(O2), G(N2)-C(N3), U(N3)-A(N1), G(N1)-C(N3), and G(N1)-C(O2)
-     # atom pairs
-     (~hbonds_geom_nr[["don_resn", "don_name", "acc_resn", "acc_name"]].eq(["A", "N6", "U", "O4"])
-      .all(axis='columns')) &
-     (~hbonds_geom_nr[["don_resn", "don_name", "acc_resn", "acc_name"]].eq(["C", "N4", "G", "O6"])
-      .all(axis='columns')) &
-     (~hbonds_geom_nr[["don_resn", "don_name", "acc_resn", "acc_name"]].eq(["G", "N2", "C", "O2"])
-      .all(axis='columns')) &
-     (~hbonds_geom_nr[["don_resn", "don_name", "acc_resn", "acc_name"]].eq(["G", "N2", "C", "N3"])
-      .all(axis='columns')) &
-     (~hbonds_geom_nr[["don_resn", "don_name", "acc_resn", "acc_name"]].eq(["U", "N3", "A", "N1"])
-      .all(axis='columns')) &
-     (~hbonds_geom_nr[["don_resn", "don_name", "acc_resn", "acc_name"]].eq(["G", "N1", "C", "N3"])
-      .all(axis='columns')) &
-     (~hbonds_geom_nr[["don_resn", "don_name", "acc_resn", "acc_name"]].eq(["G", "N1", "C", "O2"])
-      .all(axis='columns'))]
- .to_csv("plots/geom/hbonds_geom_nr_rot_filtered.csv", index=False, columns=["dist", "ang"]))
 
 # # Identify nucleobases that donate either one or at least two H-bonds via their exocyclic amines. The H-bonds from the
 # # latter nucleobases must involve both exocyclic amine hydrogens and at least two different acceptors.
