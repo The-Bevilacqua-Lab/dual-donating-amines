@@ -1,28 +1,30 @@
-import csv
+import scripts.parse_nrlist
 
 configfile: "config/config.yaml"
 
-# compile the list of equivalence classes based on the representative set file
-eq_class_list = []
-with open(config["rep_set_file"], mode='r') as rep_set_file:
-    for line in csv.reader(rep_set_file):
-        eq_class_list.append(line[0])
+# Retrieve information on all the members of each equivalence class listed in the representative set file.
+eq_class_dict = scripts.parse_nrlist.parse_nrlist(config["rep_set_file"])
+
+# Prepare a list including the equivalence class name, PDB ID, model info, and chain info for each equivalence class
+# member.
+eq_class_members = []
+for eq_class in eq_class_dict.values():
+    for member in eq_class:
+        eq_class_members.append(member)
 
 rule all:
     input:
-        expand("data/modified_mmCIF_files/{eq_class}.cif", eq_class=eq_class_list),
-        expand("data/b_factor_data/{eq_class}_b_factor_data.csv", eq_class=eq_class_list),
-        expand("data/nuc_data/{eq_class}_nuc_data.csv", eq_class=eq_class_list),
-        expand("data/hbond_data/{eq_class}_hbond_data.csv", eq_class=eq_class_list)
+        expand("data/modified_mmCIF_files/{eq_class_members}.cif", eq_class_members=eq_class_members),
+        expand("data/b_factor_data/{eq_class_members}_b_factor_data.csv", eq_class_members=eq_class_members),
+        expand("data/nuc_data/{eq_class_members}_nuc_data.csv", eq_class_members=eq_class_members),
+        expand("data/hbond_data/{eq_class_members}_hbond_data.csv", eq_class_members=eq_class_members)
 
 rule parse_nrlist:
-    input:
-        config["rep_set_file"]
     output:
-        "data/eq_class_files/{eq_class}_info.csv"
+        "data/eq_class_members_files/{eq_class_members}_info.csv"
     log:
-        stdout = "data/logs/parse_nrlist/{eq_class}.stdout",
-        stderr = "data/logs/parse_nrlist/{eq_class}.stderr"
+        stdout = "data/logs/parse_nrlist/{eq_class_members}.stdout",
+        stderr = "data/logs/parse_nrlist/{eq_class_members}.stderr"
     conda:
         "envs/general.yaml"
     script:
@@ -32,15 +34,15 @@ rule collect_data:
     input:
         rules.parse_nrlist.output
     output:
-        modified_mmcif = "data/modified_mmCIF_files/{eq_class}.cif",
-        b_factor = "data/b_factor_data/{eq_class}_b_factor_data.csv",
-        nuc = "data/nuc_data/{eq_class}_nuc_data.csv",
-        hbond = "data/hbond_data/{eq_class}_hbond_data.csv"
+        modified_mmcif = "data/modified_mmCIF_files/{eq_class_members}.cif",
+        b_factor = "data/b_factor_data/{eq_class_members}_b_factor_data.csv",
+        nuc = "data/nuc_data/{eq_class_members}_nuc_data.csv",
+        hbond = "data/hbond_data/{eq_class_members}_hbond_data.csv"
     log:
-        stdout = "data/logs/collect_data/{eq_class}.stdout",
-        stderr = "data/logs/collect_data/{eq_class}.stderr"
+        stdout = "data/logs/collect_data/{eq_class_members}.stdout",
+        stderr = "data/logs/collect_data/{eq_class_members}.stderr"
     benchmark:
-        "data/benchmark/{eq_class}.tsv"
+        "data/benchmark/{eq_class_members}.tsv"
     conda:
         "envs/general.yaml"
     script:
