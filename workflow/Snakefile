@@ -19,7 +19,7 @@ rule all:
         expand("data/nuc_data/{eq_class_members}_nuc_data.csv", eq_class_members=eq_class_members),
         expand("data/hbond_data/{eq_class_members}_hbond_data.csv", eq_class_members=eq_class_members)
 
-rule parse_nrlist:
+rule write_eq_class_files:
     output:
         "data/eq_class_members_files/{eq_class_members}_info.csv"
     log:
@@ -28,7 +28,7 @@ rule parse_nrlist:
     conda:
         "envs/general.yaml"
     script:
-        "scripts/parse_nrlist.py"
+        "scripts/write_eq_class_files.py"
 
 rule collect_data:
     input:
