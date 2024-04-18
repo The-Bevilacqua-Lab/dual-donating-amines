@@ -9,8 +9,8 @@ This module contains various constants that are used by scripts in this repo.
 # ACCEPTORS_OF_INTEREST = (('A', 'N1'), ('A', 'N3'), ('A', 'N7'), ('C', 'O2'), ('C', 'N3'), ('G', 'N3'), ('G', 'O6'),
 #                          ('G', 'N7'))
 # DEPROT_ACCEPTORS_OF_INTEREST = (('G', 'N1'), ('U', 'N3'))
-DONORS_OF_INTEREST = (('A', 'N6'))
-ACCEPTORS_OF_INTEREST = (('A', 'N1'))
+DONORS_OF_INTEREST = [('A', 'N6')]
+ACCEPTORS_OF_INTEREST = [('A', 'N1')]
 
 # define a list of dictionaries that provides information on the canonical protein and RNA/DNA residues
 # the indices of each donor or acceptor atom list specifies the following:
