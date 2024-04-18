@@ -23,8 +23,8 @@ rule write_eq_class_files:
     output:
         "data/eq_class_members_files/{eq_class_members}_info.csv"
     log:
-        stdout = "data/logs/parse_nrlist/{eq_class_members}.stdout",
-        stderr = "data/logs/parse_nrlist/{eq_class_members}.stderr"
+        stdout = "data/logs/write_eq_class_files/{eq_class_members}.stdout",
+        stderr = "data/logs/write_eq_class_files/{eq_class_members}.stderr"
     conda:
         "envs/general.yaml"
     script:
