@@ -59,7 +59,7 @@ for char in snakemake.wildcards.eq_class_members:
             chain_build[-1].append(char)
     if char == '_':
         index += 1
-eq_class = "".join(eq_class_build)
+eq_class = "".join(eq_class_build[:-1])
 pdb_id = "".join(pdb_id_build)
 model = "".join(model_build)
 chain_list = []
