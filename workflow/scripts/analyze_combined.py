@@ -3,10 +3,7 @@ This script will eventually do something.
 """
 
 import os
-import re
 import pandas as pd
-import numpy as np
-import scipy
 import const
 
 # the working directory should house the combined/ folder
@@ -37,26 +34,27 @@ neg_acceptors = pd.DataFrame({
 })
 
 # create the combined dataframes
-don_hbonds_nr = pd.read_csv(working_dir + "/combined/don_hbonds_nr_c.csv",
+don_hbonds_nr = pd.read_csv(working_dir + "/combined/don_hbonds_nr_c.csv", na_filter=False,
                             dtype={"don_resi": "object", "acc_resi": "object"})
-prot_don_hbonds_nr = pd.read_csv(working_dir + "/combined/prot_don_hbonds_nr_c.csv",
+prot_don_hbonds_nr = pd.read_csv(working_dir + "/combined/prot_don_hbonds_nr_c.csv", na_filter=False,
                                  dtype={"don_resi": "object", "acc_resi": "object"})
-acc_hbonds_nr = pd.read_csv(working_dir + "/combined/acc_hbonds_nr_c.csv",
+acc_hbonds_nr = pd.read_csv(working_dir + "/combined/acc_hbonds_nr_c.csv", na_filter=False,
                             dtype={"don_resi": "object", "acc_resi": "object"})
-deprot_acc_hbonds_nr = pd.read_csv(working_dir + "/combined/deprot_acc_hbonds_nr_c.csv",
+deprot_acc_hbonds_nr = pd.read_csv(working_dir + "/combined/deprot_acc_hbonds_nr_c.csv", na_filter=False,
                                    dtype={"don_resi": "object", "acc_resi": "object"})
-nuc_data_raw = pd.read_csv(working_dir + "/combined/nuc_data_c.csv")
-b_factor_data = pd.read_csv(working_dir + "/combined/b_factor_data_c.csv", dtype={"resi": "object"})
+nuc_data_raw = pd.read_csv(working_dir + "/combined/nuc_data_c.csv", na_filter=False, dtype={"resi": "object"})
+b_factor_data = pd.read_csv(working_dir + "/combined/b_factor_data_c.csv", na_filter=False, dtype={"resi": "object"})
 hbond_data = pd.read_csv(working_dir + "/combined/hbond_data_c.csv", na_filter=False,
                          dtype={"don_resi": "object", "acc_resi": "object"})
 
 # Create a new dataframe of nucleobases where the mean of the b-factors are below 79.
-nuc_data = nuc_data_raw.merge(b_factor_data[b_factor_data["b_mean"] < 79.0], on=["resn", "resi", "chain", "eq_class"],
+nuc_data = nuc_data_raw.merge(b_factor_data[b_factor_data["b_mean"] < 79.0], on=["resn", "resi", "chain",
+                                                                                 "eq_class_members"],
                               how='inner').drop(columns=["b_mean"])
 
 # Prepare data on donor-acceptor pairs that can be used to look at the distribution of h-bonding geometry measurements.
-acc_grp = ["don_index", "acc_resn", "acc_resi", "acc_chain", "eq_class"]
-don_grp = ["acc_index", "don_resn", "don_resi", "don_chain", "eq_class"]
+acc_grp = ["don_index", "acc_resn", "acc_resi", "acc_chain", "eq_class_members"]
+don_grp = ["acc_index", "don_resn", "don_resi", "don_chain", "eq_class_members"]
 # Remove redundancy in acceptor residues for each donor.
 hbonds_geom_nr_acc_only = (hbond_data[hbond_data.groupby(acc_grp)["rotated_side_chain"]
                            .transform(
@@ -66,20 +64,20 @@ hbonds_geom_nr = (hbonds_geom_nr_acc_only[hbonds_geom_nr_acc_only.groupby(don_gr
                   .transform(lambda grp: grp.str.fullmatch("none") if any(grp.str.fullmatch("none")) else True)])
 
 # Write data on donor-acceptor pairs to csv files.
-don_acc_grp = ["don_index", "acc_index", "eq_class"]
+don_acc_grp = ["don_index", "acc_index", "eq_class_members"]
 (hbonds_geom_nr[
      # only include hydrogens with smaller D-H...A distances
-     (hbonds_geom_nr.groupby(don_acc_grp)["dist"]
+     (hbonds_geom_nr.groupby(don_acc_grp)["h_acc_distance"]
       .transform(lambda grp: [mem == grp.min() for mem in grp])) &
      # only consider non-rotatable donors
-     (hbonds_geom_nr["vertex"] == "hydrogen")]
- .to_csv("plots/geom/hbonds_geom_nr_non_rot.csv", index=False, columns=["dist", "ang"]))
+     (hbonds_geom_nr["h_acc_distance"] != "NaN")]
+ .to_csv("plots/geom/hbonds_geom_nr_non_rot.csv", index=False, columns=["h_acc_distance", "h_angle"]))
 (hbonds_geom_nr[
      # only include hydrogens with smaller D-H...A distances
-     (hbonds_geom_nr.groupby(don_acc_grp)["dist"]
+     (hbonds_geom_nr.groupby(don_acc_grp)["h_acc_distance"]
       .transform(lambda grp: [mem == grp.min() for mem in grp])) &
      # only consider non-rotatable donors
-     (hbonds_geom_nr["vertex"] == "hydrogen") &
+     (hbonds_geom_nr["h_acc_distance"] != "NaN") &
      # do not consider A(N6)-U(O4), C(N4)-G(O6), G(N2)-C(O2), G(N2)-C(N3), U(N3)-A(N1), G(N1)-C(N3), and G(N1)-C(O2)
      # atom pairs
      (~hbonds_geom_nr[["don_resn", "don_name", "acc_resn", "acc_name"]].eq(["A", "N6", "U", "O4"])
@@ -96,24 +94,24 @@ don_acc_grp = ["don_index", "acc_index", "eq_class"]
       .all(axis='columns')) &
      (~hbonds_geom_nr[["don_resn", "don_name", "acc_resn", "acc_name"]].eq(["G", "N1", "C", "O2"])
       .all(axis='columns'))]
- .to_csv("plots/geom/hbonds_geom_nr_non_rot_filtered.csv", index=False, columns=["dist", "ang"]))
-don_acc_grp = ["don_index", "acc_index", "eq_class"]
+ .to_csv("plots/geom/hbonds_geom_nr_non_rot_filtered.csv", index=False, columns=["h_acc_distance", "h_angle"]))
+don_acc_grp = ["don_index", "acc_index", "eq_class_members"]
 (hbonds_geom_nr[
-     # only include hydrogens with smaller D-H...A distances
-     (hbonds_geom_nr.groupby(don_acc_grp)["dist"]
+     # only include pairs with smaller D-A distances
+     (hbonds_geom_nr.groupby(don_acc_grp)["don_acc_distance"]
       .transform(lambda grp: [mem == grp.min() for mem in grp])) &
      # only consider non-rotatable donors
-     (hbonds_geom_nr["vertex"] == "donor")]
- .to_csv("plots/geom/hbonds_geom_nr_rot.csv", index=False, columns=["dist", "ang"]))
+     (hbonds_geom_nr["h_acc_distance"] == "NaN")]
+ .to_csv("plots/geom/hbonds_geom_nr_rot.csv", index=False, columns=["don_acc_distance", "don_angle"]))
 
 # Identify nucleobases that donate either one or at least two H-bonds via their exocyclic amines. The H-bonds from the
 # latter nucleobases must involve both exocyclic amine hydrogens and at least two different acceptors.
 single_don_hbonds = don_hbonds_nr[
-    (don_hbonds_nr.groupby(["don_index", "eq_class"])["hydrogen"].transform("nunique") == 1) |
-    (don_hbonds_nr.groupby(["don_index", "eq_class"])["acc_index"].transform("nunique") == 1)]
+    (don_hbonds_nr.groupby(["don_index", "eq_class_members"])["h_name"].transform("nunique") == 1) |
+    (don_hbonds_nr.groupby(["don_index", "eq_class_members"])["acc_index"].transform("nunique") == 1)]
 dual_don_hbonds = don_hbonds_nr[
-    (don_hbonds_nr.groupby(["don_index", "eq_class"])["hydrogen"].transform("nunique") == 2) &
-    (don_hbonds_nr.groupby(["don_index", "eq_class"])["acc_index"].transform("nunique") >= 2)]
+    (don_hbonds_nr.groupby(["don_index", "eq_class_members"])["h_name"].transform("nunique") == 2) &
+    (don_hbonds_nr.groupby(["don_index", "eq_class_members"])["acc_index"].transform("nunique") >= 2)]
 
 # Prepare dataframes of exocyclic amines for each A, C, and G residue.
 a_exo_amines = nuc_data[nuc_data["atom_name"] == "N6"]
@@ -121,49 +119,66 @@ a_exo_amines = nuc_data[nuc_data["atom_name"] == "N6"]
 # Prepare dataframes of single and dual H-bonding A(N6) with H-bond information.
 a_n6_single_hbond = (single_don_hbonds[single_don_hbonds["don_resn"] == "A"]
                      .merge(a_exo_amines,
-                            left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
-                            right_on=["resn", "resi", "chain", "eq_class"],
+                            left_on=["don_resn", "don_resi", "don_chain", "eq_class_members"],
+                            right_on=["resn", "resi", "chain", "eq_class_members"],
                             how='inner').drop(columns=["index", "atom_name", "resn", "resi", "chain"]))
 a_n6_dual_hbond = (dual_don_hbonds[dual_don_hbonds["don_resn"] == "A"]
                    .merge(a_exo_amines,
-                          left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
-                          right_on=["resn", "resi", "chain", "eq_class"],
+                          left_on=["don_resn", "don_resi", "don_chain", "eq_class_members"],
+                          right_on=["resn", "resi", "chain", "eq_class_members"],
                           how='inner').drop(columns=["index", "atom_name", "resn", "resi", "chain"]))
 
-# prepare dataframes of no, single, and dual H-bonding A(N6) with just residue information
-a_n6_single_res = (a_n6_single_hbond.loc[:, ["eq_class", "don_resn", "don_resi", "don_chain"]]
+# Prepare dataframes of no, single, and dual H-bonding A(N6) with just residue information.
+a_n6_single_res = (a_n6_single_hbond.loc[:, ["eq_class_members", "don_resn", "don_resi", "don_chain"]]
                    .drop_duplicates()).rename(columns={"don_resn": "resn", "don_resi": "resi", "don_chain": "chain"})
-a_n6_dual_res = (a_n6_dual_hbond.loc[:, ["eq_class", "don_resn", "don_resi", "don_chain"]]
+a_n6_dual_res = (a_n6_dual_hbond.loc[:, ["eq_class_members", "don_resn", "don_resi", "don_chain"]]
                  .drop_duplicates()).rename(columns={"don_resn": "resn", "don_resi": "resi", "don_chain": "chain"})
 a_n6_no_res = (pd.concat([a_n6_single_res,
                          a_n6_dual_res,
-                         a_exo_amines.loc[:, ["eq_class", "resn", "resi", "chain"]]])
+                         a_exo_amines.loc[:, ["eq_class_members", "resn", "resi", "chain"]]])
                .drop_duplicates(keep=False))
 
-# TODO re-evaluate the following two variables at some point if I am going to keep them
-# prepare a list of single and dual H-bonding A residues that are involved in a canonical AU base pair
-au_bp_single = (a_n6_single_hbond[a_n6_single_hbond[["acc_name", "acc_resn"]].eq(["O4", "U"]).all(axis='columns')]
-                .merge(acc_hbonds_nr[acc_hbonds_nr[["don_name", "don_resn", "acc_name"]].eq(["N3", "U", "N1"])
-                       .all(axis='columns')],
-                       left_on=["don_resn", "don_resi", "don_chain", "acc_resn", "acc_resi", "acc_chain", "eq_class"],
-                       right_on=["acc_resn", "acc_resi", "acc_chain", "don_resn", "don_resi", "don_chain", "eq_class"],
-                       how='inner'))
-au_bp_dual = (a_n6_dual_hbond[a_n6_dual_hbond[["acc_name", "acc_resn"]].eq(["O4", "U"]).all(axis='columns')]
-              .merge(acc_hbonds_nr[acc_hbonds_nr[["don_name", "don_resn", "acc_name"]].eq(["N3", "U", "N1"])
-                     .all(axis='columns')],
-                     left_on=["don_resn", "don_resi", "don_chain", "acc_resn", "acc_resi", "acc_chain", "eq_class"],
-                     right_on=["acc_resn", "acc_resi", "acc_chain", "don_resn", "don_resi", "don_chain", "eq_class"],
-                     how='inner'))
+# Prepare a list of single and dual H-bonding A residues that are involved in canonical AU base pairs.
+au_bp_single_res = (a_n6_single_hbond[a_n6_single_hbond[["acc_name", "acc_resn"]].eq(["O4", "U"]).all(axis='columns')]
+                    .merge(acc_hbonds_nr[acc_hbonds_nr[["don_name", "don_resn", "acc_name"]].eq(["N3", "U", "N1"])
+                           .all(axis='columns')],
+                           left_on=["don_resn", "don_resi", "don_chain", "acc_resn", "acc_resi", "acc_chain",
+                                    "eq_class_members"],
+                           right_on=["acc_resn", "acc_resi", "acc_chain", "don_resn", "don_resi", "don_chain",
+                                     "eq_class_members"],
+                           how='inner').loc[:, ["eq_class_members", "don_resn_x", "don_resi_x", "don_chain_x"]]
+                    .drop_duplicates()
+                    .rename(columns={"don_resn_x": "resn", "don_resi_x": "resi", "don_chain_x": "chain"}))
+au_bp_dual_res = (a_n6_dual_hbond[a_n6_dual_hbond[["acc_name", "acc_resn"]].eq(["O4", "U"]).all(axis='columns')]
+                  .merge(acc_hbonds_nr[acc_hbonds_nr[["don_name", "don_resn", "acc_name"]].eq(["N3", "U", "N1"])
+                         .all(axis='columns')],
+                         left_on=["don_resn", "don_resi", "don_chain", "acc_resn", "acc_resi", "acc_chain",
+                                  "eq_class_members"],
+                         right_on=["acc_resn", "acc_resi", "acc_chain", "don_resn", "don_resi", "don_chain",
+                                   "eq_class_members"],
+                         how='inner').loc[:, ["eq_class_members", "don_resn_x", "don_resi_x", "don_chain_x"]]
+                  .drop_duplicates()
+                  .rename(columns={"don_resn_x": "resn", "don_resi_x": "resi", "don_chain_x": "chain"}))
 
-# prepare dataframes with just residue information of A residues that accept H-bonds at their N1, N3, or N7
+# Write data regarding single and dual H-bonding A residues that are involved in canonical AU base pairs.
+au_bp = pd.DataFrame({
+    "Type": ["Single", "Dual"],
+    "Occurrence": [au_bp_single_res.shape[0],
+                   au_bp_dual_res.shape[0]],
+    "Total": [a_n6_single_res.shape[0],
+              a_n6_dual_res.shape[0]]
+})
+au_bp.to_csv("plots/frequency/au_bp.csv", index=False)
+
+# Prepare dataframes with just residue information of A residues that accept H-bonds at their N1, N3, or N7.
 a_n1_acc_res = (acc_hbonds_nr[acc_hbonds_nr[["acc_name", "acc_resn"]].eq(["N1", "A"]).all(axis='columns')]
-                .loc[:, ["eq_class", "acc_resn", "acc_resi", "acc_chain"]].drop_duplicates()
+                .loc[:, ["eq_class_members", "acc_resn", "acc_resi", "acc_chain"]].drop_duplicates()
                 .rename(columns={"acc_resn": "resn", "acc_resi": "resi", "acc_chain": "chain"}))
 a_n3_acc_res = (acc_hbonds_nr[acc_hbonds_nr[["acc_name", "acc_resn"]].eq(["N3", "A"]).all(axis='columns')]
-                .loc[:, ["eq_class", "acc_resn", "acc_resi", "acc_chain"]].drop_duplicates()
+                .loc[:, ["eq_class_members", "acc_resn", "acc_resi", "acc_chain"]].drop_duplicates()
                 .rename(columns={"acc_resn": "resn", "acc_resi": "resi", "acc_chain": "chain"}))
 a_n7_acc_res = (acc_hbonds_nr[acc_hbonds_nr[["acc_name", "acc_resn"]].eq(["N7", "A"]).all(axis='columns')]
-                .loc[:, ["eq_class", "acc_resn", "acc_resi", "acc_chain"]].drop_duplicates()
+                .loc[:, ["eq_class_members", "acc_resn", "acc_resi", "acc_chain"]].drop_duplicates()
                 .rename(columns={"acc_resn": "resn", "acc_resi": "resi", "acc_chain": "chain"}))
 
 # Prepare dataframes of no, single, and dual H-bonding A(N6) that also accept at the N1 with just residue information.
@@ -245,34 +260,34 @@ a_n6_dual_a_n7_acc_hbond_to_n7 = (a_n6_dual_a_n7_acc_res
 # related to the N6 H-bond donation and the N1 H-bond acceptation.
 a_n6_single_a_n1_acc_match = (a_n6_single_a_n1_acc_hbond_from_n6
                               .merge(a_n6_single_a_n1_acc_hbond_to_n1,
-                                     left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
-                                     right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"], how='inner'))
+                                     left_on=["don_resn", "don_resi", "don_chain", "eq_class_members"],
+                                     right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class_members"], how='inner'))
 a_n6_dual_a_n1_acc_match = (a_n6_dual_a_n1_acc_hbond_from_n6
                             .merge(a_n6_dual_a_n1_acc_hbond_to_n1,
-                                   left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
-                                   right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"], how='inner'))
+                                   left_on=["don_resn", "don_resi", "don_chain", "eq_class_members"],
+                                   right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class_members"], how='inner'))
 
 # Prepare dataframes of single and dual H-bonding A(N6) that also accept at N3 and which include H-bond information
 # related to the N6 H-bond donation and the N3 H-bond acceptation.
 a_n6_single_a_n3_acc_match = (a_n6_single_a_n3_acc_hbond_from_n6
                               .merge(a_n6_single_a_n3_acc_hbond_to_n3,
-                                     left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
-                                     right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"], how='inner'))
+                                     left_on=["don_resn", "don_resi", "don_chain", "eq_class_members"],
+                                     right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class_members"], how='inner'))
 a_n6_dual_a_n3_acc_match = (a_n6_dual_a_n3_acc_hbond_from_n6
                             .merge(a_n6_dual_a_n3_acc_hbond_to_n3,
-                                   left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
-                                   right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"], how='inner'))
+                                   left_on=["don_resn", "don_resi", "don_chain", "eq_class_members"],
+                                   right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class_members"], how='inner'))
 
 # Prepare dataframes of single and dual H-bonding A(N6) that also accept at N7 and which include H-bond information
 # related to the N6 H-bond donation and the N7 H-bond acceptation.
 a_n6_single_a_n7_acc_match = (a_n6_single_a_n7_acc_hbond_from_n6
                               .merge(a_n6_single_a_n7_acc_hbond_to_n7,
-                                     left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
-                                     right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"], how='inner'))
+                                     left_on=["don_resn", "don_resi", "don_chain", "eq_class_members"],
+                                     right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class_members"], how='inner'))
 a_n6_dual_a_n7_acc_match = (a_n6_dual_a_n7_acc_hbond_from_n6
                             .merge(a_n6_dual_a_n7_acc_hbond_to_n7,
-                                   left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
-                                   right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"], how='inner'))
+                                   left_on=["don_resn", "don_resi", "don_chain", "eq_class_members"],
+                                   right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class_members"], how='inner'))
 
 # Prepare dataframes with just residue information of single and dual H-bonding A(N6) that also accepts an H-bond at the
 # N1, N3, or N7. Additionally, there is overlap in the identity of the partner nucleobase, amino acid residue backbone,
@@ -291,7 +306,7 @@ a_n6_single_a_n1_acc_ol = (a_n6_single_a_n1_acc_match[
       ~(a_n6_single_a_n1_acc_match["don_name_y"].isin(["O2'"])) &
       (a_n6_single_a_n1_acc_match["acc_name_x"].isin(["O"])) &
       (a_n6_single_a_n1_acc_match["don_name_y"].isin(["N"]))))]
-                           .loc[:, ["eq_class", "don_resn_x", "don_resi_x", "don_chain_x"]]
+                           .loc[:, ["eq_class_members", "don_resn_x", "don_resi_x", "don_chain_x"]]
                            .rename(columns={"don_resn_x": "resn", "don_resi_x": "resi", "don_chain_x": "chain"})
                            .drop_duplicates())
 a_n6_dual_a_n1_acc_ol = (a_n6_dual_a_n1_acc_match[
@@ -307,7 +322,7 @@ a_n6_dual_a_n1_acc_ol = (a_n6_dual_a_n1_acc_match[
       ~(a_n6_dual_a_n1_acc_match["don_name_y"].isin(["O2'"])) &
       (a_n6_dual_a_n1_acc_match["acc_name_x"].isin(["O"])) &
       (a_n6_dual_a_n1_acc_match["don_name_y"].isin(["N"]))))]
-                           .loc[:, ["eq_class", "don_resn_x", "don_resi_x", "don_chain_x"]]
+                           .loc[:, ["eq_class_members", "don_resn_x", "don_resi_x", "don_chain_x"]]
                            .rename(columns={"don_resn_x": "resn", "don_resi_x": "resi", "don_chain_x": "chain"})
                            .drop_duplicates())
 a_n6_single_a_n3_acc_ol = (a_n6_single_a_n3_acc_match[
@@ -323,7 +338,7 @@ a_n6_single_a_n3_acc_ol = (a_n6_single_a_n3_acc_match[
       ~(a_n6_single_a_n3_acc_match["don_name_y"].isin(["O2'"])) &
       (a_n6_single_a_n3_acc_match["acc_name_x"].isin(["O"])) &
       (a_n6_single_a_n3_acc_match["don_name_y"].isin(["N"]))))]
-                           .loc[:, ["eq_class", "don_resn_x", "don_resi_x", "don_chain_x"]]
+                           .loc[:, ["eq_class_members", "don_resn_x", "don_resi_x", "don_chain_x"]]
                            .rename(columns={"don_resn_x": "resn", "don_resi_x": "resi", "don_chain_x": "chain"})
                            .drop_duplicates())
 a_n6_dual_a_n3_acc_ol = (a_n6_dual_a_n3_acc_match[
@@ -339,7 +354,7 @@ a_n6_dual_a_n3_acc_ol = (a_n6_dual_a_n3_acc_match[
       ~(a_n6_dual_a_n3_acc_match["don_name_y"].isin(["O2'"])) &
       (a_n6_dual_a_n3_acc_match["acc_name_x"].isin(["O"])) &
       (a_n6_dual_a_n3_acc_match["don_name_y"].isin(["N"]))))]
-                           .loc[:, ["eq_class", "don_resn_x", "don_resi_x", "don_chain_x"]]
+                           .loc[:, ["eq_class_members", "don_resn_x", "don_resi_x", "don_chain_x"]]
                            .rename(columns={"don_resn_x": "resn", "don_resi_x": "resi", "don_chain_x": "chain"})
                            .drop_duplicates())
 a_n6_single_a_n7_acc_ol = (a_n6_single_a_n7_acc_match[
@@ -355,7 +370,7 @@ a_n6_single_a_n7_acc_ol = (a_n6_single_a_n7_acc_match[
       ~(a_n6_single_a_n7_acc_match["don_name_y"].isin(["O2'"])) &
       (a_n6_single_a_n7_acc_match["acc_name_x"].isin(["O"])) &
       (a_n6_single_a_n7_acc_match["don_name_y"].isin(["N"]))))]
-                           .loc[:, ["eq_class", "don_resn_x", "don_resi_x", "don_chain_x"]]
+                           .loc[:, ["eq_class_members", "don_resn_x", "don_resi_x", "don_chain_x"]]
                            .rename(columns={"don_resn_x": "resn", "don_resi_x": "resi", "don_chain_x": "chain"})
                            .drop_duplicates())
 a_n6_dual_a_n7_acc_ol = (a_n6_dual_a_n7_acc_match[
@@ -371,7 +386,7 @@ a_n6_dual_a_n7_acc_ol = (a_n6_dual_a_n7_acc_match[
       ~(a_n6_dual_a_n7_acc_match["don_name_y"].isin(["O2'"])) &
       (a_n6_dual_a_n7_acc_match["acc_name_x"].isin(["O"])) &
       (a_n6_dual_a_n7_acc_match["don_name_y"].isin(["N"]))))]
-                           .loc[:, ["eq_class", "don_resn_x", "don_resi_x", "don_chain_x"]]
+                           .loc[:, ["eq_class_members", "don_resn_x", "don_resi_x", "don_chain_x"]]
                            .rename(columns={"don_resn_x": "resn", "don_resi_x": "resi", "don_chain_x": "chain"})
                            .drop_duplicates())
 
@@ -410,49 +425,32 @@ a_n6_donation = pd.DataFrame({
               a_n6_single_res.shape[0],
               a_n6_dual_res.shape[0]]
 })
-a_n6_donation["Ratio"] = a_n6_donation["Occurrence"] / a_n6_donation["Total"]
-a_n6_donation.to_csv("plots/a_n6_donation.csv", index=False)
-
-# Write data regarding A(N6) donors that also accept via the N1, N3, or N7 only considering overlapping partner
-# entities.
-a_n6_donation_ol = pd.DataFrame({
-    "Atom": ["A(N1)", "A(N1)", "A(N3)", "A(N3)", "A(N7)", "A(N7)"],
-    "Type": ["Single", "Dual", "Single", "Dual", "Single", "Dual"],
-    "Occurrence": [a_n6_single_a_n1_acc_ol.shape[0],
-                   a_n6_dual_a_n1_acc_ol.shape[0],
-                   a_n6_single_a_n3_acc_ol.shape[0],
-                   a_n6_dual_a_n3_acc_ol.shape[0],
-                   a_n6_single_a_n7_acc_ol.shape[0],
-                   a_n6_dual_a_n7_acc_ol.shape[0]],
-    "Total": [a_n6_single_res.shape[0],
-              a_n6_dual_res.shape[0],
-              a_n6_single_res.shape[0],
-              a_n6_dual_res.shape[0],
-              a_n6_single_res.shape[0],
-              a_n6_dual_res.shape[0]]
-})
-a_n6_donation_ol["Ratio"] = a_n6_donation_ol["Occurrence"] / a_n6_donation_ol["Total"]
-a_n6_donation_ol.to_csv("plots/a_n6_donation_ol.csv", index=False)
+a_n6_donation.to_csv("plots/frequency/a_n6_donation.csv", index=False)
 
 # Write data regarding A(N6) donors that also accept via the N1, N3, or N7 with no overlap in partner entity.
 a_n6_donation_no_ol = pd.DataFrame({
-    "Atom": ["A(N1)", "A(N1)", "A(N3)", "A(N3)", "A(N7)", "A(N7)"],
-    "Type": ["Single", "Dual", "Single", "Dual", "Single", "Dual"],
-    "Occurrence": [a_n6_single_a_n1_acc_no_ol.shape[0],
+    "Atom": ["A(N1)", "A(N1)", "A(N1)", "A(N3)", "A(N3)", "A(N3)", "A(N7)", "A(N7)", "A(N7)"],
+    "Type": ["No", "Single", "Dual", "No", "Single", "Dual", "No", "Single", "Dual"],
+    "Occurrence": [a_n6_no_a_n1_acc_res.shape[0],
+                   a_n6_single_a_n1_acc_no_ol.shape[0],
                    a_n6_dual_a_n1_acc_no_ol.shape[0],
+                   a_n6_no_a_n3_acc_res.shape[0],
                    a_n6_single_a_n3_acc_no_ol.shape[0],
                    a_n6_dual_a_n3_acc_no_ol.shape[0],
+                   a_n6_no_a_n7_acc_res.shape[0],
                    a_n6_single_a_n7_acc_no_ol.shape[0],
                    a_n6_dual_a_n7_acc_no_ol.shape[0]],
-    "Total": [a_n6_single_res.shape[0],
-              a_n6_dual_res.shape[0],
+    "Total": [a_n6_no_res.shape[0],
               a_n6_single_res.shape[0],
               a_n6_dual_res.shape[0],
+              a_n6_no_res.shape[0],
+              a_n6_single_res.shape[0],
+              a_n6_dual_res.shape[0],
+              a_n6_no_res.shape[0],
               a_n6_single_res.shape[0],
               a_n6_dual_res.shape[0]]
 })
-a_n6_donation_no_ol["Ratio"] = a_n6_donation_no_ol["Occurrence"] / a_n6_donation_no_ol["Total"]
-a_n6_donation_no_ol.to_csv("plots/a_n6_donation_no_ol.csv", index=False)
+a_n6_donation_no_ol.to_csv("plots/frequency/a_n6_donation_no_ol.csv", index=False)
 
 # Prepare dataframes of A residues that do not donate via their N6 and that also accept via the N1, N3, or N7, including
 # H-bond information related to the N1, N3, or N7 H-bond acceptation.
@@ -502,219 +500,38 @@ a_n6_dual_a_n7_acc_no_ol_hbond_to_n7 = (a_n6_dual_a_n7_acc_no_ol
                                         .merge(acc_hbonds_nr[acc_hbonds_nr[["acc_name", "acc_resn"]].eq(["N7", "A"])
                                                .all(axis='columns')], how='inner'))
 
-# print(len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1[a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"].groupby(["acc_index", "eq_class"]).groups.keys()))
-# print(len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1[a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"].groupby(["acc_index", "eq_class"]).groups.keys()))
-# print(len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1[a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"].groupby(["acc_index", "eq_class"]).groups.keys()))
-# print(len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1[a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"].groupby(["acc_index", "eq_class"]).groups.keys()))
-
-# print(a_n6_single_a_n1_acc_no_ol_hbond_to_n1[a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].mean())
-# print(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1[a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].mean())
-# print(a_n6_single_a_n1_acc_no_ol_hbond_to_n1[a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].mean())
-# print(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1[a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].mean())
-
 # Write data on H-bond distance for donors to the N1, N3, or N7 of A residues categorized by the number of H-bonds they
 # donate via their N6. Adenines that donate via their N6 have no overlap in partner entity when considering the donor
 # to the N1, N3, or N7.
 a_n6_donation_a_n1_acc_no_ol_hbond_to_n1 = pd.DataFrame({
-    "Donor": (["Non-Rotatable"] * len(a_n6_no_a_n1_acc_hbond_to_n1
-                                      [a_n6_no_a_n1_acc_hbond_to_n1["vertex"] == "hydrogen"]["dist"]
-                                      .to_list()) +
-              ["Non-Rotatable"] * len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1
-                                      [a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"]
-                                      .to_list()) +
-              ["Non-Rotatable"] * len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1
-                                      [a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"]
-                                      .to_list()) +
-              ["Rotatable"] * len(a_n6_no_a_n1_acc_hbond_to_n1
-                                  [a_n6_no_a_n1_acc_hbond_to_n1["vertex"] == "donor"]["dist"].to_list()) +
-              ["Rotatable"] * len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1
-                                  [a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list()) +
-              ["Rotatable"] * len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1
-                                  [a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list())),
-    "Type": (["No"] * len(a_n6_no_a_n1_acc_hbond_to_n1
-                          [a_n6_no_a_n1_acc_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list()) +
-             ["Single"] * len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1
-                              [a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list()) +
-             ["Dual"] * len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1
-                            [a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list()) +
-             ["No"] * len(a_n6_no_a_n1_acc_hbond_to_n1
-                          [a_n6_no_a_n1_acc_hbond_to_n1["vertex"] == "donor"]["dist"].to_list()) +
-             ["Single"] * len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1
-                              [a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list()) +
-             ["Dual"] * len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1
-                            [a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list())),
-    "Count": ([len(a_n6_no_a_n1_acc_hbond_to_n1[
-                       a_n6_no_a_n1_acc_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list())] *
-              len(a_n6_no_a_n1_acc_hbond_to_n1[
-                      a_n6_no_a_n1_acc_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list()) +
-              [len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1[
-                       a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list())] *
-              len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1[
-                      a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list()) +
-              [len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1[
-                       a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list())] *
-              len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1[
-                      a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list()) +
-              [len(a_n6_no_a_n1_acc_hbond_to_n1[
-                       a_n6_no_a_n1_acc_hbond_to_n1["vertex"] == "donor"]["dist"].to_list())] *
-              len(a_n6_no_a_n1_acc_hbond_to_n1[
-                      a_n6_no_a_n1_acc_hbond_to_n1["vertex"] == "donor"]["dist"].to_list()) +
-              [len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1[
-                       a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list())] *
-              len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1[
-                      a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list()) +
-              [len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1[
-                       a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list())] *
-              len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1[
-                      a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list())),
-    "Distance": (a_n6_no_a_n1_acc_hbond_to_n1[
-                     a_n6_no_a_n1_acc_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list() +
-                 a_n6_single_a_n1_acc_no_ol_hbond_to_n1[
-                     a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list() +
-                 a_n6_dual_a_n1_acc_no_ol_hbond_to_n1[
-                     a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list() +
-                 a_n6_no_a_n1_acc_hbond_to_n1[
-                     a_n6_no_a_n1_acc_hbond_to_n1["vertex"] == "donor"]["dist"].to_list() +
-                 a_n6_single_a_n1_acc_no_ol_hbond_to_n1[
-                     a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list() +
-                 a_n6_dual_a_n1_acc_no_ol_hbond_to_n1[
-                     a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list())
+    "Type": (["No"] * a_n6_no_a_n1_acc_hbond_to_n1.shape[0] +
+             ["Single"] * a_n6_single_a_n1_acc_no_ol_hbond_to_n1.shape[0] +
+             ["Dual"] * a_n6_dual_a_n1_acc_no_ol_hbond_to_n1.shape[0]),
+    "Distance": (a_n6_no_a_n1_acc_hbond_to_n1["don_acc_distance"].to_list() +
+                 a_n6_single_a_n1_acc_no_ol_hbond_to_n1["don_acc_distance"].to_list() +
+                 a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["don_acc_distance"].to_list())
 })
-a_n6_donation_a_n1_acc_no_ol_hbond_to_n1.to_csv("plots/a_n6_donation_a_n1_acc_no_ol_hbond_to_n1.csv",
+a_n6_donation_a_n1_acc_no_ol_hbond_to_n1.to_csv("plots/dist/a_n1_acc/a_n6_donation_a_n1_acc_no_ol_hbond_to_n1.csv",
                                                 index=False)
 a_n6_donation_a_n3_acc_no_ol_hbond_to_n3 = pd.DataFrame({
-    "Donor": (["Non-Rotatable"] * len(a_n6_no_a_n3_acc_hbond_to_n3
-                                      [a_n6_no_a_n3_acc_hbond_to_n3["vertex"] == "hydrogen"]["dist"]
-                                      .to_list()) +
-              ["Non-Rotatable"] * len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3
-                                      [a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "hydrogen"]["dist"]
-                                      .to_list()) +
-              ["Non-Rotatable"] * len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3
-                                      [a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "hydrogen"]["dist"]
-                                      .to_list()) +
-              ["Rotatable"] * len(a_n6_no_a_n3_acc_hbond_to_n3
-                                  [a_n6_no_a_n3_acc_hbond_to_n3["vertex"] == "donor"]["dist"].to_list()) +
-              ["Rotatable"] * len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3
-                                  [a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"].to_list()) +
-              ["Rotatable"] * len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3
-                                  [a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"].to_list())),
-    "Type": (["No"] * len(a_n6_no_a_n3_acc_hbond_to_n3
-                          [a_n6_no_a_n3_acc_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list()) +
-             ["Single"] * len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3
-                              [a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list()) +
-             ["Dual"] * len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3
-                            [a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list()) +
-             ["No"] * len(a_n6_no_a_n3_acc_hbond_to_n3
-                          [a_n6_no_a_n3_acc_hbond_to_n3["vertex"] == "donor"]["dist"].to_list()) +
-             ["Single"] * len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3
-                              [a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"].to_list()) +
-             ["Dual"] * len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3
-                            [a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"].to_list())),
-    "Count": ([len(a_n6_no_a_n3_acc_hbond_to_n3[
-                       a_n6_no_a_n3_acc_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list())] *
-              len(a_n6_no_a_n3_acc_hbond_to_n3[
-                      a_n6_no_a_n3_acc_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list()) +
-              [len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3[
-                       a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list())] *
-              len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3[
-                      a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list()) +
-              [len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3[
-                       a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list())] *
-              len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3[
-                      a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list()) +
-              [len(a_n6_no_a_n3_acc_hbond_to_n3[
-                       a_n6_no_a_n3_acc_hbond_to_n3["vertex"] == "donor"]["dist"].to_list())] *
-              len(a_n6_no_a_n3_acc_hbond_to_n3[
-                      a_n6_no_a_n3_acc_hbond_to_n3["vertex"] == "donor"]["dist"].to_list()) +
-              [len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3[
-                       a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"].to_list())] *
-              len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3[
-                      a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"].to_list()) +
-              [len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3[
-                       a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"].to_list())] *
-              len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3[
-                      a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"].to_list())),
-    "Distance": (a_n6_no_a_n3_acc_hbond_to_n3[
-                     a_n6_no_a_n3_acc_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list() +
-                 a_n6_single_a_n3_acc_no_ol_hbond_to_n3[
-                     a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list() +
-                 a_n6_dual_a_n3_acc_no_ol_hbond_to_n3[
-                     a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list() +
-                 a_n6_no_a_n3_acc_hbond_to_n3[
-                     a_n6_no_a_n3_acc_hbond_to_n3["vertex"] == "donor"]["dist"].to_list() +
-                 a_n6_single_a_n3_acc_no_ol_hbond_to_n3[
-                     a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"].to_list() +
-                 a_n6_dual_a_n3_acc_no_ol_hbond_to_n3[
-                     a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"].to_list())
+    "Type": (["No"] * a_n6_no_a_n3_acc_hbond_to_n3.shape[0] +
+             ["Single"] * a_n6_single_a_n3_acc_no_ol_hbond_to_n3.shape[0] +
+             ["Dual"] * a_n6_dual_a_n3_acc_no_ol_hbond_to_n3.shape[0]),
+    "Distance": (a_n6_no_a_n3_acc_hbond_to_n3["don_acc_distance"].to_list() +
+                 a_n6_single_a_n3_acc_no_ol_hbond_to_n3["don_acc_distance"].to_list() +
+                 a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["don_acc_distance"].to_list())
 })
-a_n6_donation_a_n3_acc_no_ol_hbond_to_n3.to_csv("plots/a_n6_donation_a_n3_acc_no_ol_hbond_to_n3.csv",
+a_n6_donation_a_n3_acc_no_ol_hbond_to_n3.to_csv("plots/dist/a_n3_acc/a_n6_donation_a_n3_acc_no_ol_hbond_to_n3.csv",
                                                 index=False)
 a_n6_donation_a_n7_acc_no_ol_hbond_to_n7 = pd.DataFrame({
-    "Donor": (["Non-Rotatable"] * len(a_n6_no_a_n7_acc_hbond_to_n7
-                                      [a_n6_no_a_n7_acc_hbond_to_n7["vertex"] == "hydrogen"]["dist"]
-                                      .to_list()) +
-              ["Non-Rotatable"] * len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7
-                                      [a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "hydrogen"]["dist"]
-                                      .to_list()) +
-              ["Non-Rotatable"] * len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7
-                                      [a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "hydrogen"]["dist"]
-                                      .to_list()) +
-              ["Rotatable"] * len(a_n6_no_a_n7_acc_hbond_to_n7
-                                  [a_n6_no_a_n7_acc_hbond_to_n7["vertex"] == "donor"]["dist"].to_list()) +
-              ["Rotatable"] * len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7
-                                  [a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"].to_list()) +
-              ["Rotatable"] * len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7
-                                  [a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"].to_list())),
-    "Type": (["No"] * len(a_n6_no_a_n7_acc_hbond_to_n7
-                          [a_n6_no_a_n7_acc_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list()) +
-             ["Single"] * len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7
-                              [a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list()) +
-             ["Dual"] * len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7
-                            [a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list()) +
-             ["No"] * len(a_n6_no_a_n7_acc_hbond_to_n7
-                          [a_n6_no_a_n7_acc_hbond_to_n7["vertex"] == "donor"]["dist"].to_list()) +
-             ["Single"] * len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7
-                              [a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"].to_list()) +
-             ["Dual"] * len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7
-                            [a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"].to_list())),
-    "Count": ([len(a_n6_no_a_n7_acc_hbond_to_n7[
-                       a_n6_no_a_n7_acc_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list())] *
-              len(a_n6_no_a_n7_acc_hbond_to_n7[
-                      a_n6_no_a_n7_acc_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list()) +
-              [len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7[
-                       a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list())] *
-              len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7[
-                      a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list()) +
-              [len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7[
-                       a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list())] *
-              len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7[
-                      a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list()) +
-              [len(a_n6_no_a_n7_acc_hbond_to_n7[
-                       a_n6_no_a_n7_acc_hbond_to_n7["vertex"] == "donor"]["dist"].to_list())] *
-              len(a_n6_no_a_n7_acc_hbond_to_n7[
-                      a_n6_no_a_n7_acc_hbond_to_n7["vertex"] == "donor"]["dist"].to_list()) +
-              [len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7[
-                       a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"].to_list())] *
-              len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7[
-                      a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"].to_list()) +
-              [len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7[
-                       a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"].to_list())] *
-              len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7[
-                      a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"].to_list())),
-    "Distance": (a_n6_no_a_n7_acc_hbond_to_n7[
-                     a_n6_no_a_n7_acc_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list() +
-                 a_n6_single_a_n7_acc_no_ol_hbond_to_n7[
-                     a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list() +
-                 a_n6_dual_a_n7_acc_no_ol_hbond_to_n7[
-                     a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list() +
-                 a_n6_no_a_n7_acc_hbond_to_n7[
-                     a_n6_no_a_n7_acc_hbond_to_n7["vertex"] == "donor"]["dist"].to_list() +
-                 a_n6_single_a_n7_acc_no_ol_hbond_to_n7[
-                     a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"].to_list() +
-                 a_n6_dual_a_n7_acc_no_ol_hbond_to_n7[
-                     a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"].to_list())
+    "Type": (["No"] * a_n6_no_a_n7_acc_hbond_to_n7.shape[0] +
+             ["Single"] * a_n6_single_a_n7_acc_no_ol_hbond_to_n7.shape[0] +
+             ["Dual"] * a_n6_dual_a_n7_acc_no_ol_hbond_to_n7.shape[0]),
+    "Distance": (a_n6_no_a_n7_acc_hbond_to_n7["don_acc_distance"].to_list() +
+                 a_n6_single_a_n7_acc_no_ol_hbond_to_n7["don_acc_distance"].to_list() +
+                 a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["don_acc_distance"].to_list())
 })
-a_n6_donation_a_n7_acc_no_ol_hbond_to_n7.to_csv("plots/a_n6_donation_a_n7_acc_no_ol_hbond_to_n7.csv",
+a_n6_donation_a_n7_acc_no_ol_hbond_to_n7.to_csv("plots/dist/a_n7_acc/a_n6_donation_a_n7_acc_no_ol_hbond_to_n7.csv",
                                                 index=False)
 
 # Prepare dataframes of single and dual H-bonding A(N6) residues that only donate to OD1 or OD2 of Asp, OE1 or OE2 of
@@ -724,12 +541,12 @@ find_neg_single_n1 = a_n6_single_a_n1_acc_hbond_from_n6
 find_neg_single_n1["neg_acc"] = pd.Series((a_n6_single_a_n1_acc_hbond_from_n6["acc_resn"].isin(neg_acc_resn)) &
                                           (a_n6_single_a_n1_acc_hbond_from_n6["acc_name"].isin(neg_acc_name)))
 a_n6_single_a_n1_acc_hbond_from_n6_neg = (find_neg_single_n1[find_neg_single_n1
-                                          .groupby(["don_index", "eq_class"])["neg_acc"]
+                                          .groupby(["don_index", "eq_class_members"])["neg_acc"]
                                           .transform("all")].drop(columns=["neg_acc"]))
 find_neg_dual = a_n6_dual_a_n1_acc_hbond_from_n6
 find_neg_dual["neg_acc"] = pd.Series((a_n6_dual_a_n1_acc_hbond_from_n6["acc_resn"].isin(neg_acc_resn)) &
                                      (a_n6_dual_a_n1_acc_hbond_from_n6["acc_name"].isin(neg_acc_name)))
-a_n6_dual_a_n1_acc_hbond_from_n6_neg = (find_neg_dual[find_neg_dual.groupby(["don_index", "eq_class"])["neg_acc"]
+a_n6_dual_a_n1_acc_hbond_from_n6_neg = (find_neg_dual[find_neg_dual.groupby(["don_index", "eq_class_members"])["neg_acc"]
                                         .transform("all")].drop(columns=["neg_acc"]))
 
 # Prepare dataframes of single and dual H-bonding A(N6) residues that only donate to OD1 or OD2 of Asp, OE1 or OE2 of
@@ -739,12 +556,12 @@ find_neg_single_n3 = a_n6_single_a_n3_acc_hbond_from_n6
 find_neg_single_n3["neg_acc"] = pd.Series((a_n6_single_a_n3_acc_hbond_from_n6["acc_resn"].isin(neg_acc_resn)) &
                                           (a_n6_single_a_n3_acc_hbond_from_n6["acc_name"].isin(neg_acc_name)))
 a_n6_single_a_n3_acc_hbond_from_n6_neg = (find_neg_single_n3[find_neg_single_n3
-                                          .groupby(["don_index", "eq_class"])["neg_acc"]
+                                          .groupby(["don_index", "eq_class_members"])["neg_acc"]
                                           .transform("all")].drop(columns=["neg_acc"]))
 find_neg_dual = a_n6_dual_a_n3_acc_hbond_from_n6
 find_neg_dual["neg_acc"] = pd.Series((a_n6_dual_a_n3_acc_hbond_from_n6["acc_resn"].isin(neg_acc_resn)) &
                                      (a_n6_dual_a_n3_acc_hbond_from_n6["acc_name"].isin(neg_acc_name)))
-a_n6_dual_a_n3_acc_hbond_from_n6_neg = (find_neg_dual[find_neg_dual.groupby(["don_index", "eq_class"])["neg_acc"]
+a_n6_dual_a_n3_acc_hbond_from_n6_neg = (find_neg_dual[find_neg_dual.groupby(["don_index", "eq_class_members"])["neg_acc"]
                                         .transform("all")].drop(columns=["neg_acc"]))
 
 # Prepare dataframes of single and dual H-bonding A(N6) residues that only donate to OD1 or OD2 of Asp, OE1 or OE2 of
@@ -754,44 +571,44 @@ find_neg_single_n7 = a_n6_single_a_n7_acc_hbond_from_n6
 find_neg_single_n7["neg_acc"] = pd.Series((a_n6_single_a_n7_acc_hbond_from_n6["acc_resn"].isin(neg_acc_resn)) &
                                           (a_n6_single_a_n7_acc_hbond_from_n6["acc_name"].isin(neg_acc_name)))
 a_n6_single_a_n7_acc_hbond_from_n6_neg = (find_neg_single_n7[find_neg_single_n7
-                                          .groupby(["don_index", "eq_class"])["neg_acc"]
+                                          .groupby(["don_index", "eq_class_members"])["neg_acc"]
                                           .transform("all")].drop(columns=["neg_acc"]))
 find_neg_dual = a_n6_dual_a_n7_acc_hbond_from_n6
 find_neg_dual["neg_acc"] = pd.Series((a_n6_dual_a_n7_acc_hbond_from_n6["acc_resn"].isin(neg_acc_resn)) &
                                      (a_n6_dual_a_n7_acc_hbond_from_n6["acc_name"].isin(neg_acc_name)))
-a_n6_dual_a_n7_acc_hbond_from_n6_neg = (find_neg_dual[find_neg_dual.groupby(["don_index", "eq_class"])["neg_acc"]
+a_n6_dual_a_n7_acc_hbond_from_n6_neg = (find_neg_dual[find_neg_dual.groupby(["don_index", "eq_class_members"])["neg_acc"]
                                         .transform("all")].drop(columns=["neg_acc"]))
 
 # Prepare dataframes of single and dual H-bonding A(N6) that also accept at the N1 with just residue information. The N6
 # only donates to OD1 or OD2 of Asp, OE1 or OE2 of Glu, or OP1 or OP2 of nucleic acids.
 a_n6_single_a_n1_acc_res_neg = ((a_n6_single_a_n1_acc_hbond_from_n6_neg
-                                .loc[:, ["eq_class", "don_resn", "don_resi", "don_chain"]]
+                                .loc[:, ["eq_class_members", "don_resn", "don_resi", "don_chain"]]
                                 .drop_duplicates())
                                 .rename(columns={"don_resn": "resn", "don_resi": "resi", "don_chain": "chain"}))
 a_n6_dual_a_n1_acc_res_neg = ((a_n6_dual_a_n1_acc_hbond_from_n6_neg
-                              .loc[:, ["eq_class", "don_resn", "don_resi", "don_chain"]]
+                              .loc[:, ["eq_class_members", "don_resn", "don_resi", "don_chain"]]
                               .drop_duplicates())
                               .rename(columns={"don_resn": "resn", "don_resi": "resi", "don_chain": "chain"}))
 
 # Prepare dataframes of single and dual H-bonding A(N6) that also accept at the N3 with just residue information. The N6
 # only donates to OD1 or OD2 of Asp, OE1 or OE2 of Glu, or OP1 or OP2 of nucleic acids.
 a_n6_single_a_n3_acc_res_neg = ((a_n6_single_a_n3_acc_hbond_from_n6_neg
-                                .loc[:, ["eq_class", "don_resn", "don_resi", "don_chain"]]
+                                .loc[:, ["eq_class_members", "don_resn", "don_resi", "don_chain"]]
                                 .drop_duplicates())
                                 .rename(columns={"don_resn": "resn", "don_resi": "resi", "don_chain": "chain"}))
 a_n6_dual_a_n3_acc_res_neg = ((a_n6_dual_a_n3_acc_hbond_from_n6_neg
-                              .loc[:, ["eq_class", "don_resn", "don_resi", "don_chain"]]
+                              .loc[:, ["eq_class_members", "don_resn", "don_resi", "don_chain"]]
                               .drop_duplicates())
                               .rename(columns={"don_resn": "resn", "don_resi": "resi", "don_chain": "chain"}))
 
 # Prepare dataframes of single and dual H-bonding A(N6) that also accept at the N7 with just residue information. The N6
 # only donates to OD1 or OD2 of Asp, OE1 or OE2 of Glu, or OP1 or OP2 of nucleic acids.
 a_n6_single_a_n7_acc_res_neg = ((a_n6_single_a_n7_acc_hbond_from_n6_neg
-                                .loc[:, ["eq_class", "don_resn", "don_resi", "don_chain"]]
+                                .loc[:, ["eq_class_members", "don_resn", "don_resi", "don_chain"]]
                                 .drop_duplicates())
                                 .rename(columns={"don_resn": "resn", "don_resi": "resi", "don_chain": "chain"}))
 a_n6_dual_a_n7_acc_res_neg = ((a_n6_dual_a_n7_acc_hbond_from_n6_neg
-                              .loc[:, ["eq_class", "don_resn", "don_resi", "don_chain"]]
+                              .loc[:, ["eq_class_members", "don_resn", "don_resi", "don_chain"]]
                               .drop_duplicates())
                               .rename(columns={"don_resn": "resn", "don_resi": "resi", "don_chain": "chain"}))
 
@@ -800,36 +617,36 @@ a_n6_dual_a_n7_acc_res_neg = ((a_n6_dual_a_n7_acc_hbond_from_n6_neg
 # related to the N6 H-bond donation and the N1 H-bond acceptation.
 a_n6_single_a_n1_acc_match_neg = (a_n6_single_a_n1_acc_hbond_from_n6_neg
                                   .merge(a_n6_single_a_n1_acc_hbond_to_n1,
-                                         left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
-                                         right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"], how='inner'))
+                                         left_on=["don_resn", "don_resi", "don_chain", "eq_class_members"],
+                                         right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class_members"], how='inner'))
 a_n6_dual_a_n1_acc_match_neg = (a_n6_dual_a_n1_acc_hbond_from_n6_neg
                                 .merge(a_n6_dual_a_n1_acc_hbond_to_n1,
-                                       left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
-                                       right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"], how='inner'))
+                                       left_on=["don_resn", "don_resi", "don_chain", "eq_class_members"],
+                                       right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class_members"], how='inner'))
 
 # Prepare dataframes of single and dual H-bonding A(N6) residues that only donate to OD1 or OD2 of Asp, OE1 or OE2 of
 # Glu, or OP1 or OP2 of nucleic acids and that accept an H-bond at the N3. The dataframes include H-bond information
 # related to the N6 H-bond donation and the N3 H-bond acceptation.
 a_n6_single_a_n3_acc_match_neg = (a_n6_single_a_n3_acc_hbond_from_n6_neg
                                   .merge(a_n6_single_a_n3_acc_hbond_to_n3,
-                                         left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
-                                         right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"], how='inner'))
+                                         left_on=["don_resn", "don_resi", "don_chain", "eq_class_members"],
+                                         right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class_members"], how='inner'))
 a_n6_dual_a_n3_acc_match_neg = (a_n6_dual_a_n3_acc_hbond_from_n6_neg
                                 .merge(a_n6_dual_a_n3_acc_hbond_to_n3,
-                                       left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
-                                       right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"], how='inner'))
+                                       left_on=["don_resn", "don_resi", "don_chain", "eq_class_members"],
+                                       right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class_members"], how='inner'))
 
 # Prepare dataframes of single and dual H-bonding A(N6) residues that only donate to OD1 or OD2 of Asp, OE1 or OE2 of
 # Glu, or OP1 or OP2 of nucleic acids and that accept an H-bond at the N7. The dataframes include H-bond information
 # related to the N6 H-bond donation and the N7 H-bond acceptation.
 a_n6_single_a_n7_acc_match_neg = (a_n6_single_a_n7_acc_hbond_from_n6_neg
                                   .merge(a_n6_single_a_n7_acc_hbond_to_n7,
-                                         left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
-                                         right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"], how='inner'))
+                                         left_on=["don_resn", "don_resi", "don_chain", "eq_class_members"],
+                                         right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class_members"], how='inner'))
 a_n6_dual_a_n7_acc_match_neg = (a_n6_dual_a_n7_acc_hbond_from_n6_neg
                                 .merge(a_n6_dual_a_n7_acc_hbond_to_n7,
-                                       left_on=["don_resn", "don_resi", "don_chain", "eq_class"],
-                                       right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class"], how='inner'))
+                                       left_on=["don_resn", "don_resi", "don_chain", "eq_class_members"],
+                                       right_on=["acc_resn", "acc_resi", "acc_chain", "eq_class_members"], how='inner'))
 
 # Prepare dataframes with just residue information of single and dual H-bonding A(N6) that also accepts an H-bond at the
 # N1, N3, or N7. The N6 only donates to OD1 or OD2 of Asp, OE1 or OE2 of Glu, or OP1 or OP2 of nucleic acids.
@@ -849,7 +666,7 @@ a_n6_single_a_n1_acc_ol_neg = (a_n6_single_a_n1_acc_match_neg[
       ~(a_n6_single_a_n1_acc_match_neg["don_name_y"].isin(["O2'"])) &
       (a_n6_single_a_n1_acc_match_neg["acc_name_x"].isin(["O"])) &
       (a_n6_single_a_n1_acc_match_neg["don_name_y"].isin(["N"]))))]
-                           .loc[:, ["eq_class", "don_resn_x", "don_resi_x", "don_chain_x"]]
+                           .loc[:, ["eq_class_members", "don_resn_x", "don_resi_x", "don_chain_x"]]
                            .rename(columns={"don_resn_x": "resn", "don_resi_x": "resi", "don_chain_x": "chain"})
                            .drop_duplicates())
 a_n6_dual_a_n1_acc_ol_neg = (a_n6_dual_a_n1_acc_match_neg[
@@ -865,7 +682,7 @@ a_n6_dual_a_n1_acc_ol_neg = (a_n6_dual_a_n1_acc_match_neg[
       ~(a_n6_dual_a_n1_acc_match_neg["don_name_y"].isin(["O2'"])) &
       (a_n6_dual_a_n1_acc_match_neg["acc_name_x"].isin(["O"])) &
       (a_n6_dual_a_n1_acc_match_neg["don_name_y"].isin(["N"]))))]
-                           .loc[:, ["eq_class", "don_resn_x", "don_resi_x", "don_chain_x"]]
+                           .loc[:, ["eq_class_members", "don_resn_x", "don_resi_x", "don_chain_x"]]
                            .rename(columns={"don_resn_x": "resn", "don_resi_x": "resi", "don_chain_x": "chain"})
                            .drop_duplicates())
 a_n6_single_a_n3_acc_ol_neg = (a_n6_single_a_n3_acc_match_neg[
@@ -881,7 +698,7 @@ a_n6_single_a_n3_acc_ol_neg = (a_n6_single_a_n3_acc_match_neg[
       ~(a_n6_single_a_n3_acc_match_neg["don_name_y"].isin(["O2'"])) &
       (a_n6_single_a_n3_acc_match_neg["acc_name_x"].isin(["O"])) &
       (a_n6_single_a_n3_acc_match_neg["don_name_y"].isin(["N"]))))]
-                           .loc[:, ["eq_class", "don_resn_x", "don_resi_x", "don_chain_x"]]
+                           .loc[:, ["eq_class_members", "don_resn_x", "don_resi_x", "don_chain_x"]]
                            .rename(columns={"don_resn_x": "resn", "don_resi_x": "resi", "don_chain_x": "chain"})
                            .drop_duplicates())
 a_n6_dual_a_n3_acc_ol_neg = (a_n6_dual_a_n3_acc_match_neg[
@@ -897,7 +714,7 @@ a_n6_dual_a_n3_acc_ol_neg = (a_n6_dual_a_n3_acc_match_neg[
       ~(a_n6_dual_a_n3_acc_match_neg["don_name_y"].isin(["O2'"])) &
       (a_n6_dual_a_n3_acc_match_neg["acc_name_x"].isin(["O"])) &
       (a_n6_dual_a_n3_acc_match_neg["don_name_y"].isin(["N"]))))]
-                           .loc[:, ["eq_class", "don_resn_x", "don_resi_x", "don_chain_x"]]
+                           .loc[:, ["eq_class_members", "don_resn_x", "don_resi_x", "don_chain_x"]]
                            .rename(columns={"don_resn_x": "resn", "don_resi_x": "resi", "don_chain_x": "chain"})
                            .drop_duplicates())
 a_n6_single_a_n7_acc_ol_neg = (a_n6_single_a_n7_acc_match_neg[
@@ -913,7 +730,7 @@ a_n6_single_a_n7_acc_ol_neg = (a_n6_single_a_n7_acc_match_neg[
       ~(a_n6_single_a_n7_acc_match_neg["don_name_y"].isin(["O2'"])) &
       (a_n6_single_a_n7_acc_match_neg["acc_name_x"].isin(["O"])) &
       (a_n6_single_a_n7_acc_match_neg["don_name_y"].isin(["N"]))))]
-                           .loc[:, ["eq_class", "don_resn_x", "don_resi_x", "don_chain_x"]]
+                           .loc[:, ["eq_class_members", "don_resn_x", "don_resi_x", "don_chain_x"]]
                            .rename(columns={"don_resn_x": "resn", "don_resi_x": "resi", "don_chain_x": "chain"})
                            .drop_duplicates())
 a_n6_dual_a_n7_acc_ol_neg = (a_n6_dual_a_n7_acc_match_neg[
@@ -929,7 +746,7 @@ a_n6_dual_a_n7_acc_ol_neg = (a_n6_dual_a_n7_acc_match_neg[
       ~(a_n6_dual_a_n7_acc_match_neg["don_name_y"].isin(["O2'"])) &
       (a_n6_dual_a_n7_acc_match_neg["acc_name_x"].isin(["O"])) &
       (a_n6_dual_a_n7_acc_match_neg["don_name_y"].isin(["N"]))))]
-                           .loc[:, ["eq_class", "don_resn_x", "don_resi_x", "don_chain_x"]]
+                           .loc[:, ["eq_class_members", "don_resn_x", "don_resi_x", "don_chain_x"]]
                            .rename(columns={"don_resn_x": "resn", "don_resi_x": "resi", "don_chain_x": "chain"})
                            .drop_duplicates())
 
@@ -991,528 +808,57 @@ a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg = (a_n6_dual_a_n7_acc_no_ol_neg
                                                    .eq(["N7", "A"])
                                                    .all(axis='columns')], how='inner'))
 
-# Write data on H-bond distance for donors to the N1, N3, or N7 of A residues that also donate via their N6 with no
-# overlap in partner entity. The N6 only donates to OD1 or OD2 of Asp, OE1 or OE2 of Glu, or OP1 or OP2 of nucleic
-# acids.
-a_n6_donation_a_n1_acc_no_ol_hbond_to_n1_neg = pd.DataFrame({
-    "Donor": (["Non-Rotatable"] * len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg
-                                      [a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "hydrogen"]["dist"]
-                                      .to_list()) +
-              ["Non-Rotatable"] * len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg
-                                      [a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "hydrogen"]["dist"]
-                                      .to_list()) +
-              ["Rotatable"] * len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg
-                                  [a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"].to_list()) +
-              ["Rotatable"] * len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg
-                                  [a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"].to_list())),
-    "Type": (["Single"] * len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg
-                              [a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "hydrogen"]["dist"].to_list()) +
-             ["Dual"] * len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg
-                            [a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "hydrogen"]["dist"].to_list()) +
-             ["Single"] * len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg
-                              [a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"].to_list()) +
-             ["Dual"] * len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg
-                            [a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"].to_list())),
-    "Count": ([len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg[
-                       a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "hydrogen"]["dist"].to_list())] *
-              len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg[
-                      a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "hydrogen"]["dist"].to_list()) +
-              [len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg[
-                       a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "hydrogen"]["dist"].to_list())] *
-              len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg[
-                      a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "hydrogen"]["dist"].to_list()) +
-              [len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg[
-                       a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"].to_list())] *
-              len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg[
-                      a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"].to_list()) +
-              [len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg[
-                       a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"].to_list())] *
-              len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg[
-                      a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"].to_list())),
-    "Distance": (a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg[
-                     a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "hydrogen"]["dist"].to_list() +
-                 a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg[
-                     a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "hydrogen"]["dist"].to_list() +
-                 a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg[
-                     a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"].to_list() +
-                 a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg[
-                     a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"].to_list())
-})
-a_n6_donation_a_n1_acc_no_ol_hbond_to_n1_neg.to_csv("plots/a_n6_donation_a_n1_acc_no_ol_hbond_to_n1_neg.csv",
-                                                    index=False)
-a_n6_donation_a_n3_acc_no_ol_hbond_to_n3_neg = pd.DataFrame({
-    "Donor": (["Non-Rotatable"] * len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg
-                                      [a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "hydrogen"]["dist"]
-                                      .to_list()) +
-              ["Non-Rotatable"] * len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg
-                                      [a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "hydrogen"]["dist"]
-                                      .to_list()) +
-              ["Rotatable"] * len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg
-                                  [a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"].to_list()) +
-              ["Rotatable"] * len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg
-                                  [a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"].to_list())),
-    "Type": (["Single"] * len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg
-                              [a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "hydrogen"]["dist"].to_list()) +
-             ["Dual"] * len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg
-                            [a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "hydrogen"]["dist"].to_list()) +
-             ["Single"] * len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg
-                              [a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"].to_list()) +
-             ["Dual"] * len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg
-                            [a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"].to_list())),
-    "Count": ([len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg[
-                       a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "hydrogen"]["dist"].to_list())] *
-              len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg[
-                      a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "hydrogen"]["dist"].to_list()) +
-              [len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg[
-                       a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "hydrogen"]["dist"].to_list())] *
-              len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg[
-                      a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "hydrogen"]["dist"].to_list()) +
-              [len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg[
-                       a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"].to_list())] *
-              len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg[
-                      a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"].to_list()) +
-              [len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg[
-                       a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"].to_list())] *
-              len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg[
-                      a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"].to_list())),
-    "Distance": (a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg[
-                     a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "hydrogen"]["dist"].to_list() +
-                 a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg[
-                     a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "hydrogen"]["dist"].to_list() +
-                 a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg[
-                     a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"].to_list() +
-                 a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg[
-                     a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"].to_list())
-})
-a_n6_donation_a_n3_acc_no_ol_hbond_to_n3_neg.to_csv("plots/a_n6_donation_a_n3_acc_no_ol_hbond_to_n3_neg.csv",
-                                                    index=False)
-a_n6_donation_a_n7_acc_no_ol_hbond_to_n7_neg = pd.DataFrame({
-    "Donor": (["Non-Rotatable"] * len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg
-                                      [a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "hydrogen"]["dist"]
-                                      .to_list()) +
-              ["Non-Rotatable"] * len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg
-                                      [a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "hydrogen"]["dist"]
-                                      .to_list()) +
-              ["Rotatable"] * len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg
-                                  [a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"].to_list()) +
-              ["Rotatable"] * len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg
-                                  [a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"].to_list())),
-    "Type": (["Single"] * len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg
-                              [a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "hydrogen"]["dist"].to_list()) +
-             ["Dual"] * len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg
-                            [a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "hydrogen"]["dist"].to_list()) +
-             ["Single"] * len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg
-                              [a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"].to_list()) +
-             ["Dual"] * len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg
-                            [a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"].to_list())),
-    "Count": ([len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg[
-                       a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "hydrogen"]["dist"].to_list())] *
-              len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg[
-                      a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "hydrogen"]["dist"].to_list()) +
-              [len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg[
-                       a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "hydrogen"]["dist"].to_list())] *
-              len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg[
-                      a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "hydrogen"]["dist"].to_list()) +
-              [len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg[
-                       a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"].to_list())] *
-              len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg[
-                      a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"].to_list()) +
-              [len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg[
-                       a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"].to_list())] *
-              len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg[
-                      a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"].to_list())),
-    "Distance": (a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg[
-                     a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "hydrogen"]["dist"].to_list() +
-                 a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg[
-                     a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "hydrogen"]["dist"].to_list() +
-                 a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg[
-                     a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"].to_list() +
-                 a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg[
-                     a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"].to_list())
-})
-a_n6_donation_a_n7_acc_no_ol_hbond_to_n7_neg.to_csv("plots/a_n6_donation_a_n7_acc_no_ol_hbond_to_n7_neg.csv",
-                                                    index=False)
-
-# Write data on H-bond distance for non-rotatable donors to the N1, N3, or N7 of A residues that also donate via their
+# Write data on H-bond distance for donors to the N1, N3, or N7 of A residues that also donate via their
 # N6 with no overlap in partner entity. Include data where the N6 donates to all acceptor types and where it only
 # donates to OD1 or OD2 of Asp, OE1 or OE2 of Glu, or OP1 or OP2 of nucleic acids.
-a_n6_donation_a_n1_acc_no_ol_hbond_to_n1_all_neg_h = pd.DataFrame({
-    "Acceptor": (["All"] * len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1
-                               [a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"]
-                               .to_list()) +
-                 ["All"] * len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1
-                               [a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"]
-                               .to_list()) +
-                 ["Negative"] * len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg
-                                    [a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "hydrogen"]["dist"]
-                                    .to_list()) +
-                 ["Negative"] * len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg
-                                    [a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "hydrogen"]["dist"].to_list())),
-    "Type": (["Single"] * len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1
-                              [a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list()) +
-             ["Dual"] * len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1
-                            [a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list()) +
-             ["Single"] * len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg
-                              [a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "hydrogen"]["dist"].to_list()) +
-             ["Dual"] * len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg
-                            [a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "hydrogen"]["dist"].to_list())),
-    "Group": (["Single-All"] * len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1
-                                   [a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list()) +
-              ["Dual-All"] * len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1
-                                 [a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list()) +
-              ["Single-Negative"] * len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg
-                                        [a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "hydrogen"]["dist"]
-                                        .to_list()) +
-              ["Dual-Negative"] * len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg
-                                      [a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "hydrogen"]["dist"]
-                                      .to_list())),
-    "Count": ([len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1[
-                       a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list())] *
-              len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1[
-                      a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list()) +
-              [len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1[
-                       a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list())] *
-              len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1[
-                      a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list()) +
-              [len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg[
-                       a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "hydrogen"]["dist"].to_list())] *
-              len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg[
-                      a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "hydrogen"]["dist"].to_list()) +
-              [len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg[
-                       a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "hydrogen"]["dist"].to_list())] *
-              len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg[
-                      a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "hydrogen"]["dist"].to_list())),
-    "Distance": (a_n6_single_a_n1_acc_no_ol_hbond_to_n1[
-                     a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list() +
-                 a_n6_dual_a_n1_acc_no_ol_hbond_to_n1[
-                     a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "hydrogen"]["dist"].to_list() +
-                 a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg[
-                     a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "hydrogen"]["dist"].to_list() +
-                 a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg[
-                     a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "hydrogen"]["dist"].to_list())
+a_n6_donation_a_n1_acc_no_ol_hbond_to_n1_all_neg = pd.DataFrame({
+    "Acceptor": (["All"] * a_n6_single_a_n1_acc_no_ol_hbond_to_n1.shape[0] +
+                 ["All"] * a_n6_dual_a_n1_acc_no_ol_hbond_to_n1.shape[0] +
+                 ["Negative"] * a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg.shape[0] +
+                 ["Negative"] * a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg.shape[0]),
+    "Type": (["Single"] * a_n6_single_a_n1_acc_no_ol_hbond_to_n1.shape[0] +
+             ["Dual"] * a_n6_dual_a_n1_acc_no_ol_hbond_to_n1.shape[0] +
+             ["Single"] * a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg.shape[0] +
+             ["Dual"] * a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg.shape[0]),
+    "Distance": (a_n6_single_a_n1_acc_no_ol_hbond_to_n1["don_acc_distance"].to_list() +
+                 a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["don_acc_distance"].to_list() +
+                 a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["don_acc_distance"].to_list() +
+                 a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["don_acc_distance"].to_list())
 })
-a_n6_donation_a_n1_acc_no_ol_hbond_to_n1_all_neg_h.to_csv(
-    "plots/a_n6_donation_a_n1_acc_no_ol_hbond_to_n1_all_neg_h.csv", index=False)
-a_n6_donation_a_n3_acc_no_ol_hbond_to_n3_all_neg_h = pd.DataFrame({
-    "Acceptor": (["All"] * len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3
-                               [a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "hydrogen"]["dist"]
-                               .to_list()) +
-                 ["All"] * len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3
-                               [a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "hydrogen"]["dist"]
-                               .to_list()) +
-                 ["Negative"] * len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg
-                                    [a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "hydrogen"]["dist"]
-                                    .to_list()) +
-                 ["Negative"] * len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg
-                                    [a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "hydrogen"]["dist"].to_list())),
-    "Type": (["Single"] * len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3
-                              [a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list()) +
-             ["Dual"] * len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3
-                            [a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list()) +
-             ["Single"] * len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg
-                              [a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "hydrogen"]["dist"].to_list()) +
-             ["Dual"] * len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg
-                            [a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "hydrogen"]["dist"].to_list())),
-    "Group": (["Single-All"] * len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3
-                                   [a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list()) +
-              ["Dual-All"] * len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3
-                                 [a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list()) +
-              ["Single-Negative"] * len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg
-                                        [a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "hydrogen"]["dist"]
-                                        .to_list()) +
-              ["Dual-Negative"] * len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg
-                                      [a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "hydrogen"]["dist"]
-                                      .to_list())),
-    "Count": ([len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3[
-                       a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list())] *
-              len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3[
-                      a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list()) +
-              [len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3[
-                       a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list())] *
-              len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3[
-                      a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list()) +
-              [len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg[
-                       a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "hydrogen"]["dist"].to_list())] *
-              len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg[
-                      a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "hydrogen"]["dist"].to_list()) +
-              [len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg[
-                       a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "hydrogen"]["dist"].to_list())] *
-              len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg[
-                      a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "hydrogen"]["dist"].to_list())),
-    "Distance": (a_n6_single_a_n3_acc_no_ol_hbond_to_n3[
-                     a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list() +
-                 a_n6_dual_a_n3_acc_no_ol_hbond_to_n3[
-                     a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "hydrogen"]["dist"].to_list() +
-                 a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg[
-                     a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "hydrogen"]["dist"].to_list() +
-                 a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg[
-                     a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "hydrogen"]["dist"].to_list())
+a_n6_donation_a_n1_acc_no_ol_hbond_to_n1_all_neg.to_csv(
+    "plots/dist/a_n1_acc/a_n6_donation_a_n1_acc_no_ol_hbond_to_n1_all_neg.csv", index=False)
+a_n6_donation_a_n3_acc_no_ol_hbond_to_n3_all_neg = pd.DataFrame({
+    "Acceptor": (["All"] * a_n6_single_a_n3_acc_no_ol_hbond_to_n3.shape[0] +
+                 ["All"] * a_n6_dual_a_n3_acc_no_ol_hbond_to_n3.shape[0] +
+                 ["Negative"] * a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg.shape[0] +
+                 ["Negative"] * a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg.shape[0]),
+    "Type": (["Single"] * a_n6_single_a_n3_acc_no_ol_hbond_to_n3.shape[0] +
+             ["Dual"] * a_n6_dual_a_n3_acc_no_ol_hbond_to_n3.shape[0] +
+             ["Single"] * a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg.shape[0] +
+             ["Dual"] * a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg.shape[0]),
+    "Distance": (a_n6_single_a_n3_acc_no_ol_hbond_to_n3["don_acc_distance"].to_list() +
+                 a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["don_acc_distance"].to_list() +
+                 a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["don_acc_distance"].to_list() +
+                 a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["don_acc_distance"].to_list())
 })
-a_n6_donation_a_n3_acc_no_ol_hbond_to_n3_all_neg_h.to_csv(
-    "plots/a_n6_donation_a_n3_acc_no_ol_hbond_to_n3_all_neg_h.csv", index=False)
-a_n6_donation_a_n7_acc_no_ol_hbond_to_n7_all_neg_h = pd.DataFrame({
-    "Acceptor": (["All"] * len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7
-                               [a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "hydrogen"]["dist"]
-                               .to_list()) +
-                 ["All"] * len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7
-                               [a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "hydrogen"]["dist"]
-                               .to_list()) +
-                 ["Negative"] * len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg
-                                    [a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "hydrogen"]["dist"]
-                                    .to_list()) +
-                 ["Negative"] * len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg
-                                    [a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "hydrogen"]["dist"].to_list())),
-    "Type": (["Single"] * len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7
-                              [a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list()) +
-             ["Dual"] * len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7
-                            [a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list()) +
-             ["Single"] * len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg
-                              [a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "hydrogen"]["dist"].to_list()) +
-             ["Dual"] * len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg
-                            [a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "hydrogen"]["dist"].to_list())),
-    "Group": (["Single-All"] * len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7
-                                   [a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list()) +
-              ["Dual-All"] * len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7
-                                 [a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list()) +
-              ["Single-Negative"] * len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg
-                                        [a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "hydrogen"]["dist"]
-                                        .to_list()) +
-              ["Dual-Negative"] * len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg
-                                      [a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "hydrogen"]["dist"]
-                                      .to_list())),
-    "Count": ([len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7[
-                       a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list())] *
-              len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7[
-                      a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list()) +
-              [len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7[
-                       a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list())] *
-              len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7[
-                      a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list()) +
-              [len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg[
-                       a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "hydrogen"]["dist"].to_list())] *
-              len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg[
-                      a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "hydrogen"]["dist"].to_list()) +
-              [len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg[
-                       a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "hydrogen"]["dist"].to_list())] *
-              len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg[
-                      a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "hydrogen"]["dist"].to_list())),
-    "Distance": (a_n6_single_a_n7_acc_no_ol_hbond_to_n7[
-                     a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list() +
-                 a_n6_dual_a_n7_acc_no_ol_hbond_to_n7[
-                     a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "hydrogen"]["dist"].to_list() +
-                 a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg[
-                     a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "hydrogen"]["dist"].to_list() +
-                 a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg[
-                     a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "hydrogen"]["dist"].to_list())
+a_n6_donation_a_n3_acc_no_ol_hbond_to_n3_all_neg.to_csv(
+    "plots/dist/a_n3_acc/a_n6_donation_a_n3_acc_no_ol_hbond_to_n3_all_neg.csv", index=False)
+a_n6_donation_a_n7_acc_no_ol_hbond_to_n7_all_neg = pd.DataFrame({
+    "Acceptor": (["All"] * a_n6_single_a_n7_acc_no_ol_hbond_to_n7.shape[0] +
+                 ["All"] * a_n6_dual_a_n7_acc_no_ol_hbond_to_n7.shape[0] +
+                 ["Negative"] * a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg.shape[0] +
+                 ["Negative"] * a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg.shape[0]),
+    "Type": (["Single"] * a_n6_single_a_n7_acc_no_ol_hbond_to_n7.shape[0] +
+             ["Dual"] * a_n6_dual_a_n7_acc_no_ol_hbond_to_n7.shape[0] +
+             ["Single"] * a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg.shape[0] +
+             ["Dual"] * a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg.shape[0]),
+    "Distance": (a_n6_single_a_n7_acc_no_ol_hbond_to_n7["don_acc_distance"].to_list() +
+                 a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["don_acc_distance"].to_list() +
+                 a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["don_acc_distance"].to_list() +
+                 a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["don_acc_distance"].to_list())
 })
-a_n6_donation_a_n7_acc_no_ol_hbond_to_n7_all_neg_h.to_csv(
-    "plots/a_n6_donation_a_n7_acc_no_ol_hbond_to_n7_all_neg_h.csv", index=False)
+a_n6_donation_a_n7_acc_no_ol_hbond_to_n7_all_neg.to_csv(
+    "plots/dist/a_n7_acc/a_n6_donation_a_n7_acc_no_ol_hbond_to_n7_all_neg.csv", index=False)
 
-# Write data on H-bond distance for rotatable donors to the N1, N3, or N7 of A residues that also donate via their N6
-# with no overlap in partner entity. Include data where the N6 donates to all acceptor types and where it only  donates
-# to OD1 or OD2 of Asp, OE1 or OE2 of Glu, or OP1 or OP2 of nucleic acids.
-a_n6_donation_a_n1_acc_no_ol_hbond_to_n1_all_neg_d = pd.DataFrame({
-    "Acceptor": (["All"] * len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1
-                               [a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"]
-                               .to_list()) +
-                 ["All"] * len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1
-                               [a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"]
-                               .to_list()) +
-                 ["Negative"] * len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg
-                                    [a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"]
-                                    .to_list()) +
-                 ["Negative"] * len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg
-                                    [a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"].to_list())),
-    "Type": (["Single"] * len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1
-                              [a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list()) +
-             ["Dual"] * len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1
-                            [a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list()) +
-             ["Single"] * len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg
-                              [a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"].to_list()) +
-             ["Dual"] * len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg
-                            [a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"].to_list())),
-    "Group": (["Single-All"] * len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1
-                                   [a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list()) +
-              ["Dual-All"] * len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1
-                                 [a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list()) +
-              ["Single-Negative"] * len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg
-                                        [a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"]
-                                        .to_list()) +
-              ["Dual-Negative"] * len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg
-                                      [a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"]
-                                      .to_list())),
-    "Count": ([len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1[
-                       a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list())] *
-              len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1[
-                      a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list()) +
-              [len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1[
-                       a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list())] *
-              len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1[
-                      a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list()) +
-              [len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg[
-                       a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"].to_list())] *
-              len(a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg[
-                      a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"].to_list()) +
-              [len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg[
-                       a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"].to_list())] *
-              len(a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg[
-                      a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"].to_list())),
-    "Distance": (a_n6_single_a_n1_acc_no_ol_hbond_to_n1[
-                     a_n6_single_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list() +
-                 a_n6_dual_a_n1_acc_no_ol_hbond_to_n1[
-                     a_n6_dual_a_n1_acc_no_ol_hbond_to_n1["vertex"] == "donor"]["dist"].to_list() +
-                 a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg[
-                     a_n6_single_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"].to_list() +
-                 a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg[
-                     a_n6_dual_a_n1_acc_no_ol_hbond_to_n1_neg["vertex"] == "donor"]["dist"].to_list())
-})
-a_n6_donation_a_n1_acc_no_ol_hbond_to_n1_all_neg_d.to_csv(
-    "plots/a_n6_donation_a_n1_acc_no_ol_hbond_to_n1_all_neg_d.csv", index=False)
-a_n6_donation_a_n3_acc_no_ol_hbond_to_n3_all_neg_d = pd.DataFrame({
-    "Acceptor": (["All"] * len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3
-                               [a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"]
-                               .to_list()) +
-                 ["All"] * len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3
-                               [a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"]
-                               .to_list()) +
-                 ["Negative"] * len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg
-                                    [a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"]
-                                    .to_list()) +
-                 ["Negative"] * len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg
-                                    [a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"].to_list())),
-    "Type": (["Single"] * len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3
-                              [a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"].to_list()) +
-             ["Dual"] * len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3
-                            [a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"].to_list()) +
-             ["Single"] * len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg
-                              [a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"].to_list()) +
-             ["Dual"] * len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg
-                            [a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"].to_list())),
-    "Group": (["Single-All"] * len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3
-                                   [a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"].to_list()) +
-              ["Dual-All"] * len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3
-                                 [a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"].to_list()) +
-              ["Single-Negative"] * len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg
-                                        [a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"]
-                                        .to_list()) +
-              ["Dual-Negative"] * len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg
-                                      [a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"]
-                                      .to_list())),
-    "Count": ([len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3[
-                       a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"].to_list())] *
-              len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3[
-                      a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"].to_list()) +
-              [len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3[
-                       a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"].to_list())] *
-              len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3[
-                      a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"].to_list()) +
-              [len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg[
-                       a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"].to_list())] *
-              len(a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg[
-                      a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"].to_list()) +
-              [len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg[
-                       a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"].to_list())] *
-              len(a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg[
-                      a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"].to_list())),
-    "Distance": (a_n6_single_a_n3_acc_no_ol_hbond_to_n3[
-                     a_n6_single_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"].to_list() +
-                 a_n6_dual_a_n3_acc_no_ol_hbond_to_n3[
-                     a_n6_dual_a_n3_acc_no_ol_hbond_to_n3["vertex"] == "donor"]["dist"].to_list() +
-                 a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg[
-                     a_n6_single_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"].to_list() +
-                 a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg[
-                     a_n6_dual_a_n3_acc_no_ol_hbond_to_n3_neg["vertex"] == "donor"]["dist"].to_list())
-})
-a_n6_donation_a_n3_acc_no_ol_hbond_to_n3_all_neg_d.to_csv(
-    "plots/a_n6_donation_a_n3_acc_no_ol_hbond_to_n3_all_neg_d.csv", index=False)
-a_n6_donation_a_n7_acc_no_ol_hbond_to_n7_all_neg_d = pd.DataFrame({
-    "Acceptor": (["All"] * len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7
-                               [a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"]
-                               .to_list()) +
-                 ["All"] * len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7
-                               [a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"]
-                               .to_list()) +
-                 ["Negative"] * len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg
-                                    [a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"]
-                                    .to_list()) +
-                 ["Negative"] * len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg
-                                    [a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"].to_list())),
-    "Type": (["Single"] * len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7
-                              [a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"].to_list()) +
-             ["Dual"] * len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7
-                            [a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"].to_list()) +
-             ["Single"] * len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg
-                              [a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"].to_list()) +
-             ["Dual"] * len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg
-                            [a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"].to_list())),
-    "Group": (["Single-All"] * len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7
-                                   [a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"].to_list()) +
-              ["Dual-All"] * len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7
-                                 [a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"].to_list()) +
-              ["Single-Negative"] * len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg
-                                        [a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"]
-                                        .to_list()) +
-              ["Dual-Negative"] * len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg
-                                      [a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"]
-                                      .to_list())),
-    "Count": ([len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7[
-                       a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"].to_list())] *
-              len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7[
-                      a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"].to_list()) +
-              [len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7[
-                       a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"].to_list())] *
-              len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7[
-                      a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"].to_list()) +
-              [len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg[
-                       a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"].to_list())] *
-              len(a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg[
-                      a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"].to_list()) +
-              [len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg[
-                       a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"].to_list())] *
-              len(a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg[
-                      a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"].to_list())),
-    "Distance": (a_n6_single_a_n7_acc_no_ol_hbond_to_n7[
-                     a_n6_single_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"].to_list() +
-                 a_n6_dual_a_n7_acc_no_ol_hbond_to_n7[
-                     a_n6_dual_a_n7_acc_no_ol_hbond_to_n7["vertex"] == "donor"]["dist"].to_list() +
-                 a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg[
-                     a_n6_single_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"].to_list() +
-                 a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg[
-                     a_n6_dual_a_n7_acc_no_ol_hbond_to_n7_neg["vertex"] == "donor"]["dist"].to_list())
-})
-a_n6_donation_a_n7_acc_no_ol_hbond_to_n7_all_neg_d.to_csv(
-    "plots/a_n6_donation_a_n7_acc_no_ol_hbond_to_n7_all_neg_d.csv", index=False)
-
-
-
-# # H-BONDING DISTANCE, HYDROGEN VERTEX, NUCLEOBASES NOT INVOLVED IN SINGLE/DUAL DONATION
-# print(a_n1_acc_a_n6_single_diff[a_n1_acc_a_n6_single_diff["vertex_y"] == "hydrogen"]["dist_y"].mean())
-
-# TODO ignore instances when exo amine donates to sugar/phosphate of other nucleotide
-# TODO all H-bond donations from exo amine must be to acceptors other than that of the nucleobase which is donating to N1
-# count = a_n1_acc_a_n6_dual_diff[a_n1_acc_a_n6_dual_diff["vertex_y"] == "hydrogen"].groupby(["don_index_x", "eq_class"]).count()
-# print(count[count["don_name_x"] >= 2]["don_name_x"].size)
-# print(a_n1_acc_a_n6_dual_diff[(a_n1_acc_a_n6_dual_diff["don_index_x"] == 1186) & (a_n1_acc_a_n6_dual_diff["eq_class"] == "NR_3.0_41610.18")])
-# print(a_n1_acc_a_n6_dual[(a_n1_acc_a_n6_dual["don_index_x"] == 56) & (a_n1_acc_a_n6_dual["eq_class"] == "NR_3.0_18859.1")])
-# print(len(a_n1_acc_a_n6_dual_diff[a_n1_acc_a_n6_dual_diff["vertex_y"] == "hydrogen"].groupby(["don_index_x", "eq_class"]).groups.keys()))
-
-# # H-BONDING DISTANCE, DONOR VERTEX, NUCLEOBASES NOT INVOLVED IN SINGLE/DUAL DONATION
-# print(a_n1_acc_a_n6_single_diff[a_n1_acc_a_n6_single_diff["vertex_y"] == "donor"]["dist_y"].mean())
-# print(a_n1_acc_a_n6_dual_diff[a_n1_acc_a_n6_dual_diff["vertex_y"] == "donor"]["dist_y"].mean())
-
-# # H-BONDING DISTANCE, CANONICAL BASEPAIR
-# print(au_bp_single["dist_y"].mean())
-# print(au_bp_single["dist_y"].std())
-# print(au_bp_dual["dist_y"].mean())
-# print(au_bp_dual["dist_y"].std())
-
-# P_VALUE
-# acc = np.array([[len(a_n3_acc_a_n6_single.groupby(["don_index_x", "eq_class"]).groups.keys()),
-#                  len(a_n6_single_hbond.groupby(["don_index", "eq_class"]).groups.keys()) - len(a_n3_acc_a_n6_single.groupby(["don_index_x", "eq_class"]).groups.keys())],
-#                 [len(a_n3_acc_a_n6_dual.groupby(["don_index_x", "eq_class"]).groups.keys()),
-#                  len(a_n6_dual_hbond.groupby(["don_index", "eq_class"]).groups.keys()) - len(a_n3_acc_a_n6_dual.groupby(["don_index_x", "eq_class"]).groups.keys())]])
-# chi2, p_value, df, acc = scipy.stats.chi2_contingency(acc)
-# print(p_value)
-
-# TODO consider revising collect_data.py to only consider nucleobases with all heavy atoms, see resn A and resi 2150 and chain A eq_class NR_3.0_90633.21 for an example of an incomplete nucleobase, leading to the following evaluation to be False
-# print((a_n6_no_a_n7_acc_res["eq_class"].size + a_n6_single_a_n7_acc_res["eq_class"].size + a_n6_dual_a_n7_acc_res["eq_class"].size) == a_n7_acc_res["eq_class"].size)
+# TODO consider revising collect_data.py to only consider nucleobases with all heavy atoms, see resn A and resi 2150 and chain A eq_class_members NR_3.0_90633.21 for an example of an incomplete nucleobase, leading to the following evaluation to be False
+# print((a_n6_no_a_n7_acc_res["eq_class_members"].size + a_n6_single_a_n7_acc_res["eq_class_members"].size + a_n6_dual_a_n7_acc_res["eq_class_members"].size) == a_n7_acc_res["eq_class_members"].size)
