@@ -35,17 +35,22 @@ neg_acceptors = pd.DataFrame({
 
 # create the combined dataframes
 don_hbonds_nr = pd.read_csv(working_dir + "/combined/don_hbonds_nr_c.csv", na_filter=False,
-                            dtype={"don_resi": "object", "acc_resi": "object"})
+                            dtype={"don_resi": "object", "acc_resi": "object", "h_acc_distance": "object",
+                                   "h_angle": "object", "h_dihedral": "object"})
 prot_don_hbonds_nr = pd.read_csv(working_dir + "/combined/prot_don_hbonds_nr_c.csv", na_filter=False,
-                                 dtype={"don_resi": "object", "acc_resi": "object"})
+                                 dtype={"don_resi": "object", "acc_resi": "object", "h_acc_distance": "object",
+                                        "h_angle": "object", "h_dihedral": "object"})
 acc_hbonds_nr = pd.read_csv(working_dir + "/combined/acc_hbonds_nr_c.csv", na_filter=False,
-                            dtype={"don_resi": "object", "acc_resi": "object"})
+                            dtype={"don_resi": "object", "acc_resi": "object", "h_acc_distance": "object",
+                                   "h_angle": "object", "h_dihedral": "object"})
 deprot_acc_hbonds_nr = pd.read_csv(working_dir + "/combined/deprot_acc_hbonds_nr_c.csv", na_filter=False,
-                                   dtype={"don_resi": "object", "acc_resi": "object"})
+                                   dtype={"don_resi": "object", "acc_resi": "object", "h_acc_distance": "object",
+                                          "h_angle": "object", "h_dihedral": "object"})
 nuc_data_raw = pd.read_csv(working_dir + "/combined/nuc_data_c.csv", na_filter=False, dtype={"resi": "object"})
 b_factor_data = pd.read_csv(working_dir + "/combined/b_factor_data_c.csv", na_filter=False, dtype={"resi": "object"})
 hbond_data = pd.read_csv(working_dir + "/combined/hbond_data_c.csv", na_filter=False,
-                         dtype={"don_resi": "object", "acc_resi": "object"})
+                         dtype={"don_resi": "object", "acc_resi": "object", "h_acc_distance": "object",
+                                "h_angle": "object", "h_dihedral": "object"})
 
 # Create a new dataframe of nucleobases where the mean of the b-factors are below 79.
 nuc_data = nuc_data_raw.merge(b_factor_data[b_factor_data["b_mean"] < 79.0], on=["resn", "resi", "chain",
