@@ -2,8 +2,8 @@ import scripts.parse_nrlist
 
 configfile: "config/config.yaml"
 
-# Retrieve information on all the members of each equivalence class listed in the representative set file.
-eq_class_dict = scripts.parse_nrlist.parse_nrlist(config["rep_set_file"])
+# Retrieve information from each equivalence class listed in the representative set file.
+eq_class_dict = scripts.parse_nrlist.parse_nrlist(config["rep_set_file"], config["all_members"])
 
 # Prepare a list including the equivalence class name, PDB ID, model info, and chain info for each equivalence class
 # member.
