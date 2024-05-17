@@ -547,7 +547,7 @@ find_neg_single_n1["neg_acc"] = pd.Series((a_n6_single_a_n1_acc_hbond_from_n6["a
                                           (a_n6_single_a_n1_acc_hbond_from_n6["acc_name"].isin(neg_acc_name)))
 a_n6_single_a_n1_acc_hbond_from_n6_neg = (find_neg_single_n1[find_neg_single_n1
                                           .groupby(["don_index", "eq_class_members"])["neg_acc"]
-                                          .transform("all")].drop(columns=["neg_acc"]))
+                                          .transform("any")].drop(columns=["neg_acc"]))
 find_neg_dual = a_n6_dual_a_n1_acc_hbond_from_n6
 find_neg_dual["neg_acc"] = pd.Series((a_n6_dual_a_n1_acc_hbond_from_n6["acc_resn"].isin(neg_acc_resn)) &
                                      (a_n6_dual_a_n1_acc_hbond_from_n6["acc_name"].isin(neg_acc_name)))
