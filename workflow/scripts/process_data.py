@@ -16,8 +16,8 @@ pd.set_option("display.max_rows", 1300)
 H_DIST_MAX = 2.3
 H_ANG_TOL = 45.0
 DON_DIST_MAX = 3.3
-DON_ANG_MIN = 100
-DON_ANG_MAX = 145
+DON_ANG_MIN = 100.0
+DON_ANG_MAX = 145.0
 
 # construct a list of tuples containing atom and residue names that describe atoms capable of both donating and
 # accepting an H-bond
