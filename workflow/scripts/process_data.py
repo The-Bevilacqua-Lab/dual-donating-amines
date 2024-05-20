@@ -33,9 +33,10 @@ hbond_col_names = ["don_index", "don_name", "don_resn", "don_resi", "don_chain",
                    "acc_resn", "acc_resi", "acc_chain", "don_acc_distance", "don_angle", "acc_angle", "h_acc_distance",
                    "h_angle", "h_dihedral", "h_name", "rotated_side_chain"]
 unique_col_comb = ["don_index", "acc_index", "h_name", "rotated_side_chain"]
-hbond_data = (pd.read_csv(snakemake.input.hbond_data, names=hbond_col_names, comment="#", na_filter=False,
-                          dtype={"don_chain": "object", "acc_chain": "object",
-                                 "h_acc_distance": "str", "h_angle": "str", "h_dihedral": "str"})
+# noinspection PyTypeChecker
+hbond_data = (pd.read_csv(snakemake.input.hbond_data, names=hbond_col_names, comment="#", keep_default_na=False,
+                          na_values={"h_acc_distance": "NaN", "h_angle": "NaN", "h_dihedral": "NaN"},
+                          dtype={"don_chain": "object", "acc_chain": "object"})
               .drop_duplicates(subset=unique_col_comb))
 
 # extract the data from the nuc csv file
@@ -68,14 +69,14 @@ eq_class_members_data = (pd.read_csv(snakemake.input.eq_class_members_data, head
                          .set_index(pd.Series(["pdb_id", "model", "chain"])).transpose())
 
 # identify atom pairs that meet the H-bond criteria and include a donor of interest
-don_hbonds = (hbond_data[(hbond_data["h_acc_distance"] <= str(H_DIST_MAX)) & (hbond_data["h_angle"] >= str(180.0 - float(H_ANG_TOL)))]
+don_hbonds = (hbond_data[(hbond_data["h_acc_distance"] <= H_DIST_MAX) & (hbond_data["h_angle"] >= 180.0 - H_ANG_TOL)]
               .merge(pd.DataFrame(const.DONORS_OF_INTEREST, columns=["don_resn", "don_name"]), how='inner')
               .merge(eq_class_members_data, left_on="don_chain", right_on="chain", how='inner')
               .drop(columns=["pdb_id", "model", "chain"]))
 
 # # identify atom pairs that meet the H-bond criteria and include a protonated donor of interest
 # # values in the _merge column matching left_only indicate acceptors that cannot typically also donate an H-bond
-# prot_don_hbonds_unfiltered = (hbond_data[(hbond_data["h_acc_distance"] <= str(H_DIST_MAX)) & (hbond_data["h_angle"] >= str(180.0 - float(H_ANG_TOL)))]
+# prot_don_hbonds_unfiltered = (hbond_data[(hbond_data["h_acc_distance"] <= H_DIST_MAX) & (hbond_data["h_angle"] >= 180.0 - H_ANG_TOL)]
 #                               .merge(pd.DataFrame(const.PROT_DONORS_OF_INTEREST, columns=["don_resn", "don_name"]),
 #                                      how='inner')
 #                               .merge(pd.DataFrame(don_acc_atoms, columns=["acc_resn", "acc_name"]), how='left',
@@ -93,9 +94,9 @@ don_hbonds = (hbond_data[(hbond_data["h_acc_distance"] <= str(H_DIST_MAX)) & (hb
 #                    .drop(columns=["pdb_id", "model", "chain"]))
 
 # identify atom pairs that meet the H-bond criteria and include an acceptor of interest
-acc_hbonds = (hbond_data[(~(hbond_data["h_acc_distance"] == "NaN") & (hbond_data["h_acc_distance"] <= str(H_DIST_MAX)) &
-                          (hbond_data["h_angle"] >= str(180.0 - float(H_ANG_TOL)))) |
-                         ((hbond_data["h_acc_distance"] == "NaN") & (hbond_data["don_acc_distance"] <= DON_DIST_MAX) &
+acc_hbonds = (hbond_data[((hbond_data["h_acc_distance"].notna()) & (hbond_data["h_acc_distance"] <= H_DIST_MAX) &
+                          (hbond_data["h_angle"] >= 180.0 - H_ANG_TOL)) |
+                         ((hbond_data["h_acc_distance"].isna()) & (hbond_data["don_acc_distance"] <= DON_DIST_MAX) &
                                     (hbond_data["don_angle"] >= DON_ANG_MIN) &
                                     (hbond_data["don_angle"] <= DON_ANG_MAX))]
               .merge(pd.DataFrame(const.ACCEPTORS_OF_INTEREST, columns=["acc_resn", "acc_name"]), how='inner')
@@ -104,9 +105,9 @@ acc_hbonds = (hbond_data[(~(hbond_data["h_acc_distance"] == "NaN") & (hbond_data
 
 # # identify atom pairs that meet the H-bond criteria and include a deprotonated acceptor of interest
 # # values in the _merge column matching left_only indicate donors that cannot typically also accept an H-bond
-# deprot_acc_hbonds_unfiltered = (hbond_data[(~(hbond_data["h_acc_distance"] == "NaN") & (hbond_data["h_acc_distance"] <= str(H_DIST_MAX)) &
-#                                             (hbond_data["h_angle"] >= str(180.0 - float(H_ANG_TOL)))) |
-#                                            ((hbond_data["h_acc_distance"] == "NaN") & (hbond_data["don_acc_distance"] <= DON_DIST_MAX) &
+# deprot_acc_hbonds_unfiltered = (hbond_data[((hbond_data["h_acc_distance"].notna()) & (hbond_data["h_acc_distance"] <= H_DIST_MAX) &
+#                                             (hbond_data["h_angle"] >= 180.0 - H_ANG_TOL)) |
+#                                            ((hbond_data["h_acc_distance"].isna()) & (hbond_data["don_acc_distance"] <= DON_DIST_MAX) &
 #                                             (hbond_data["don_angle"] >= DON_ANG_MIN) &
 #                                             (hbond_data["don_angle"] <= DON_ANG_MAX))]
 #                                 .merge(pd.DataFrame(const.DEPROT_ACCEPTORS_OF_INTEREST,
