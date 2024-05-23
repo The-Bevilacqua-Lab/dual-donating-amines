@@ -181,7 +181,7 @@ for i in range(len(eq_class[2])):
     # if this is not the case, print an error message and exit
     if eq_class[2][i] != eq_class[2][0]:
         print(f"Error: There are representative RNA chains that belong to different models for equivalence class "
-              f"{eq_class[0][0]}.")
+              f"member {snakemake.wildcards.eq_class_members}.")
         sys.exit(1)
     rep_rna_list.append(f"chain {eq_class[3][i]}")
 rep_rna = " ".join(rep_rna_list)
@@ -263,20 +263,20 @@ if len(stored.h_count) > 0:
                         'stored.h_count.append(cmd.count_atoms(f"(neighbor index {index}) and elem H"))')
             if max(stored.h_count) == min(stored.h_count):
                 if stored.h_count[0] != 2:
-                    print(f"Error: For equivalence class {eq_class[0][0]}, the ARG(NH2) atoms have the incorrect "
-                          f"number of hydrogens even after attempting to correct.")
+                    print(f"Error: For equivalence class member {snakemake.wildcards.eq_class_members}, the ARG(NH2) "
+                          f"atoms have the incorrect number of hydrogens even after attempting to correct.")
                     sys.exit(1)
             else:
-                print(f"Error: For equivalence class {eq_class[0][0]}, the ARG(NH2) atoms do not have a consistent "
-                      f"number of hydrogens after attempting to correct.")
+                print(f"Error: For equivalence class member {snakemake.wildcards.eq_class_members}, the ARG(NH2) atoms "
+                      f"do not have a consistent number of hydrogens after attempting to correct.")
                 sys.exit(1)
         elif stored.h_count[0] != 2:
-            print(f"Error: For equivalence class {eq_class[0][0]}, the ARG(NH2) atoms have the incorrect number of "
-                  f"hydrogens (either less than two or more than three each).")
+            print(f"Error: For equivalence class member {snakemake.wildcards.eq_class_members}, the ARG(NH2) atoms "
+                  f"have the incorrect number of hydrogens (either less than two or more than three each).")
             sys.exit(1)
     else:
-        print(f"Error: For equivalence class {eq_class[0][0]}, the ARG(NH2) atoms do not have a consistent number of "
-              f"hydrogens.")
+        print(f"Error: For equivalence class member {snakemake.wildcards.eq_class_members}, the ARG(NH2) atoms do not "
+              f"have a consistent number of hydrogens.")
         sys.exit(1)
 
 # Randomly sample 100 atom indices in the structure and record the info of the associated atoms for later comparison.
@@ -719,7 +719,7 @@ stored.check_two = []
 for index in indices:
     cmd.iterate(f'index {index}', 'stored.check_two.append((index, name, resn, resi, chain))')
 if not stored.check_one == stored.check_two:
-    print(f"Error: The indices in equivalence class {eq_class[0][0]} changed.")
+    print(f"Error: The indices in equivalence class member {snakemake.wildcards.eq_class_members} changed.")
     sys.exit(1)
 
 # If commit_hash is set to true in the Snakemake configuration file, check if any changes have been made to the repo and
