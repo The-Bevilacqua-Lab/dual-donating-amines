@@ -135,7 +135,3 @@ prot_don_hbonds_nr.assign(eq_class_members=snakemake.wildcards.eq_class_members)
 acc_hbonds_nr.assign(eq_class_members=snakemake.wildcards.eq_class_members).to_csv(snakemake.output.acc_hbonds_nr, index=False)
 b_factor_data.assign(eq_class_members=snakemake.wildcards.eq_class_members).to_csv(snakemake.output.b_factor_data, index=False)
 hbond_data.assign(eq_class_members=snakemake.wildcards.eq_class_members).to_csv(snakemake.output.hbond_data, index=False)
-
-# TODO prot donor should not donate to the same atom the exo amine is donating to (e.g., C788 A5 in 6xu8)
-# TODO keep in mind ["H04", "A", "4212", "L5", "OD1", "ASN", "3", "LT"] in 8GLP
-# TODO why is NR_3.0_65061.22_hbond_test_data/LA/LA/ARG`3/NH2 missing a proton?
