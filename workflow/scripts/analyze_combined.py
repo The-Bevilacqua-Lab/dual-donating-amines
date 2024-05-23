@@ -34,20 +34,20 @@ neg_acceptors = pd.DataFrame({
 })
 
 # create the combined dataframes
-don_hbonds_nr = pd.read_csv(working_dir + "/combined/don_hbonds_nr_c.csv", na_filter=False,
+don_hbonds_nr = pd.read_csv(working_dir + "/combined/don_hbonds_nr.csv", na_filter=False,
                             dtype={"don_resi": "object", "acc_resi": "object"})
 # TODO prot donor should not donate to the same atom the exo amine is donating to (e.g., C788 A5 in 6xu8)
 # noinspection PyTypeChecker
-prot_don_hbonds_nr = pd.read_csv(working_dir + "/combined/prot_don_hbonds_nr_c.csv", na_filter=False,
+prot_don_hbonds_nr = pd.read_csv(working_dir + "/combined/prot_don_hbonds_nr.csv", na_filter=False,
                                  dtype={"don_resi": "object", "acc_resi": "object"})
 # noinspection PyTypeChecker
-acc_hbonds_nr = pd.read_csv(working_dir + "/combined/acc_hbonds_nr_c.csv", keep_default_na=False,
+acc_hbonds_nr = pd.read_csv(working_dir + "/combined/acc_hbonds_nr.csv", keep_default_na=False,
                             na_values={"h_acc_distance": "NaN", "h_angle": "NaN", "h_dihedral": "NaN"},
                             dtype={"don_resi": "object", "acc_resi": "object"})
-nuc_data_raw = pd.read_csv(working_dir + "/combined/nuc_data_c.csv", na_filter=False, dtype={"resi": "object"})
-b_factor_data = pd.read_csv(working_dir + "/combined/b_factor_data_c.csv", na_filter=False, dtype={"resi": "object"})
+nuc_data_raw = pd.read_csv(working_dir + "/combined/nuc_data.csv", na_filter=False, dtype={"resi": "object"})
+b_factor_data = pd.read_csv(working_dir + "/combined/b_factor_data.csv", na_filter=False, dtype={"resi": "object"})
 # noinspection PyTypeChecker
-hbond_data = pd.read_csv(working_dir + "/combined/hbond_data_c.csv", keep_default_na=False,
+hbond_data = pd.read_csv(working_dir + "/combined/hbond_data.csv", keep_default_na=False,
                          na_values={"h_acc_distance": "NaN", "h_angle": "NaN", "h_dihedral": "NaN"},
                          dtype={"don_resi": "object", "acc_resi": "object"})
 

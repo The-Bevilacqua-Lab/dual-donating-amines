@@ -41,9 +41,9 @@ for cat in categories.keys():
 os.mkdir(working_dir + "/combined")
 
 # Create the combined dataframes and write to csv files.
-pd.concat([pd.read_csv(file, na_filter=False) for file in categories["nuc_data"]]).to_csv("combined/nuc_data_c.csv", index=False)
-pd.concat([pd.read_csv(file, na_filter=False) for file in categories["b_factor_data"]]).to_csv("combined/b_factor_data_c.csv", index=False)
-pd.concat([pd.read_csv(file, na_filter=False) for file in categories["don_hbonds_nr"]]).to_csv("combined/don_hbonds_nr_c.csv", index=False)
-pd.concat([pd.read_csv(file, na_filter=False) for file in categories["prot_don_hbonds_nr"]]).to_csv("combined/prot_don_hbonds_nr_c.csv", index=False)
-pd.concat([pd.read_csv(file, na_filter=False) for file in categories["acc_hbonds_nr"]]).to_csv("combined/acc_hbonds_nr_c.csv", index=False)
-pd.concat([pd.read_csv(file, na_filter=False) for file in categories["hbond_data"]]).to_csv("combined/hbond_data_c.csv", index=False)
+pd.concat([pd.read_csv(file, na_filter=False) for file in categories["nuc_data"]]).to_csv("combined/nuc_data.csv", index=False)
+pd.concat([pd.read_csv(file, na_filter=False) for file in categories["b_factor_data"]]).to_csv("combined/b_factor_data.csv", index=False)
+pd.concat([pd.read_csv(file, na_filter=False) for file in categories["don_hbonds_nr"]]).to_csv("combined/don_hbonds_nr.csv", index=False)
+pd.concat([pd.read_csv(file, na_filter=False) for file in categories["prot_don_hbonds_nr"]]).to_csv("combined/prot_don_hbonds_nr.csv", index=False)
+pd.concat([pd.read_csv(file, na_filter=False) for file in categories["acc_hbonds_nr"]]).to_csv("combined/acc_hbonds_nr.csv", index=False)
+pd.concat([pd.read_csv(file, na_filter=False) for file in categories["hbond_data"]]).to_csv("combined/hbond_data.csv", index=False)
