@@ -11,7 +11,7 @@ from pymol import cmd
 from pymol import stored
 
 
-def remove(eq_class):
+def remove(eq_class_mem):
     # initially assume that the evaluation will complete successfully
     successful_completion = True
     # initialize an empty list that can be used to document why an evaluation was not completed successfully
@@ -45,8 +45,8 @@ def remove(eq_class):
             elif atom[5] == keep[5]:
                 if len(atom[4]) != 1 or len(keep[4]) != 1:
                     successful_completion = False
-                    notes.append(f"Error: There is at least one atom in equivalence class {eq_class} with an alt ID "
-                                 f"that does not consist of exactly one character.")
+                    notes.append(f"Error: There is at least one atom in equivalence class member {eq_class_mem} with "
+                                 f"an alt ID that does not consist of exactly one character.")
                     return [successful_completion, notes]
                 elif atom[4] < keep[4]:
                     remove.append(keep)
@@ -54,7 +54,7 @@ def remove(eq_class):
                 elif atom[4] == keep[4]:
                     successful_completion = False
                     notes.append(f"Error: There are multiple atoms with the same alt ID that should have different alt "
-                                 f"IDs in equivalence class {eq_class}.")
+                                 f"IDs in equivalence class member {eq_class_mem}.")
                     return [successful_completion, notes]
                 elif atom[4] > keep[4]:
                     remove.append(atom)
@@ -69,7 +69,7 @@ def remove(eq_class):
                            f'alt {atom[4]}') != 1:
             successful_completion = False
             notes.append(f"Error: The info provided for an atom to remove does not account for exactly one atom in "
-                         f"equivalence class {eq_class}.")
+                         f"equivalence class member {eq_class_mem}.")
             return [successful_completion, notes]
         # check for whether there is any indication that removing the atom will disrupt the connectivity of the atoms
         # that are kept
@@ -87,8 +87,8 @@ def remove(eq_class):
                 if not neighbor_in_remove_list:
                     successful_completion = False
                     notes.append(f"Error: Removing the atom {atom[0]} with alt ID {atom[4]} from residue "
-                                 f"{atom[1]}{atom[2]} within chain {atom[3]} of equivalence class {eq_class} may "
-                                 f"disrupt the connectivity of the atoms that are kept.")
+                                 f"{atom[1]}{atom[2]} within chain {atom[3]} of equivalence class member "
+                                 f"{eq_class_mem} may disrupt the connectivity of the atoms that are kept.")
                     return [successful_completion, notes]
         cmd.remove(f'name {atom[0]} and resn {atom[1]} and resi {atom[2]} and chain {atom[3]} and alt {atom[4]}')
     return [successful_completion, notes]
