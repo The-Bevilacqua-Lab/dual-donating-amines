@@ -25,17 +25,18 @@ import remove_alt_conf
 
 # TODO add code to count how many atoms each residue contains pre- and post- hydrogen addition, reject those that do not meet expectations
 
-# Redirect stdout and stderr to log files.
-stdout = sys.stdout
-stderr = sys.stderr
-stdout_file = open(snakemake.log.stdout, mode='w')
-stderr_file = open(snakemake.log.stderr, mode='w')
-sys.stdout = stdout_file
-sys.stderr = stderr_file
+# # Redirect stdout and stderr to log files.
+# stdout = sys.stdout
+# stderr = sys.stderr
+# stdout_file = open(snakemake.log.stdout, mode='w')
+# stderr_file = open(snakemake.log.stderr, mode='w')
+# sys.stdout = stdout_file
+# sys.stderr = stderr_file
 
 # Iterate through the lines of the equivalence class file and collect the equivalence class name, PDB ID, model info,
 # and chain info for the equivalence class member.
-with open(snakemake.input[0], mode='r') as read_file:
+# with open(snakemake.input[0], mode='r') as read_file:
+with open("data/eq_class_members_files/NR_3.0_26197.1_6SKG_1_BB_info.csv", mode='r') as read_file:
     eq_class_mem = []
     for line in csv.reader(read_file):
         if line[0][0] != "#":
@@ -43,7 +44,8 @@ with open(snakemake.input[0], mode='r') as read_file:
 
 # Check whether the folder exists for PyMOL to save mmCIF files into that are fetched from the PDB.
 # If it does not exist, create the folder.
-original_mmcif_dir = snakemake.config["original_mmcif_dir"]
+# original_mmcif_dir = snakemake.config["original_mmcif_dir"]
+original_mmcif_dir = "data/original_mmCIF_files"
 if not os.path.isdir(original_mmcif_dir):
     try:
         os.mkdir(original_mmcif_dir)
@@ -55,70 +57,52 @@ if not os.path.isdir(original_mmcif_dir):
 # Change fetch_path to original_mmcif_dir so that PyMOL drops the mmCIF files into this folder when running fetch.
 cmd.set('fetch_path', cmd.exp_path(original_mmcif_dir))
 
-# Construct two lists of tuples containing atom and residue names that describe either donor or acceptor atoms.
-# Additionally, construct a list of tuples containing atom and residue names that describe rotatable donor atoms.
+# Construct three lists of strings containing residue and atom names that describe either donor, rotatable donor, or
+# acceptor atoms. Additionally, construct two strings that can be used with PyMOL to select donor and rotatable donor
+# atoms.
 donor_atoms = []
 rotatable_donor_atoms = []
 acceptor_atoms = []
+donor_string = ''
+rotatable_donor_string = ''
 for residue in const.RESIDUE_LIBRARY:
     for donor in residue['don']:
-        donor_atoms.append((residue['res'], donor[0]))
+        donor_atoms.append(f'{residue["res"]}.{donor[0]}')
+        donor_string += f'(resn {residue["res"]} and name {donor[0]}) '
         if donor[2]:
-            rotatable_donor_atoms.append((residue['res'], donor[0]))
+            rotatable_donor_atoms.append(f'{residue["res"]}.{donor[0]}')
+            rotatable_donor_string += f'(resn {residue["res"]} and name {donor[0]}) '
     for acceptor in residue['acc']:
-        acceptor_atoms.append((residue['res'], acceptor[0]))
+        acceptor_atoms.append(f'{residue["res"]}.{acceptor[0]}')
+donor_string = donor_string[:-1]
+rotatable_donor_string = rotatable_donor_string[:-1]
 
-# Construct three strings that can be used with PyMOL to select all possible donor, all possible rotatable donor, or
-# all possible acceptor atoms.
-donor_string = ''
-last_atom = donor_atoms[-1]
-for atom in donor_atoms:
-    donor_string += f'(resn {atom[0]} and name {atom[1]})'
-    if atom != last_atom:
-        donor_string += ' '
-rotatable_donor_string = ''
-last_atom = rotatable_donor_atoms[-1]
-for atom in rotatable_donor_atoms:
-    rotatable_donor_string += f'(resn {atom[0]} and name {atom[1]})'
-    if atom != last_atom:
-        rotatable_donor_string += ' '
-acceptor_string = ''
-last_atom = acceptor_atoms[-1]
-for atom in acceptor_atoms:
-    acceptor_string += f'(resn {atom[0]} and name {atom[1]})'
-    if atom != last_atom:
-        acceptor_string += ' '
-
-# Construct four strings that can be used with PyMOL to select all possible donor, all possible protonated donor
-# (formal charge of +1), or all possible acceptor atoms of particular interest.
+# Construct three lists of strings containing residue and atom names that describe either donor, protonated donor
+# (formal charge of +1), or acceptor atoms of particular interest. Additionally, construct three strings that can be
+# used with PyMOL to select all possible donor, all possible protonated donor, or all possible acceptor atoms of
+# particular interest.
+donors_of_interest = []
 donors_of_interest_str = ''
-last_atom = const.DONORS_OF_INTEREST[-1]
 for atom in const.DONORS_OF_INTEREST:
-    donors_of_interest_str += f'(resn {atom[0]} and name {atom[1]})'
-    if atom != last_atom:
-        donors_of_interest_str += ' '
+    donors_of_interest.append(f'{atom[0]}.{atom[1]}')
+    donors_of_interest_str += f'(resn {atom[0]} and name {atom[1]}) '
+donors_of_interest_str = donors_of_interest_str[:-1]
+prot_donors_of_interest = []
 prot_donors_of_interest_str = ''
-last_atom = const.PROT_DONORS_OF_INTEREST[-1]
 for atom in const.PROT_DONORS_OF_INTEREST:
-    prot_donors_of_interest_str += f'(resn {atom[0]} and name {atom[1]})'
-    if atom != last_atom:
-        prot_donors_of_interest_str += ' '
+    prot_donors_of_interest.append(f'{atom[0]}.{atom[1]}')
+    prot_donors_of_interest_str += f'(resn {atom[0]} and name {atom[1]}) '
+prot_donors_of_interest_str = prot_donors_of_interest_str[:-1]
+acceptors_of_interest = []
 acceptors_of_interest_str = ''
-last_atom = const.ACCEPTORS_OF_INTEREST[-1]
 for atom in const.ACCEPTORS_OF_INTEREST:
-    acceptors_of_interest_str += f'(resn {atom[0]} and name {atom[1]})'
-    if atom != last_atom:
-        acceptors_of_interest_str += ' '
+    acceptors_of_interest.append(f'{atom[0]}.{atom[1]}')
+    acceptors_of_interest_str += f'(resn {atom[0]} and name {atom[1]}) '
+acceptors_of_interest_str = acceptors_of_interest_str[:-1]
 
 # Define the donor and acceptor atoms of the RNA nucleobases.
-adenine_nuc_donors = ["N6"]
-adenine_nuc_acceptors = ["N1", "N3", "N7"]
-cytosine_nuc_donors = ["N4"]
-cytosine_nuc_acceptors = ["O2", "N3"]
-guanine_nuc_donors = ["N1", "N2"]
-guanine_nuc_acceptors = ["N3", "O6", "N7"]
-uracil_nuc_donors = ["N3"]
-uracil_nuc_acceptors = ["O2", "O4"]
+nuc_donors = ["A.N6", "C.N4", "G.N1", "G.N2", "U.N3"]
+nuc_acceptors = ["A.N1", "A.N3", "A.N7", "C.O2", "C.N3", "G.N3", "G.O6", "G.N7", "U.O2", "U.O4"]
 
 # Using the library provided by the const module, create a new library including protonated adenine.
 expanded_library = const.RESIDUE_LIBRARY
@@ -206,11 +190,43 @@ for acceptor in stored.acceptor_list:
         nucleobase_dict["near_resi"].append(atom[3])
         nucleobase_dict["near_chain"].append(atom[4])
 
-# Create a dataframe based on the nucleobase dictionary.
-nucleobase_dataframe = pd.DataFrame(nucleobase_dict)
+# Create a dataframe based on the nucleobase dictionary. Also include two columns containing both residue and atom names
+# for nucleobase atoms and nearby atoms.
+nucleobase_df_total = pd.DataFrame(nucleobase_dict)
+nucleobase_df_total["resn.name"] = nucleobase_df_total["resn"] + "." + nucleobase_df_total["name"]
+nucleobase_df_total["near_resn.name"] = nucleobase_df_total["near_resn"] + "." + nucleobase_df_total["near_name"]
 
-print(nucleobase_dataframe)
-nucleobase_dataframe.to_csv(snakemake.output.test, index=False)
+# Create a new dataframe omitting nucleobases where at least one nearby atom belongs to a residue not specified within
+# INCLUDED_RESIDUES.
+nuc_grp = ["resn", "resi", "chain"]
+nucleobase_df = (nucleobase_df_total[nucleobase_df_total.groupby(nuc_grp)["near_resn"]
+                 .transform(lambda mem: all(mem.isin(const.INCLUDED_RESIDUES)))])
+
+# nucleobase_df = nucleobase_df[nucleobase_df[["resi"]].eq([nucleobase_df["resi"]]).all(axis='columns')]
+
+# Create a new dataframe containing donors of interest and omitting nucleobases that do not have any nearby acceptor
+# atoms. Additionally, atoms near the donor of interest that are not acceptors are filtered out along with atoms
+# belonging to the nucleobase.
+don_df = nucleobase_df[nucleobase_df["resn.name"].isin(donor_atoms)]
+don_df = don_df[don_df["near_resn.name"].isin(acceptor_atoms)]
+don_df = don_df[~((don_df["resn"] == don_df["near_resn"]) &
+                  (don_df["resi"] == don_df["near_resi"]) &
+                  (don_df["chain"] == don_df["near_chain"]) &
+                  (don_df["near_resn.name"].isin(nuc_acceptors)))]
+
+# # Create a new dataframe containing acceptors of interest and omitting nucleobases that do not have any nearby donor
+# # atoms. Additionally, atoms near the acceptors of interest that are not donors are filtered out along with atoms
+# belonging to the nucleobase.
+acc_df = nucleobase_df[nucleobase_df["resn.name"].isin(acceptor_atoms)]
+acc_df = acc_df[acc_df["near_resn.name"].isin(donor_atoms)]
+acc_df = acc_df[~((acc_df["resn"] == acc_df["near_resn"]) &
+                  (acc_df["resi"] == acc_df["near_resi"]) &
+                  (acc_df["chain"] == acc_df["near_chain"]) &
+                  (acc_df["near_resn.name"].isin(nuc_donors)))]
+
+
+print(don_df)
+# nucleobase_df.to_csv("test.csv", index=False)
 
 
 
@@ -790,8 +806,8 @@ nucleobase_dataframe.to_csv(snakemake.output.test, index=False)
 # # Save the modified structure.
 # cmd.save(snakemake.output.modified_mmcif)
 #
-# Close files and reset stdout and stderr.
-stdout_file.close()
-stderr_file.close()
-sys.stdout = stdout
-sys.stderr = stderr
+# # Close files and reset stdout and stderr.
+# stdout_file.close()
+# stderr_file.close()
+# sys.stdout = stdout
+# sys.stderr = stderr
