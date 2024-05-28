@@ -110,262 +110,22 @@ def evaluate(donor_atom, acceptor_atom, eq_class, library):
     # library, return a non-successful completion with the relevant notes.
     if not successful_completion:
         return [successful_completion, notes]
-    # If the donor is not rotatable, the vertex of the angle calculation will be the hydrogen atom.
-    if not donor_info[2]:
-        vertex = 'hydrogen'
-    # If the donor is rotatable, the vertex of the angle calculation will be the donor atom.
+    # Get the distance and angle values for the donor/acceptor pair.
+    geometry = calc_geom(donor_atom, acceptor_atom, donor_info, acceptor_info, eq_class)
+    # If the geometry calculation was not successful, return an explanation of what went wrong.
+    geometry_successful = geometry[0]
+    if not geometry_successful:
+        return geometry
+    # Proceed if the geometry calculation was successful.
     else:
-        vertex = 'donor'
-    # # Check if the donor and/or acceptor residues have side chains that have conformations that may have been
-    # # ambiguously assigned.
-    # if donor_res in ["ASN", "GLN", "HIS"] and donor_atom[1] != "N":
-    #     ambiguous_donor = True
-    # else:
-    #     ambiguous_donor = False
-    # if acceptor_res in ["ASN", "GLN", "HIS"] and acceptor_atom[1] != "O":
-    #     ambiguous_acceptor = True
-    # else:
-    #     ambiguous_acceptor = False
-    # If there is no ambiguity in the side chain conformations of either donor or acceptor residues and the potential
-    # donor is not a tyrosine OH atom, the geometry calculation only needs to be performed once.
-    # if not ambiguous_donor and not ambiguous_acceptor and not (donor_atom[1] == "OH" and donor_atom[2] == "TYR"):
-    if not (donor_atom[1] == "OH" and donor_atom[2] == "TYR"):
-        # get the distance and angle values for the donor/acceptor pair
-        geometry = calc_geom(donor_atom, acceptor_atom, donor_info, acceptor_info, eq_class)
-        # if the geometry calculation was not successful, return an explanation of what went wrong
-        successful_completion = geometry[0]
-        if not successful_completion:
-            return geometry
-        # proceed if the geometry calculation was successful
-        else:
-            # return the H-bonding geometry measurements
-            if len(geometry[1]) == 1:
-                first_set = geometry[1][0]
-                first_set.append("NaN")
-                return [successful_completion, [first_set]]
-            if len(geometry[1]) == 2:
-                first_set = geometry[1][0]
-                first_set.append("NaN")
-                second_set = geometry[1][1]
-                second_set.append("NaN")
-                return [successful_completion, [first_set, second_set]]
-    # # If there is ambiguity in the side chain conformation of either the donor residue or the acceptor residue (but not
-    # # both), the geometry calculation needs to be performed twice.
-    # elif (((ambiguous_donor and not ambiguous_acceptor) or (not ambiguous_donor and ambiguous_acceptor)) and not
-    #         (donor_atom[1] == "OH" and donor_atom[2] == "TYR")):
-    #     # get the first set of distance and angle values for the donor/acceptor pair
-    #     first_geometry = calc_geom(donor_atom, acceptor_atom, donor_info, eq_class)
-    #     # if the geometry calculation was not successful, return an explanation of what went wrong
-    #     successful_completion = first_geometry[0]
-    #     if not successful_completion:
-    #         return first_geometry
-    #     # proceed if the geometry calculation was successful
-    #     else:
-    #         # collect the H-bonding geometry measurements for the first evaluation
-    #         first_eval = []
-    #         if vertex == 'hydrogen':
-    #             if type(first_geometry[1][0]) is float:
-    #                 distance = first_geometry[1][0]
-    #                 angle = first_geometry[1][1]
-    #                 h_name = first_geometry[1][2]
-    #                 first_eval = [[distance, angle, 'hydrogen', h_name, 'none']]
-    #             elif type(first_geometry[1][0]) is list:
-    #                 first_distance = first_geometry[1][0][0]
-    #                 first_angle = first_geometry[1][0][1]
-    #                 first_h_name = first_geometry[1][0][2]
-    #                 first_set = [first_distance, first_angle, 'hydrogen', first_h_name, 'none']
-    #                 second_distance = first_geometry[1][1][0]
-    #                 second_angle = first_geometry[1][1][1]
-    #                 second_h_name = first_geometry[1][1][2]
-    #                 second_set = [second_distance, second_angle, 'hydrogen', second_h_name, 'none']
-    #                 first_eval = [first_set, second_set]
-    #         elif vertex == 'donor':
-    #             distance = first_geometry[1][0]
-    #             angle = first_geometry[1][1]
-    #             h_name = first_geometry[1][2]
-    #             first_eval = [[distance, angle, 'donor', h_name, 'none']]
-    #     # rotate the ambiguous side chain atoms of the donor or acceptor residue
-    #     if ambiguous_donor:
-    #         rotated_res = f'{donor_atom[2]}{donor_atom[3]} {donor_atom[4]}'
-    #         rotation = rotate_side_chain(donor_atom, eq_class)
-    #     else:
-    #         rotated_res = f'{acceptor_atom[2]}{acceptor_atom[3]} {acceptor_atom[4]}'
-    #         rotation = rotate_side_chain(acceptor_atom, eq_class)
-    #     # if the rotation was not successful, return an explanation of what went wrong
-    #     successful_completion = rotation[0]
-    #     if not successful_completion:
-    #         return rotation
-    #     # get the second set of distance and angle values for the donor/acceptor pair
-    #     second_geometry = calc_geom(donor_atom, acceptor_atom, donor_info, eq_class)
-    #     # if the geometry calculation was not successful, return an explanation of what went wrong
-    #     successful_completion = second_geometry[0]
-    #     if not successful_completion:
-    #         return second_geometry
-    #     # proceed if the geometry calculation was successful
-    #     else:
-    #         # collect the H-bonding geometry measurements for the second evaluation
-    #         second_eval = []
-    #         if vertex == 'hydrogen':
-    #             if type(second_geometry[1][0]) is float:
-    #                 distance = second_geometry[1][0]
-    #                 angle = second_geometry[1][1]
-    #                 h_name = second_geometry[1][2]
-    #                 second_eval = [[distance, angle, 'hydrogen', h_name, rotated_res]]
-    #             elif type(second_geometry[1][0]) is list:
-    #                 first_distance = second_geometry[1][0][0]
-    #                 first_angle = second_geometry[1][0][1]
-    #                 first_h_name = second_geometry[1][0][2]
-    #                 first_set = [first_distance, first_angle, 'hydrogen', first_h_name, rotated_res]
-    #                 second_distance = second_geometry[1][1][0]
-    #                 second_angle = second_geometry[1][1][1]
-    #                 second_h_name = second_geometry[1][1][2]
-    #                 second_set = [second_distance, second_angle, 'hydrogen', second_h_name, rotated_res]
-    #                 second_eval = [first_set, second_set]
-    #         elif vertex == 'donor':
-    #             distance = second_geometry[1][0]
-    #             angle = second_geometry[1][1]
-    #             h_name = second_geometry[1][2]
-    #             second_eval = [[distance, angle, 'donor', h_name, rotated_res]]
-    #     # rotate the ambiguous side chain atoms of the donor or acceptor residue to get them back to their original
-    #     # conformation
-    #     if ambiguous_donor:
-    #         rotation = rotate_side_chain(donor_atom, eq_class)
-    #     elif ambiguous_acceptor:
-    #         rotation = rotate_side_chain(acceptor_atom, eq_class)
-    #     # if the rotation was not successful, return an explanation of what went wrong
-    #     successful_completion = rotation[0]
-    #     if not successful_completion:
-    #         return rotation
-    #     # return all evaluations
-    #     all_eval = first_eval
-    #     all_eval.extend(second_eval)
-    #     return [successful_completion, all_eval]
-    # # If there is ambiguity in the side chain conformations of both donor and acceptor residues, do not calculate any
-    # # geometries and return False for successful_completion. This situation should never be encountered in the current
-    # # study since, at a minimum, an RNA/DNA residue should always be either the donor or acceptor. The code could be
-    # # expanded to return H-bonding geometry measurements in this situation.
-    # elif ambiguous_donor and ambiguous_acceptor and not (donor_atom[1] == "OH" and donor_atom[2] == "TYR"):
-    #     successful_completion = False
-    #     notes.append(f"Error: Both the potential H-bonding donor and acceptor atoms belong to the side chains of ASN, "
-    #                  f"GLN, or HIS in equivalence class {eq_class}. The code is not capable of returning H-bonding "
-    #                  f"geometry measurements in this situation.")
-    #     return [successful_completion, notes]
-    # If the potential donor is a tyrosine OH atom, the geometry calculation needs to be performed twice for each
-    # conformation of the OH atom.
-    # elif (donor_atom[1] == "OH" and donor_atom[2] == "TYR") and not ambiguous_acceptor:
-    elif donor_atom[1] == "OH" and donor_atom[2] == "TYR":
-        # get the distance and angle values for the donor/acceptor pair and with the tyrosine OH in the original
-        # conformation
-        geometry = calc_geom(donor_atom, acceptor_atom, donor_info, acceptor_info, eq_class)
-        # if the geometry calculation was not successful, return an explanation of what went wrong
-        successful_completion = geometry[0]
-        if not successful_completion:
-            return geometry
-        # collect the H-bonding geometry measurements for the original conformation
-        original_conformation = geometry[1][0]
-        original_conformation.append("NaN")
-        # rotate the tyrosine hydroxyl
-        rotated_res = f'{donor_atom[2]}{donor_atom[3]} {donor_atom[4]}'
-        rotation = rotate_side_chain(donor_atom, eq_class)
-        # if the rotation was not successful, return an explanation of what went wrong
-        successful_completion = rotation[0]
-        if not successful_completion:
-            return rotation
-        # get the distance and angle values for the donor/acceptor pair and with the tyrosine OH in the rotated
-        # conformation
-        geometry = calc_geom(donor_atom, acceptor_atom, donor_info, acceptor_info, eq_class)
-        # if the geometry calculation was not successful, return an explanation of what went wrong
-        successful_completion = geometry[0]
-        if not successful_completion:
-            return geometry
-        # collect the H-bonding geometry measurements for the rotated conformation
-        rotated_conformation = geometry[1][0]
-        rotated_conformation.append(rotated_res)
-        # rotate the tyrosine hydroxyl to get it back to its original conformation
-        rotation = rotate_side_chain(donor_atom, eq_class)
-        # if the rotation was not successful, return an explanation of what went wrong
-        successful_completion = rotation[0]
-        if not successful_completion:
-            return rotation
-        # return all evaluations
-        return [successful_completion, [original_conformation, rotated_conformation]]
-    # # If the donor is tyrosine OH and there is ambiguity in the side chain conformations of the acceptor residue, do not
-    # # calculate any geometries and return False for successful_completion. This situation should never be encountered in
-    # # the current study since, at a minimum, an RNA/DNA residue should always be either the donor or acceptor. The code
-    # # could be expanded to return H-bonding geometry measurements in this situation.
-    # elif (donor_atom[1] == "OH" and donor_atom[2] == "TYR") and ambiguous_acceptor:
-    #     successful_completion = False
-    #     notes.append(f"Error: The potential H-bonding donor is a tyrosine OH atom and the potential H-bonding acceptor "
-    #                  f"atom belongs to the side chain of an ASN, GLN, or HIS in equivalence class {eq_class}. The code "
-    #                  f"is not capable of returning H-bonding geometry measurements in this situation.")
-    #     return [successful_completion, notes]
-    # I don't know why the code would ever get to this point, but this will serve as a catch-all for anything that I may
-    # have missed
-    else:
-        successful_completion = False
-        notes.append(f"Error: The code was unable to classify the donor and/or acceptor as non-ambiguous, ambiguous, "
-                     f"or Tyr(OH).")
-        return [successful_completion, notes]
-
-
-def rotate_side_chain(atom, eq_class):
-    # initially assume that the evaluation will complete successfully
-    successful_completion = True
-    # initialize an empty list that can be used to document why an evaluation was not completed successfully
-    notes = []
-    # collect information specific to the residue
-    if atom[2] == "ASN":
-        origin = cmd.get_coords(f'(byres index {atom[0]}) and name CG', state=0)[0]
-        origin_antecedent = cmd.get_coords(f'(byres index {atom[0]}) and name CB', state=0)[0]
-        axis = [origin[0] - origin_antecedent[0], origin[1] - origin_antecedent[1], origin[2] - origin_antecedent[2]]
-        atoms_to_rotate = f'(byres index {atom[0]}) and (name ND2 ((neighbor name ND2) and elem H) name OD1)'
-        # ensure that atoms_to_rotate accounts for exactly four atoms
-        if cmd.count_atoms(atoms_to_rotate) != 4:
-            successful_completion = False
-            notes.append(f"Error: Atoms selected from an ASN residue to rotate do not number to exactly four atoms in "
-                         f"equivalence class {eq_class}.")
-            return [successful_completion, notes]
-    elif atom[2] == "GLN":
-        origin = cmd.get_coords(f'(byres index {atom[0]}) and name CD', state=0)[0]
-        origin_antecedent = cmd.get_coords(f'(byres index {atom[0]}) and name CG', state=0)[0]
-        axis = [origin[0] - origin_antecedent[0], origin[1] - origin_antecedent[1], origin[2] - origin_antecedent[2]]
-        atoms_to_rotate = f'(byres index {atom[0]}) and (name NE2 ((neighbor name NE2) and elem H) name OE1)'
-        # ensure that atoms_to_rotate accounts for exactly four atoms
-        if cmd.count_atoms(atoms_to_rotate) != 4:
-            successful_completion = False
-            notes.append(f"Error: Atoms selected from a GLN residue to rotate do not number to exactly four atoms in "
-                         f"equivalence class {eq_class}.")
-            return [successful_completion, notes]
-    elif atom[2] == "HIS":
-        origin = cmd.get_coords(f'(byres index {atom[0]}) and name CG', state=0)[0]
-        origin_antecedent = cmd.get_coords(f'(byres index {atom[0]}) and name CB', state=0)[0]
-        axis = [origin[0] - origin_antecedent[0], origin[1] - origin_antecedent[1], origin[2] - origin_antecedent[2]]
-        atoms_to_rotate = (f'(byres index {atom[0]}) and (name ND1 ((neighbor name ND1) and elem H) name CE1 name CD2 '
-                           f'name NE2 ((neighbor name NE2) and elem H))')
-        # ensure that atoms_to_rotate accounts for exactly six atoms
-        if cmd.count_atoms(atoms_to_rotate) != 6:
-            successful_completion = False
-            notes.append(f"Error: Atoms selected from a HIS residue to rotate do not number to exactly six atoms in "
-                         f"equivalence class {eq_class}.")
-            return [successful_completion, notes]
-    elif atom[2] == "TYR":
-        origin = cmd.get_coords(f'index {atom[0]}', state=0)[0]
-        origin_antecedent = cmd.get_coords(f'(neighbor index {atom[0]}) and name CZ', state=0)[0]
-        axis = [origin[0] - origin_antecedent[0], origin[1] - origin_antecedent[1], origin[2] - origin_antecedent[2]]
-        atoms_to_rotate = f'index {atom[0]} ((neighbor index {atom[0]}) and elem H)'
-        # ensure that atoms_to_rotate accounts for exactly two atoms
-        if cmd.count_atoms(atoms_to_rotate) != 2:
-            successful_completion = False
-            notes.append(f"Error: Atoms selected from a TYR residue to rotate do not number to exactly two atoms in "
-                         f"equivalence class {eq_class}.")
-            return [successful_completion, notes]
-    else:
-        successful_completion = False
-        notes.append(f"Error: The code attempted to rotate atoms in equivalence class {eq_class} that do not belong to "
-                     f"an ASN, GLN, HIS, or TYR.")
-        return [successful_completion, notes]
-    cmd.rotate(axis, 180, selection=atoms_to_rotate, state=0, camera=0, origin=origin)
-    return [successful_completion, notes]
+        # Return the H-bonding geometry measurements.
+        if len(geometry[1]) == 1:
+            first_set = geometry[1][0]
+            return [geometry_successful, [first_set]]
+        if len(geometry[1]) == 2:
+            first_set = geometry[1][0]
+            second_set = geometry[1][1]
+            return [geometry_successful, [first_set, second_set]]
 
 
 def calc_geom(donor_atom, acceptor_atom, donor_info, acceptor_info, eq_class):
@@ -388,7 +148,7 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, acceptor_info, eq_class):
     # Get the DA-D-A angle when one donor antecedent atom was identified.
     elif len(stored.don_ant) == 1:
         don_angle = cmd.get_angle(f'index {stored.don_ant[0][0]}', f'index {donor_atom[0]}',
-                              f'index {acceptor_atom[0]}')
+                                  f'index {acceptor_atom[0]}')
     # Issue an error message if more than one donor antecedent atom was identified.
     else:
         successful_completion = False
@@ -420,29 +180,35 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, acceptor_info, eq_class):
     # closest to the WCF nucleobase edge and the nearby endocyclic nitrogen that is part of the 6-membered ring. For
     # instance, this would be the N1-C6-N6-H dihedral for A residues.
     if not donor_info[2]:
-        # collect the indices of the hydrogens
+        # Collect the indices of the hydrogens.
         stored.hydrogen = []
         cmd.iterate(f'elem H and neighbor index {donor_atom[0]}', 'stored.hydrogen.append((index, '
                                                                   'name, resn, resi, chain))')
-        # issue an error message if there are no hydrogens
+        # Issue an error message if there are no hydrogens.
         if len(stored.hydrogen) == 0:
             successful_completion = False
             notes.append(f"Error: A non-rotatable donor atom has zero hydrogens in equivalence class {eq_class}.")
             return [successful_completion, notes]
-        # get the measurements for donors that have one hydrogen
+        # Get the measurements for donors that have one hydrogen.
         elif len(stored.hydrogen) == 1:
-            h_acc_distance = [cmd.get_distance(f'index {stored.hydrogen[0][0]}', f'index {acceptor_atom[0]}'), "NaN"]
-            h_angle = [cmd.get_angle(f'index {donor_atom[0]}', f'index {stored.hydrogen[0][0]}',
-                                     f'index {acceptor_atom[0]}'), "NaN"]
-            h_dihedral = ["NaN", "NaN"]
-            h_name = [stored.hydrogen[0][1], "NaN"]
-            # Return the geometry values.
-            return [successful_completion,
-                    [[don_acc_distance, don_angle, acc_angle, h_acc_distance[0], h_angle[0], h_dihedral[0], h_name[0]]]]
-        # get the measurements for donors that have two hydrogens
+            if donor_atom[1:3] in [["N6", "A"], ["N4", "C"], ["N2", "G"]]:
+                successful_completion = False
+                notes.append(f"Error: An exocyclic amine has only one hydrogen in equivalence class {eq_class}.")
+                return [successful_completion, notes]
+            else:
+                h_acc_distance = [cmd.get_distance(f'index {stored.hydrogen[0][0]}', f'index {acceptor_atom[0]}'), "NaN"]
+                h_angle = [cmd.get_angle(f'index {donor_atom[0]}', f'index {stored.hydrogen[0][0]}',
+                                         f'index {acceptor_atom[0]}'), "NaN"]
+                h_dihedral = ["NaN", "NaN"]
+                h_name = [stored.hydrogen[0][1], "NaN"]
+                # Return the geometry values.
+                return [successful_completion,
+                        [[don_acc_distance, don_angle, acc_angle, h_acc_distance[0], h_angle[0], h_dihedral[0],
+                          h_name[0]]]]
+        # Get the measurements for donors that have two hydrogens.
         elif len(stored.hydrogen) == 2:
             # Collect information about the nearby endocyclic nitrogen.
-            if donor_atom[2] == "A" or donor_atom[2] == "G":
+            if donor_atom[2] in ["A", "G"]:
                 stored.end_n = []
                 cmd.iterate(f'name N1 and neighbor index {stored.don_ant[0][0]}',
                             'stored.end_n.append((index, name, resn, resi, chain))')
@@ -476,7 +242,7 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, acceptor_info, eq_class):
             return [successful_completion,
                     [[don_acc_distance, don_angle, acc_angle, h_acc_distance[0], h_angle[0], h_dihedral[0], h_name[0]],
                      [don_acc_distance, don_angle, acc_angle, h_acc_distance[1], h_angle[1], h_dihedral[1], h_name[1]]]]
-        # issue an error message if there are more than two hydrogens
+        # Issue an error message if there are more than two hydrogens.
         elif len(stored.hydrogen) > 2:
             successful_completion = False
             notes.append(f"Error: A non-rotatable donor atom has more than two hydrogens in equivalence class "
