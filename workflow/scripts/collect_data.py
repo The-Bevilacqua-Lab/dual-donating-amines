@@ -42,6 +42,10 @@ with open("data/eq_class_members_files/NR_3.0_26197.1_6SKG_1_BB_info.csv", mode=
         if line[0][0] != "#":
             eq_class_mem.append(line)
 
+# Create an identifier for the equivalence class member.
+eq_class_mem_id = (f'{eq_class_mem[0][0]}_{eq_class_mem[1][0]}_{eq_class_mem[2][0]}_'
+                   f'{"".join([chain + "_" for chain in eq_class_mem[3]])}')[:-1]
+
 # Check whether the folder exists for PyMOL to save mmCIF files into that are fetched from the PDB.
 # If it does not exist, create the folder.
 # original_mmcif_dir = snakemake.config["original_mmcif_dir"]
@@ -132,12 +136,27 @@ if cmd.count_states(eq_class_mem[1][0]) > 1:
     cmd.delete(eq_class_mem[1][0])
 
 # Remove atoms representing alternative conformations.
-remove_status = remove_alt_conf.remove(eq_class_mem[0][0])
+remove_status = remove_alt_conf.remove(eq_class_mem_id)
 successful_completion = remove_status[0]
 if not successful_completion:
     for note in remove_status[1]:
         print(note)
     sys.exit(1)
+
+# Change the formal charge on A(N1), A(N3), and A(N7) to +1. With a formal charge of +1, PyMOL will add hydrogens to
+# these atoms when the following h_add command is used.
+cmd.alter(prot_donors_of_interest_str, 'formal_charge=1')
+
+# Add hydrogens to non-rotatable donors that are a part of or near the equivalence class member RNA.
+cmd.h_add(f'(({donor_string} {prot_donors_of_interest_str}) and not ({rotatable_donor_string})) within {search_dist} '
+          f'of ({mem_rna_chains})')
+
+# Randomly sample 100 atom indices in the structure and record the info of the associated atoms for later comparison.
+num_atoms = cmd.count_atoms('all')
+indices = np.random.default_rng().integers(low=1, high=num_atoms+1, size=100)
+stored.check_one = []
+for index in indices:
+    cmd.iterate(f'index {index}', 'stored.check_one.append((index, name, resn, resi, chain))')
 
 # Store a list of donors of interest from the equivalence class member RNA chains.
 stored.donor_list = []
@@ -256,25 +275,9 @@ acc_df.rename(columns={"index": "acc_index", "name": "acc_name",
 # Iterate through the acceptor dataframe and remove any O5' or O3' that cannot donate an H-bond.
 for atom_pair in acc_df.itertuples(index=False, name='Acceptors'):
     donor_atom = (atom_pair.don_index, atom_pair.don_name, atom_pair.don_resn, atom_pair.don_resi, atom_pair.don_chain)
-    print(donor_atom)
     if atom_pair.don_resn_name in o5_o3_list:
         if not eval_H_bonding.terminal_donor(donor_atom):
             acc_df = acc_df[acc_df["don_index"] != atom_pair.don_index]
-
-# Change the formal charge on A(N1), A(N3), and A(N7) to +1. With a formal charge of +1, PyMOL will add hydrogens to
-# these atoms when the following h_add command is used.
-cmd.alter(prot_donors_of_interest_str, 'formal_charge=1')
-
-# Add hydrogens to non-rotatable donors that are a part of or near the equivalence class member RNA.
-cmd.h_add(f'(({donor_string} {prot_donors_of_interest_str}) and not ({rotatable_donor_string})) within {search_dist} '
-          f'of ({mem_rna_chains})')
-
-# Randomly sample 100 atom indices in the structure and record the info of the associated atoms for later comparison.
-num_atoms = cmd.count_atoms('all')
-indices = np.random.default_rng().integers(low=1, high=num_atoms+1, size=100)
-stored.check_one = []
-for index in indices:
-    cmd.iterate(f'index {index}', 'stored.check_one.append((index, name, resn, resi, chain))')
 
 # Create a dataframe to hold nucleobases where errors were encountered.
 nuc_errors = pd.DataFrame({"resn": [], "resi": [], "chain": []})
@@ -286,7 +289,7 @@ for atom_pair in don_df.itertuples(index=False, name='Donors'):
                                                   atom_pair.don_resn, atom_pair.don_resi, atom_pair.don_chain),
                                                  (atom_pair.acc_index, atom_pair.acc_name,
                                                   atom_pair.acc_resn, atom_pair.acc_resi, atom_pair.acc_chain),
-                                                 eq_class_mem[0][0], expanded_library))
+                                                 eq_class_mem_id, expanded_library))
     # If the H-bond evaluation is not successful, print the error message(s) and add the nucleobase to the nuc_errors
     # dataframe.
     successful_completion = donor_h_bonds[-1][0]
@@ -302,7 +305,7 @@ for atom_pair in prot_don_df.itertuples(index=False, name='Protonated_Donors'):
                                                        atom_pair.don_resn, atom_pair.don_resi, atom_pair.don_chain),
                                                       (atom_pair.acc_index, atom_pair.acc_name,
                                                        atom_pair.acc_resn, atom_pair.acc_resi, atom_pair.acc_chain),
-                                                      eq_class_mem[0][0], expanded_library))
+                                                      eq_class_mem_id, expanded_library))
     # If the H-bond evaluation is not successful, print the error message(s) and add the nucleobase to the nuc_errors
     # dataframe.
     successful_completion = prot_donor_h_bonds[-1][0]
@@ -314,11 +317,11 @@ for atom_pair in prot_don_df.itertuples(index=False, name='Protonated_Donors'):
 # Acquire the H-bonding geometry measurements for all donors near each acceptor of interest.
 acceptor_h_bonds = []
 for atom_pair in acc_df.itertuples(index=False, name='Acceptors'):
-    acceptor_h_bonds.append(eval_H_bonding.evaluate((atom_pair.acc_index, atom_pair.acc_name,
-                                                    atom_pair.acc_resn, atom_pair.acc_resi, atom_pair.acc_chain),
-                                                    (atom_pair.don_index, atom_pair.don_name,
+    acceptor_h_bonds.append(eval_H_bonding.evaluate((atom_pair.don_index, atom_pair.don_name,
                                                     atom_pair.don_resn, atom_pair.don_resi, atom_pair.don_chain),
-                                                    eq_class_mem[0][0], expanded_library))
+                                                    (atom_pair.acc_index, atom_pair.acc_name,
+                                                    atom_pair.acc_resn, atom_pair.acc_resi, atom_pair.acc_chain),
+                                                    eq_class_mem_id, expanded_library))
     # If the H-bond evaluation is not successful, print the error message(s) and add the nucleobase to the nuc_errors
     # dataframe.
     successful_completion = acceptor_h_bonds[-1][0]
@@ -336,7 +339,6 @@ for nuc in nuc_errors.itertuples(index=False, name='Nucleobase_Errors'):
     acc_df = (acc_df[~acc_df[["acc_resn", "acc_resi", "acc_chain"]].eq([nuc.resn, nuc.resi, nuc.chain])
               .all(axis='columns')])
 
-print(nuc_errors)
 
 
 # # Using a greater search distance for the side chains of ASN, GLN, and HIS residues, store a list of atoms near the
@@ -370,7 +372,7 @@ print(nuc_errors)
 # for acceptor in enumerate(stored.acceptor_list):
 #     h_bonds = []
 #     for donor in donors_near_acceptors_amb[acceptor[0]]:
-#         h_bonds.append(eval_H_bonding.evaluate(donor, acceptor[1], eq_class_mem[0][0], expanded_library))
+#         h_bonds.append(eval_H_bonding.evaluate(donor, acceptor[1], eq_class_mem_id, expanded_library))
 #         # if the H-bond evaluation is not successful, print the error message and exit
 #         successful_completion = h_bonds[-1][0]
 #         if not successful_completion:
@@ -398,7 +400,7 @@ print(nuc_errors)
 # for donor in enumerate(prot_donor_list):
 #     h_bonds = []
 #     for acceptor in acceptors_near_prot_donors_amb[donor[0]]:
-#         h_bonds.append(eval_H_bonding.evaluate(donor[1], acceptor, eq_class_mem[0][0], expanded_library))
+#         h_bonds.append(eval_H_bonding.evaluate(donor[1], acceptor, eq_class_mem_id, expanded_library))
 #         # if the H-bond evaluation is not successful, print the error message and exit
 #         successful_completion = h_bonds[-1][0]
 #         if not successful_completion:
@@ -458,7 +460,7 @@ print(nuc_errors)
 # for acceptor in enumerate(stored.deprot_acceptor_list):
 #     h_bonds = []
 #     for donor in donors_near_deprot_acceptors[acceptor[0]]:
-#         h_bonds.append(eval_H_bonding.evaluate(donor, acceptor[1], eq_class_mem[0][0], expanded_library))
+#         h_bonds.append(eval_H_bonding.evaluate(donor, acceptor[1], eq_class_mem_id, expanded_library))
 #         # if the H-bond evaluation is not successful, print the error message and exit
 #         successful_completion = h_bonds[-1][0]
 #         if not successful_completion:
@@ -494,7 +496,7 @@ print(nuc_errors)
 # for acceptor in enumerate(stored.deprot_acceptor_list):
 #     h_bonds = []
 #     for donor in donors_near_deprot_acceptors_amb[acceptor[0]]:
-#         h_bonds.append(eval_H_bonding.evaluate(donor, acceptor[1], eq_class_mem[0][0], expanded_library))
+#         h_bonds.append(eval_H_bonding.evaluate(donor, acceptor[1], eq_class_mem_id, expanded_library))
 #         # if the H-bond evaluation is not successful, print the error message and exit
 #         successful_completion = h_bonds[-1][0]
 #         if not successful_completion:
