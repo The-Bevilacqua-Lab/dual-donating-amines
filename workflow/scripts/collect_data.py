@@ -279,9 +279,6 @@ for atom_pair in acc_df.itertuples(index=False, name='Acceptors'):
         if not eval_H_bonding.terminal_donor(donor_atom):
             acc_df = acc_df[acc_df["don_index"] != atom_pair.don_index]
 
-# Create a dataframe to hold nucleobases where errors were encountered.
-nuc_errors = pd.DataFrame({"resn": [], "resi": [], "chain": []})
-
 # Acquire the H-bonding geometry measurements for all acceptors near each donor of interest.
 donor_h_bonds = []
 for atom_pair in don_df.itertuples(index=False, name='Donors'):
@@ -290,13 +287,12 @@ for atom_pair in don_df.itertuples(index=False, name='Donors'):
                                                  (atom_pair.acc_index, atom_pair.acc_name,
                                                   atom_pair.acc_resn, atom_pair.acc_resi, atom_pair.acc_chain),
                                                  eq_class_mem_id, expanded_library))
-    # If the H-bond evaluation is not successful, print the error message(s) and add the nucleobase to the nuc_errors
-    # dataframe.
+    # If the H-bond evaluation is not successful, print the error message(s) and exit.
     successful_completion = donor_h_bonds[-1][0]
     if not successful_completion:
         for note in donor_h_bonds[-1][1]:
             print(note)
-        nuc_errors.loc[len(nuc_errors)] = [atom_pair.don_resn, atom_pair.don_resi, atom_pair.don_chain]
+        sys.exit(1)
 
 # Acquire the H-bonding geometry measurements for all acceptors near each protonated donor of interest.
 prot_donor_h_bonds = []
@@ -306,13 +302,12 @@ for atom_pair in prot_don_df.itertuples(index=False, name='Protonated_Donors'):
                                                       (atom_pair.acc_index, atom_pair.acc_name,
                                                        atom_pair.acc_resn, atom_pair.acc_resi, atom_pair.acc_chain),
                                                       eq_class_mem_id, expanded_library))
-    # If the H-bond evaluation is not successful, print the error message(s) and add the nucleobase to the nuc_errors
-    # dataframe.
+    # If the H-bond evaluation is not successful, print the error message(s) and exit.
     successful_completion = prot_donor_h_bonds[-1][0]
     if not successful_completion:
         for note in prot_donor_h_bonds[-1][1]:
             print(note)
-        nuc_errors.loc[len(nuc_errors)] = [atom_pair.don_resn, atom_pair.don_resi, atom_pair.don_chain]
+        sys.exit(1)
 
 # Acquire the H-bonding geometry measurements for all donors near each acceptor of interest.
 acceptor_h_bonds = []
@@ -322,24 +317,12 @@ for atom_pair in acc_df.itertuples(index=False, name='Acceptors'):
                                                     (atom_pair.acc_index, atom_pair.acc_name,
                                                     atom_pair.acc_resn, atom_pair.acc_resi, atom_pair.acc_chain),
                                                     eq_class_mem_id, expanded_library))
-    # If the H-bond evaluation is not successful, print the error message(s) and add the nucleobase to the nuc_errors
-    # dataframe.
+    # If the H-bond evaluation is not successful, print the error message(s) and exit.
     successful_completion = acceptor_h_bonds[-1][0]
     if not successful_completion:
         for note in acceptor_h_bonds[-1][1]:
             print(note)
-        nuc_errors.loc[len(nuc_errors)] = [atom_pair.acc_resn, atom_pair.acc_resi, atom_pair.acc_chain]
-
-# Remove nucleobases stored in nuc_errors from the donor, protonated donor, and acceptor dataframes.
-for nuc in nuc_errors.itertuples(index=False, name='Nucleobase_Errors'):
-    don_df = (don_df[~don_df[["don_resn", "don_resi", "don_chain"]].eq([nuc.resn, nuc.resi, nuc.chain])
-              .all(axis='columns')])
-    prot_don_df = (prot_don_df[~prot_don_df[["don_resn", "don_resi", "don_chain"]].eq([nuc.resn, nuc.resi, nuc.chain])
-                   .all(axis='columns')])
-    acc_df = (acc_df[~acc_df[["acc_resn", "acc_resi", "acc_chain"]].eq([nuc.resn, nuc.resi, nuc.chain])
-              .all(axis='columns')])
-
-
+        sys.exit(1)
 
 # # Using a greater search distance for the side chains of ASN, GLN, and HIS residues, store a list of atoms near the
 # # acceptors of interest.
