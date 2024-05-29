@@ -163,8 +163,8 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, acceptor_info, eq_class_mem
     # Issue an error message if no acceptor antecedent atom was identified.
     if len(stored.acc_ant) == 0:
         successful_completion = False
-        notes.append(f"Error: No antecedent atoms were identified for {donor_atom[1]}.{donor_atom[2]}.{donor_atom[3]}."
-                     f"{donor_atom[4]} of {eq_class_mem}.")
+        notes.append(f"Error: No antecedent atoms were identified for {acceptor_atom[1]}.{acceptor_atom[2]}."
+                     f"{acceptor_atom[3]}.{acceptor_atom[4]} of {eq_class_mem}.")
         return [successful_completion, notes]
     # Get the D-A-AA angle when one acceptor antecedent atom was identified.
     elif len(stored.acc_ant) == 1:
@@ -173,8 +173,8 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, acceptor_info, eq_class_mem
     # Issue an error message if more than one acceptor antecedent atom was identified.
     else:
         successful_completion = False
-        notes.append(f"Error: More than one antecedent atom was identified for {donor_atom[1]}.{donor_atom[2]}."
-                     f"{donor_atom[3]}.{donor_atom[4]} of {eq_class_mem}.")
+        notes.append(f"Error: More than one antecedent atom was identified for {acceptor_atom[1]}.{acceptor_atom[2]}."
+                     f"{acceptor_atom[3]}.{acceptor_atom[4]} of {eq_class_mem}.")
         return [successful_completion, notes]
     # If the donor is non-rotatable, use the donor hydrogen(s) locations to calculate the H-A distance(s) and angle(s).
     # Additionally, if the hydrogens belong to an RNA exocyclic amine, calculate the dihedral between the hydrogen
