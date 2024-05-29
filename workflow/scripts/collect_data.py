@@ -345,19 +345,25 @@ for atom_pair in acc_df.itertuples():
         for h_bond in h_bond_list[1]:
             acc_h_bonds_df.loc[len(acc_h_bonds_df)] = don_list + acc_list + h_bond
 
-# # Construct a list of all nucleobases containing donors and acceptors of interest.
-# nucleobase_df.loc[:, nuc_grp].drop_duplicates()
-#
-# # Collect the b-factors of nucleobase atoms within the equivalence class member.
-# stored.res_list = []
-# cmd.iterate(f"name C1' and ({mem_rna_chains})", "stored.res_list.append((index, name, resn, resi, chain))")
-# nuc_b_factors = []
-# for res in stored.res_list:
-#     stored.b_factors = []
-#     cmd.iterate(f"(byres index {res[0]}) and sidechain", "stored.b_factors.append(b)")
-#     nuc_b_factors.append([res[2], res[3], res[4]])
-#     nuc_b_factors[-1].extend(stored.b_factors)
-#
+# # Write a csv file that stores applicable nucleobases containing donors and acceptors of interest.
+# with open(snakemake.output.nuc, "w") as csv_file:
+#     writer = csv.writer(csv_file)
+#     if commit_hash:
+#         writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
+#     writer.writerow([f"# input file: {snakemake.input[0]}"])
+#     writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
+# nucleobase_df.loc[:, nuc_grp].drop_duplicates().to_csv(snakemake.output.nuc, mode='a')
+
+# Collect the b-factors of nucleobase atoms within the equivalence class member.
+stored.res_list = []
+cmd.iterate(f"name C1' and ({mem_rna_chains})", "stored.res_list.append((index, name, resn, resi, chain))")
+nuc_b_factors = []
+for res in stored.res_list:
+    stored.b_factors = []
+    cmd.iterate(f"(byres index {res[0]}) and sidechain", "stored.b_factors.append(b)")
+    nuc_b_factors.append([res[2], res[3], res[4]])
+    nuc_b_factors[-1].extend(stored.b_factors)
+
 # # Record info on the atoms associated with the previously determined 100 atom indices and check whether there are any
 # # changes.
 # stored.check_two = []
@@ -391,17 +397,6 @@ for atom_pair in acc_df.itertuples():
 #     writer.writerow([f"# input file: {snakemake.input[0]}"])
 #     writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
 #     for nuc in nuc_b_factors:
-#         writer.writerow(nuc)
-#
-# # Write a csv containing all nucleobases that contain donors, protonated donors, acceptors, and deprotonated acceptors
-# # of interest.
-# with open(snakemake.output.nuc, "w") as csv_file:
-#     writer = csv.writer(csv_file)
-#     if commit_hash:
-#         writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
-#     writer.writerow([f"# input file: {snakemake.input[0]}"])
-#     writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
-#     for nuc in nucleobase_list:
 #         writer.writerow(nuc)
 #
 # # Write a csv containing all H-bonding information.
@@ -475,7 +470,7 @@ for atom_pair in acc_df.itertuples():
 #     #             row.extend(stored.deprot_acceptor_list[i])
 #     #             row.extend(instance)
 #     #             writer.writerow(row)
-#
+
 # # Save the modified structure.
 # cmd.save(snakemake.output.modified_mmcif)
 #
