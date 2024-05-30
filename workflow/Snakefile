@@ -17,7 +17,7 @@ rule all:
         expand("data/modified_mmCIF_files/{eq_class_members}.cif", eq_class_members=eq_class_members),
         expand("data/b_factor_data/{eq_class_members}_b_factor_data.csv", eq_class_members=eq_class_members),
         expand("data/nuc_data/{eq_class_members}_nuc_data.csv", eq_class_members=eq_class_members),
-        expand("data/hbond_data/{eq_class_members}_hbond_data.csv", eq_class_members=eq_class_members)
+        expand("data/h_bond_data/{eq_class_members}_h_bond_data.csv", eq_class_members=eq_class_members)
 
 rule write_eq_class_files:
     output:
@@ -37,7 +37,7 @@ rule collect_data:
         modified_mmcif = "data/modified_mmCIF_files/{eq_class_members}.cif",
         b_factor = "data/b_factor_data/{eq_class_members}_b_factor_data.csv",
         nuc = "data/nuc_data/{eq_class_members}_nuc_data.csv",
-        hbond = "data/hbond_data/{eq_class_members}_hbond_data.csv"
+        h_bond = "data/h_bond_data/{eq_class_members}_h_bond_data.csv"
     log:
         stdout = "data/logs/collect_data/{eq_class_members}.stdout",
         stderr = "data/logs/collect_data/{eq_class_members}.stderr"
