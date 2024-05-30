@@ -13,6 +13,7 @@ if the potential H-bond does not involve those nitrogens.
 
 from pymol import cmd
 from pymol import stored
+import pandas as pd
 
 
 def terminal_donor(donor_atom):
@@ -199,11 +200,12 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, acceptor_info, eq_class_mem
                              f"{donor_atom[4]} of {eq_class_mem} has only one hydrogen.")
                 return [successful_completion, notes]
             else:
-                h_acc_distance = [cmd.get_distance(f'index {stored.hydrogen[0][0]}', f'index {acceptor_atom[0]}'), "NaN"]
+                h_acc_distance = [cmd.get_distance(f'index {stored.hydrogen[0][0]}', f'index {acceptor_atom[0]}'),
+                                  pd.NA]
                 h_angle = [cmd.get_angle(f'index {donor_atom[0]}', f'index {stored.hydrogen[0][0]}',
-                                         f'index {acceptor_atom[0]}'), "NaN"]
-                h_dihedral = ["NaN", "NaN"]
-                h_name = [stored.hydrogen[0][1], "NaN"]
+                                         f'index {acceptor_atom[0]}'), pd.NA]
+                h_dihedral = [pd.NA, pd.NA]
+                h_name = [stored.hydrogen[0][1], pd.NA]
                 # Return the geometry values.
                 return [successful_completion,
                         [[don_acc_distance, don_angle, acc_angle, h_acc_distance[0], h_angle[0], h_dihedral[0],
@@ -220,7 +222,7 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, acceptor_info, eq_class_mem
                 cmd.iterate(f'name N3 and neighbor index {stored.don_ant[0][0]}',
                             'stored.end_n.append((index, name, resn, resi, chain))')
             else:
-                stored.end_n = ["NaN"]
+                stored.end_n = [pd.NA]
             # Issue an error message if the number of identified endocyclic nitrogen atoms does not equal one.
             if len(stored.end_n) != 1:
                 successful_completion = False
@@ -233,13 +235,13 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, acceptor_info, eq_class_mem
                                      f'index {acceptor_atom[0]}'),
                        cmd.get_angle(f'index {donor_atom[0]}', f'index {stored.hydrogen[1][0]}',
                                      f'index {acceptor_atom[0]}')]
-            if not stored.end_n[0] == "NaN":
+            if not stored.end_n[0] == pd.NA:
                 h_dihedral = [cmd.get_dihedral(f'index {stored.end_n[0][0]}', f'index {stored.don_ant[0][0]}',
                                                f'index {donor_atom[0]}', f'index {stored.hydrogen[0][0]}'),
                               cmd.get_dihedral(f'index {stored.end_n[0][0]}', f'index {stored.don_ant[0][0]}',
                                                f'index {donor_atom[0]}', f'index {stored.hydrogen[1][0]}')]
             else:
-                h_dihedral = ["NaN", "NaN"]
+                h_dihedral = [pd.NA, pd.NA]
             h_name = [stored.hydrogen[0][1], stored.hydrogen[1][1]]
             # Return the geometry values.
             return [successful_completion,
@@ -252,10 +254,10 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, acceptor_info, eq_class_mem
                          f"{donor_atom[4]} of {eq_class_mem} has more than two hydrogens.")
             return [successful_completion, notes]
     else:
-        h_acc_distance = ["NaN", "NaN"]
-        h_angle = ["NaN", "NaN"]
-        h_dihedral = ["NaN", "NaN"]
-        h_name = ["NaN", "NaN"]
+        h_acc_distance = [pd.NA, pd.NA]
+        h_angle = [pd.NA, pd.NA]
+        h_dihedral = [pd.NA, pd.NA]
+        h_name = [pd.NA, pd.NA]
         # Return the geometry values.
         return [successful_completion,
                 [[don_acc_distance, don_angle, acc_angle, h_acc_distance[0], h_angle[0], h_dihedral[0], h_name[0]]]]
