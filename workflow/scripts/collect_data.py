@@ -240,6 +240,20 @@ nuc_grp = ["resn", "resi", "chain"]
 nucleobase_df = (nucleobase_df_total[nucleobase_df_total.groupby(nuc_grp)["near_resn"]
                  .transform(lambda mem: all(mem.isin(const.INCLUDED_RESIDUES)))])
 
+# For each omitted nucleobase, print out the identity of the nearby residues not listed in const.INCLUDED_RESIDUES.
+omitted_nuc_df = nucleobase_df.merge(nucleobase_df_total, how='right', indicator=True)
+omitted_nuc_df = omitted_nuc_df[(omitted_nuc_df["_merge"] == "right_only") &
+                                ~(omitted_nuc_df["near_resn"].isin(const.INCLUDED_RESIDUES))].drop(columns=["_merge"])
+total_nuc = len(nucleobase_df_total.loc[:, nuc_grp].drop_duplicates())
+keep_nuc = len(nucleobase_df.loc[:, nuc_grp].drop_duplicates())
+omit_nuc = len(omitted_nuc_df.loc[:, nuc_grp].drop_duplicates())
+if not total_nuc == keep_nuc + omit_nuc:
+    print(f"Error: The number of retained and omitted nucleobases does not equal the total number of nucleobases in "
+          f"equivalence class member {snakemake.wildcards.eq_class_members}.")
+    sys.exit(1)
+print(f"Note: There are {keep_nuc} retained nucleobases.")
+print(f"Note: There are {omit_nuc} omitted nucleobases.")
+
 # Create a new dataframe containing donors of interest and omitting nucleobases that do not have any nearby acceptor
 # atoms. Additionally, atoms near the donor of interest that are not acceptors are filtered out along with atoms
 # belonging to the nucleobase.
