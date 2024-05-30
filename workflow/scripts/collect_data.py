@@ -25,18 +25,33 @@ import remove_alt_conf
 
 # TODO add code to count how many atoms each residue contains pre- and post- hydrogen addition, reject those that do not meet expectations
 
-# # Redirect stdout and stderr to log files.
-# stdout = sys.stdout
-# stderr = sys.stderr
-# stdout_file = open(snakemake.log.stdout, mode='w')
-# stderr_file = open(snakemake.log.stderr, mode='w')
-# sys.stdout = stdout_file
-# sys.stderr = stderr_file
+# Redirect stdout and stderr to log files.
+stdout = sys.stdout
+stderr = sys.stderr
+stdout_file = open(snakemake.log.stdout, mode='w')
+stderr_file = open(snakemake.log.stderr, mode='w')
+sys.stdout = stdout_file
+sys.stderr = stderr_file
+
+# If commit_hash is set to true in the Snakemake configuration file, check if any changes have been made to the repo and
+# get the hash of the current git commit. If uncommitted changes have been made to anything other than
+# config/config.yaml, print an error message and exit.
+repo_changes = []
+commit_hash = ""
+if snakemake.config["commit_hash"]:
+    repo_changes = list(subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"],
+                                                cwd=os.path.dirname(os.path.realpath(__file__)))
+                        .decode('ascii').strip().split("\n"))
+    if repo_changes == [""] or (len(repo_changes) == 1 and "config/config.yaml" in repo_changes[0]):
+        commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"],
+                                              cwd=os.path.dirname(os.path.realpath(__file__))).decode('ascii').strip()
+    else:
+        print(f"Error: Uncommitted changes have been made to the repo.")
+        sys.exit(1)
 
 # Iterate through the lines of the equivalence class file and collect the equivalence class name, PDB ID, model info,
 # and chain info for the equivalence class member.
-# with open(snakemake.input[0], mode='r') as read_file:
-with open("data/eq_class_members_files/NR_3.0_26197.1_6SKG_1_BB_info.csv", mode='r') as read_file:
+with open(snakemake.input[0], mode='r') as read_file:
     eq_class_mem = []
     for line in csv.reader(read_file):
         if line[0][0] != "#":
@@ -48,8 +63,7 @@ eq_class_mem_id = (f'{eq_class_mem[0][0]}_{eq_class_mem[1][0]}_{eq_class_mem[2][
 
 # Check whether the folder exists for PyMOL to save mmCIF files into that are fetched from the PDB.
 # If it does not exist, create the folder.
-# original_mmcif_dir = snakemake.config["original_mmcif_dir"]
-original_mmcif_dir = "data/original_mmCIF_files"
+original_mmcif_dir = snakemake.config["original_mmcif_dir"]
 if not os.path.isdir(original_mmcif_dir):
     try:
         os.mkdir(original_mmcif_dir)
@@ -131,7 +145,8 @@ cmd.fetch(eq_class_mem[1][0])
 
 # If the structure contains more than one model (or "state" in PyMOL), create a new PyMOL object of just that model.
 if cmd.count_states(eq_class_mem[1][0]) > 1:
-    cmd.create(f'{eq_class_mem[1][0]}_state_{eq_class_mem[2][0]}', selection=eq_class_mem[1][0], source_state=eq_class_mem[2][0],
+    cmd.create(f'{eq_class_mem[1][0]}_state_{eq_class_mem[2][0]}', selection=eq_class_mem[1][0],
+               source_state=eq_class_mem[2][0],
                target_state=1)
     cmd.delete(eq_class_mem[1][0])
 
@@ -146,6 +161,9 @@ if not successful_completion:
 # Change the formal charge on A(N1), A(N3), and A(N7) to +1. With a formal charge of +1, PyMOL will add hydrogens to
 # these atoms when the following h_add command is used.
 cmd.alter(prot_donors_of_interest_str, 'formal_charge=1')
+
+# Remove any hydrogens that loaded with the structure.
+cmd.remove('elem H')
 
 # Add hydrogens to non-rotatable donors that are a part of or near the equivalence class member RNA.
 cmd.h_add(f'(({donor_string} {prot_donors_of_interest_str}) and not ({rotatable_donor_string})) within {search_dist} '
@@ -217,7 +235,7 @@ nucleobase_df_total["resn_name"] = nucleobase_df_total["resn"] + "." + nucleobas
 nucleobase_df_total["near_resn_name"] = nucleobase_df_total["near_resn"] + "." + nucleobase_df_total["near_name"]
 
 # Create a new dataframe omitting nucleobases where at least one nearby atom belongs to a residue not specified within
-# INCLUDED_RESIDUES.
+# const.INCLUDED_RESIDUES.
 nuc_grp = ["resn", "resi", "chain"]
 nucleobase_df = (nucleobase_df_total[nucleobase_df_total.groupby(nuc_grp)["near_resn"]
                  .transform(lambda mem: all(mem.isin(const.INCLUDED_RESIDUES)))])
@@ -258,7 +276,7 @@ prot_don_df.rename(columns={"index": "don_index", "name": "don_name",
 # atoms. Additionally, atoms near the acceptors of interest that are not donors are filtered out along with atoms
 # belonging to the nucleobase. Temporarily consider O5' and O3' atoms to be donors.
 o5_o3_list = ["A.O5'", "A.O3'", "C.O5'", "C.O3'", "G.O5'", "G.O3'", "U.O5'", "U.O3'",
-              "DA.O5'", "DA.O3'", "DC.O5'", "DC.O3'", "DG.O5'", "DG.O3'", "DU.O5'", "DU.O3'"]
+              "DA.O5'", "DA.O3'", "DC.O5'", "DC.O3'", "DG.O5'", "DG.O3'", "DT.O5'", "DT.O3'"]
 acc_df = nucleobase_df[nucleobase_df["resn_name"].isin(acceptors_of_interest)]
 acc_df = acc_df[acc_df["near_resn_name"].isin(donor_atoms + o5_o3_list)]
 acc_df = acc_df[~((acc_df["resn"] == acc_df["near_resn"]) &
@@ -300,6 +318,8 @@ for atom_pair in don_df.itertuples():
     else:
         for h_bond in h_bond_list[1]:
             don_h_bonds_df.loc[len(don_h_bonds_df)] = don_list + acc_list + h_bond
+# Add a category column defining this data as being specific to the donors of interest.
+don_h_bonds_df["cat"] = "don"
 
 # Acquire the H-bonding geometry measurements for all acceptors near each protonated donor of interest.
 prot_don_h_bonds_df = pd.DataFrame(
@@ -322,6 +342,8 @@ for atom_pair in prot_don_df.itertuples():
     else:
         for h_bond in h_bond_list[1]:
             prot_don_h_bonds_df.loc[len(prot_don_h_bonds_df)] = don_list + acc_list + h_bond
+# Add a category column defining this data as being specific to the protonated donors of interest.
+prot_don_h_bonds_df["cat"] = "prot_don"
 
 # Acquire the H-bonding geometry measurements for all donors near each acceptor of interest.
 acc_h_bonds_df = pd.DataFrame(
@@ -344,138 +366,78 @@ for atom_pair in acc_df.itertuples():
     else:
         for h_bond in h_bond_list[1]:
             acc_h_bonds_df.loc[len(acc_h_bonds_df)] = don_list + acc_list + h_bond
+# Add a category column defining this data as being specific to the acceptors of interest.
+acc_h_bonds_df["cat"] = "acc"
 
-# # Write a csv file that stores applicable nucleobases containing donors and acceptors of interest.
-# with open(snakemake.output.nuc, "w") as csv_file:
-#     writer = csv.writer(csv_file)
-#     if commit_hash:
-#         writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
-#     writer.writerow([f"# input file: {snakemake.input[0]}"])
-#     writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
-# nucleobase_df.loc[:, nuc_grp].drop_duplicates().to_csv(snakemake.output.nuc, mode='a')
+# Create a dataframe of residues that are involved in potential H-bonding interactions.
+res_df = pd.concat([
+    don_df.loc[:, ["don_resn", "don_resi", "don_chain"]]
+    .rename(columns={"don_resn": "resn", "don_resi": "resi", "don_chain": "chain"}),
+    don_df.loc[:, ["acc_resn", "acc_resi", "acc_chain"]]
+    .rename(columns={"acc_resn": "resn", "acc_resi": "resi", "acc_chain": "chain"}),
+    prot_don_df.loc[:, ["don_resn", "don_resi", "don_chain"]]
+    .rename(columns={"don_resn": "resn", "don_resi": "resi", "don_chain": "chain"}),
+    prot_don_df.loc[:, ["acc_resn", "acc_resi", "acc_chain"]]
+    .rename(columns={"acc_resn": "resn", "acc_resi": "resi", "acc_chain": "chain"}),
+    acc_df.loc[:, ["don_resn", "don_resi", "don_chain"]]
+    .rename(columns={"don_resn": "resn", "don_resi": "resi", "don_chain": "chain"}),
+    acc_df.loc[:, ["acc_resn", "acc_resi", "acc_chain"]]
+    .rename(columns={"acc_resn": "resn", "acc_resi": "resi", "acc_chain": "chain"})]).drop_duplicates()
 
-# Collect the b-factors of nucleobase atoms within the equivalence class member.
-stored.res_list = []
-cmd.iterate(f"name C1' and ({mem_rna_chains})", "stored.res_list.append((index, name, resn, resi, chain))")
-nuc_b_factors = []
-for res in stored.res_list:
-    stored.b_factors = []
-    cmd.iterate(f"(byres index {res[0]}) and sidechain", "stored.b_factors.append(b)")
-    nuc_b_factors.append([res[2], res[3], res[4]])
-    nuc_b_factors[-1].extend(stored.b_factors)
+# Create a dataframe with the b-factors of heavy atoms for residues involved in potential H-bonding interactions.
+b_factor_df = pd.DataFrame({"index": [], "name": [], "resn": [], "resi": [], "chain": [], "b-factor": [], "subset": []})
+for res in res_df.itertuples():
+    stored.atoms = []
+    # Collect the b-factors for backbone atoms.
+    cmd.iterate(f"resn {res.resn} and resi {res.resi} and chain {res.chain} and backbone and not elem H",
+                "stored.atoms.append((index, name, resn, resi, chain, b, 'backbone'))")
+    # Collect the b-factors for side chain atoms.
+    cmd.iterate(f"resn {res.resn} and resi {res.resi} and chain {res.chain} and sidechain and not elem H",
+                "stored.atoms.append((index, name, resn, resi, chain, b, 'sidechain'))")
+    for atom in stored.atoms:
+        b_factor_df.loc[len(b_factor_df)] = atom
 
-# # Record info on the atoms associated with the previously determined 100 atom indices and check whether there are any
-# # changes.
-# stored.check_two = []
-# for index in indices:
-#     cmd.iterate(f'index {index}', 'stored.check_two.append((index, name, resn, resi, chain))')
-# if not stored.check_one == stored.check_two:
-#     print(f"Error: The indices in equivalence class member {snakemake.wildcards.eq_class_members} changed.")
-#     sys.exit(1)
-#
-# # If commit_hash is set to true in the Snakemake configuration file, check if any changes have been made to the repo and
-# # get the hash of the current git commit. If uncommitted changes have been made to anything other than
-# # config/config.yaml, print an error message and exit.
-# repo_changes = []
-# commit_hash = ""
-# if snakemake.config["commit_hash"]:
-#     repo_changes = list(subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"],
-#                                                 cwd=os.path.dirname(os.path.realpath(__file__)))
-#                         .decode('ascii').strip().split("\n"))
-#     if repo_changes == [""] or (len(repo_changes) == 1 and "config/config.yaml" in repo_changes[0]):
-#         commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"],
-#                                               cwd=os.path.dirname(os.path.realpath(__file__))).decode('ascii').strip()
-#     else:
-#         print(f"Error: Uncommitted changes have been made to the repo.")
-#         sys.exit(1)
-#
-# # Write a csv containing the b-factors of all nucleobase atoms in the equivalence class member.
-# with open(snakemake.output.b_factor, "w") as csv_file:
-#     writer = csv.writer(csv_file)
-#     if commit_hash:
-#         writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
-#     writer.writerow([f"# input file: {snakemake.input[0]}"])
-#     writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
-#     for nuc in nuc_b_factors:
-#         writer.writerow(nuc)
-#
-# # Write a csv containing all H-bonding information.
-# with open(snakemake.output.hbond, "w") as csv_file:
-#     writer = csv.writer(csv_file)
-#     if commit_hash:
-#         writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
-#     writer.writerow([f"# input file: {snakemake.input[0]}"])
-#     writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
-#     for i, don in enumerate(donor_h_bonds):
-#         for j, acc in enumerate(don):
-#             for instance in acc[1]:
-#                 row = []
-#                 row.extend(stored.donor_list[i])
-#                 row.extend(acceptors_near_donors[i][j])
-#                 row.extend(instance)
-#                 writer.writerow(row)
-#     # for i, don in enumerate(donor_h_bonds_amb):
-#     #     for j, acc in enumerate(don):
-#     #         for instance in acc[1]:
-#     #             row = []
-#     #             row.extend(stored.donor_list[i])
-#     #             row.extend(acceptors_near_donors_amb[i][j])
-#     #             row.extend(instance)
-#     #             writer.writerow(row)
-#     for i, acc in enumerate(acceptor_h_bonds):
-#         for j, don in enumerate(acc):
-#             for instance in don[1]:
-#                 row = []
-#                 row.extend(donors_near_acceptors[i][j])
-#                 row.extend(stored.acceptor_list[i])
-#                 row.extend(instance)
-#                 writer.writerow(row)
-#     # for i, acc in enumerate(acceptor_h_bonds_amb):
-#     #     for j, don in enumerate(acc):
-#     #         for instance in don[1]:
-#     #             row = []
-#     #             row.extend(donors_near_acceptors_amb[i][j])
-#     #             row.extend(stored.acceptor_list[i])
-#     #             row.extend(instance)
-#     #             writer.writerow(row)
-#     # for i, don in enumerate(prot_donor_h_bonds):
-#     #     for j, acc in enumerate(don):
-#     #         for instance in acc[1]:
-#     #             row = []
-#     #             row.extend(prot_donor_list[i])
-#     #             row.extend(acceptors_near_prot_donors[i][j])
-#     #             row.extend(instance)
-#     #             writer.writerow(row)
-#     # for i, don in enumerate(prot_donor_h_bonds_amb):
-#     #     for j, acc in enumerate(don):
-#     #         for instance in acc[1]:
-#     #             row = []
-#     #             row.extend(prot_donor_list[i])
-#     #             row.extend(acceptors_near_prot_donors_amb[i][j])
-#     #             row.extend(instance)
-#     #             writer.writerow(row)
-#     # for i, acc in enumerate(deprot_acceptor_h_bonds):
-#     #     for j, don in enumerate(acc):
-#     #         for instance in don[1]:
-#     #             row = []
-#     #             row.extend(donors_near_deprot_acceptors[i][j])
-#     #             row.extend(stored.deprot_acceptor_list[i])
-#     #             row.extend(instance)
-#     #             writer.writerow(row)
-#     # for i, acc in enumerate(deprot_acceptor_h_bonds_amb):
-#     #     for j, don in enumerate(acc):
-#     #         for instance in don[1]:
-#     #             row = []
-#     #             row.extend(donors_near_deprot_acceptors_amb[i][j])
-#     #             row.extend(stored.deprot_acceptor_list[i])
-#     #             row.extend(instance)
-#     #             writer.writerow(row)
+# Record info on the atoms associated with the previously determined 100 atom indices and check whether there are any
+# changes.
+stored.check_two = []
+for index in indices:
+    cmd.iterate(f'index {index}', 'stored.check_two.append((index, name, resn, resi, chain))')
+if not stored.check_one == stored.check_two:
+    print(f"Error: The indices in equivalence class member {snakemake.wildcards.eq_class_members} changed.")
+    sys.exit(1)
 
-# # Save the modified structure.
-# cmd.save(snakemake.output.modified_mmcif)
-#
-# # Close files and reset stdout and stderr.
-# stdout_file.close()
-# stderr_file.close()
-# sys.stdout = stdout
-# sys.stderr = stderr
+# Write a csv containing all H-bonding information.
+with open(snakemake.output.h_bond, "w") as csv_file:
+    writer = csv.writer(csv_file)
+    if commit_hash:
+        writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
+    writer.writerow([f"# input file: {snakemake.input[0]}"])
+    writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
+pd.concat([don_h_bonds_df, prot_don_h_bonds_df, acc_h_bonds_df]).to_csv(snakemake.output.h_bond, index=False, mode='a')
+
+# Write a csv file that stores applicable nucleobases containing donors and acceptors of interest.
+with open(snakemake.output.nuc, "w") as csv_file:
+    writer = csv.writer(csv_file)
+    if commit_hash:
+        writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
+    writer.writerow([f"# input file: {snakemake.input[0]}"])
+    writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
+nucleobase_df.loc[:, nuc_grp].drop_duplicates().to_csv(snakemake.output.nuc, index=False, mode='a')
+
+# Write a csv containing the b-factors.
+with open(snakemake.output.b_factor, "w") as csv_file:
+    writer = csv.writer(csv_file)
+    if commit_hash:
+        writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
+    writer.writerow([f"# input file: {snakemake.input[0]}"])
+    writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
+b_factor_df.to_csv(snakemake.output.b_factor, index=False, mode='a')
+
+# Save the modified structure.
+cmd.save(snakemake.output.modified_mmcif)
+
+# Close files and reset stdout and stderr.
+stdout_file.close()
+stderr_file.close()
+sys.stdout = stdout
+sys.stderr = stderr
