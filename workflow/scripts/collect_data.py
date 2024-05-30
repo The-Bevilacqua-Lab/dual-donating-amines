@@ -413,7 +413,8 @@ with open(snakemake.output.h_bond, "w") as csv_file:
         writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
     writer.writerow([f"# input file: {snakemake.input[0]}"])
     writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
-pd.concat([don_h_bonds_df, prot_don_h_bonds_df, acc_h_bonds_df]).to_csv(snakemake.output.h_bond, index=False, mode='a')
+pd.concat([don_h_bonds_df, prot_don_h_bonds_df, acc_h_bonds_df]).to_csv(snakemake.output.h_bond, index=False, mode='a',
+                                                                        na_rep='NaN')
 
 # Write a csv file that stores applicable nucleobases containing donors and acceptors of interest.
 with open(snakemake.output.nuc, "w") as csv_file:
@@ -422,7 +423,7 @@ with open(snakemake.output.nuc, "w") as csv_file:
         writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
     writer.writerow([f"# input file: {snakemake.input[0]}"])
     writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
-nucleobase_df.loc[:, nuc_grp].drop_duplicates().to_csv(snakemake.output.nuc, index=False, mode='a')
+nucleobase_df.loc[:, nuc_grp].drop_duplicates().to_csv(snakemake.output.nuc, index=False, mode='a', na_rep='NaN')
 
 # Write a csv containing the b-factors.
 with open(snakemake.output.b_factor, "w") as csv_file:
@@ -431,7 +432,7 @@ with open(snakemake.output.b_factor, "w") as csv_file:
         writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
     writer.writerow([f"# input file: {snakemake.input[0]}"])
     writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
-b_factor_df.to_csv(snakemake.output.b_factor, index=False, mode='a')
+b_factor_df.to_csv(snakemake.output.b_factor, index=False, mode='a', na_rep='NaN')
 
 # Save the modified structure.
 cmd.save(snakemake.output.modified_mmcif)
