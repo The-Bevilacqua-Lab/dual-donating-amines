@@ -253,6 +253,14 @@ if not total_nuc == keep_nuc + omit_nuc:
     sys.exit(1)
 print(f"Note: There are {keep_nuc} retained nucleobases.")
 print(f"Note: There are {omit_nuc} omitted nucleobases.")
+with open(snakemake.output.omitted_nuc, "w") as csv_file:
+    writer = csv.writer(csv_file)
+    if commit_hash:
+        writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
+    writer.writerow([f"# input file: {snakemake.input[0]}"])
+    writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
+omitted_nuc_df.drop(columns=["resn_name", "near_resn_name"]).to_csv(snakemake.output.omitted_nuc, index=False, mode='a',
+                                                                    na_rep='NaN')
 
 # Create a new dataframe containing donors of interest and omitting nucleobases that do not have any nearby acceptor
 # atoms. Additionally, atoms near the donor of interest that are not acceptors are filtered out along with atoms

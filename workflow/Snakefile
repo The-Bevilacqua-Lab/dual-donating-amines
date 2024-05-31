@@ -15,9 +15,10 @@ for eq_class in eq_class_dict.values():
 rule all:
     input:
         expand("data/modified_mmCIF_files/{eq_class_members}.cif", eq_class_members=eq_class_members),
-        expand("data/b_factor_data/{eq_class_members}_b_factor_data.csv", eq_class_members=eq_class_members),
-        expand("data/nuc_data/{eq_class_members}_nuc_data.csv", eq_class_members=eq_class_members),
-        expand("data/h_bond_data/{eq_class_members}_h_bond_data.csv", eq_class_members=eq_class_members)
+        expand("data/b_factor/{eq_class_members}_b_factor.csv", eq_class_members=eq_class_members),
+        expand("data/nuc/{eq_class_members}_nuc.csv", eq_class_members=eq_class_members),
+        expand("data/h_bond/{eq_class_members}_h_bond.csv", eq_class_members=eq_class_members),
+        expand("data/omitted_nuc/{eq_class_members}_omitted_nuc.csv", eq_class_members=eq_class_members)
 
 rule write_eq_class_files:
     output:
@@ -35,9 +36,10 @@ rule collect_data:
         rules.write_eq_class_files.output
     output:
         modified_mmcif = "data/modified_mmCIF_files/{eq_class_members}.cif",
-        b_factor = "data/b_factor_data/{eq_class_members}_b_factor_data.csv",
-        nuc = "data/nuc_data/{eq_class_members}_nuc_data.csv",
-        h_bond = "data/h_bond_data/{eq_class_members}_h_bond_data.csv"
+        b_factor = "data/b_factor/{eq_class_members}_b_factor.csv",
+        nuc = "data/nuc/{eq_class_members}_nuc.csv",
+        h_bond = "data/h_bond/{eq_class_members}_h_bond.csv",
+        omitted_nuc = "data/omitted_nuc/{eq_class_members}_omitted_nuc.csv"
     log:
         stdout = "data/logs/collect_data/{eq_class_members}.stdout",
         stderr = "data/logs/collect_data/{eq_class_members}.stderr"
