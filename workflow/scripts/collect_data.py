@@ -231,8 +231,9 @@ for acceptor in stored.acceptor_list:
 # Create a dataframe based on the nucleobase dictionary. Also include two columns containing both residue and atom names
 # for nucleobase atoms and nearby atoms.
 nucleobase_df_total = pd.DataFrame(nucleobase_dict)
-nucleobase_df_total["resn_name"] = nucleobase_df_total["resn"] + "." + nucleobase_df_total["name"]
-nucleobase_df_total["near_resn_name"] = nucleobase_df_total["near_resn"] + "." + nucleobase_df_total["near_name"]
+nucleobase_df_total["resn_name"] = str(nucleobase_df_total["resn"]) + "." + str(nucleobase_df_total["name"])
+nucleobase_df_total["near_resn_name"] = (str(nucleobase_df_total["near_resn"]) + "." +
+                                         str(nucleobase_df_total["near_name"]))
 
 # Create a new dataframe omitting nucleobases where at least one nearby atom belongs to a residue not specified within
 # const.INCLUDED_RESIDUES.
