@@ -235,7 +235,7 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, acceptor_info, eq_class_mem
                                      f'index {acceptor_atom[0]}'),
                        cmd.get_angle(f'index {donor_atom[0]}', f'index {stored.hydrogen[1][0]}',
                                      f'index {acceptor_atom[0]}')]
-            if not stored.end_n[0] == pd.NA:
+            if not pd.isna(stored.end_n[0]):
                 h_dihedral = [cmd.get_dihedral(f'index {stored.end_n[0][0]}', f'index {stored.don_ant[0][0]}',
                                                f'index {donor_atom[0]}', f'index {stored.hydrogen[0][0]}'),
                               cmd.get_dihedral(f'index {stored.end_n[0][0]}', f'index {stored.don_ant[0][0]}',
