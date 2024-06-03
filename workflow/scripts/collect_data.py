@@ -14,6 +14,7 @@ import os
 import csv
 import subprocess
 import time
+import copy
 from pymol import cmd
 from pymol import stored
 import numpy as np
@@ -183,9 +184,10 @@ cmd.iterate(f'({mem_rna_chains}) and ({donors_of_interest_str})',
 
 # Store a list of atoms near the donors of interest within a dictionary of nucleobases. Also include two keys which have
 # values containing both residue and atom names for nucleobase atoms and nearby atoms.
-nucleobase_dict = {"index": [], "name": [], "resn": [], "resi": [], "chain": [],
-                   "near_index": [], "near_name": [], "near_resn": [], "near_resi": [], "near_chain": [],
-                   "resn_name": [], "near_resn_name": []}
+blank_nucleobase_dict = {"index": [], "name": [], "resn": [], "resi": [], "chain": [],
+                         "near_index": [], "near_name": [], "near_resn": [], "near_resi": [], "near_chain": [],
+                         "resn_name": [], "near_resn_name": []}
+nucleobase_dict = copy.deepcopy(blank_nucleobase_dict)
 for donor in stored.donor_list:
     # Find the atoms near the donor.
     stored.nearby_atoms = []
@@ -242,6 +244,9 @@ nucleobase_df_total = pd.DataFrame(nucleobase_dict)
 nuc_grp = ["resn", "resi", "chain"]
 nucleobase_df = (nucleobase_df_total[nucleobase_df_total.groupby(nuc_grp)["near_resn"]
                  .transform(lambda mem: all(mem.isin(const.INCLUDED_RESIDUES)))])
+# If the dataframe is empty, recreate it using the blank dictionary so that it has the appropriate column names.
+if len(nucleobase_df) == 0:
+    nucleobase_df = pd.DataFrame(blank_nucleobase_dict)
 
 # For each omitted nucleobase, print out the identity of the nearby residues not listed in const.INCLUDED_RESIDUES.
 omitted_nuc_df = nucleobase_df.merge(nucleobase_df_total, how='right', indicator=True)
@@ -371,12 +376,13 @@ for atom_pair in prot_don_df.itertuples():
 prot_don_h_bonds_df["cat"] = "prot_don"
 
 # Acquire the H-bonding geometry measurements for all donors near each acceptor of interest.
-acc_h_bonds_df = pd.DataFrame(
-    {"don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "acc_index": [], "acc_name": [],
-     "acc_resn": [], "acc_resi": [], "acc_chain": [], "don_acc_distance": [], "don_angle": [], "acc_angle": [],
-     "h_acc_distance": [], "h_angle": [], "h_dihedral": [], "h_name": []})
+acc_h_bonds_dict = {
+    "don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "acc_index": [], "acc_name": [],
+    "acc_resn": [], "acc_resi": [], "acc_chain": [], "don_acc_distance": [], "don_angle": [], "acc_angle": [],
+    "h_acc_distance": [], "h_angle": [], "h_dihedral": [], "h_name": []
+}
 for atom_pair in acc_df.itertuples():
-    # Store the donor and acceptor atom values for the dataframe row.
+    # Store the donor and acceptor atom values for the dictionary row.
     don_list = [atom_pair.don_index, atom_pair.don_name, atom_pair.don_resn, atom_pair.don_resi, atom_pair.don_chain]
     acc_list = [atom_pair.acc_index, atom_pair.acc_name, atom_pair.acc_resn, atom_pair.acc_resi, atom_pair.acc_chain]
     # Retrieve the H-bond measurements for the atom pair.
@@ -387,10 +393,16 @@ for atom_pair in acc_df.itertuples():
         for note in h_bond_list[1]:
             print(note)
         sys.exit(1)
-    # Add the H-bond measurements to the dataframe.
+    # Add the H-bond measurements to the dictionary.
     else:
         for h_bond in h_bond_list[1]:
-            acc_h_bonds_df.loc[len(acc_h_bonds_df)] = don_list + acc_list + h_bond
+            row = don_list + acc_list + h_bond
+            idx = 0
+            for key in acc_h_bonds_dict:
+                acc_h_bonds_dict[key].append(row[idx])
+                idx += 1
+# Create a dataframe based on the dictionary.
+acc_h_bonds_df = pd.DataFrame(acc_h_bonds_dict)
 # Add a category column defining this data as being specific to the acceptors of interest.
 acc_h_bonds_df["cat"] = "acc"
 
