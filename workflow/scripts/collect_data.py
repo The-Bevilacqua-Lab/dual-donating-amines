@@ -181,9 +181,11 @@ stored.donor_list = []
 cmd.iterate(f'({mem_rna_chains}) and ({donors_of_interest_str})',
             'stored.donor_list.append((index, name, resn, resi, chain))')
 
-# Store a list of atoms near the donors of interest within a dictionary of nucleobases.
+# Store a list of atoms near the donors of interest within a dictionary of nucleobases. Also include two keys which have
+# values containing both residue and atom names for nucleobase atoms and nearby atoms.
 nucleobase_dict = {"index": [], "name": [], "resn": [], "resi": [], "chain": [],
-                   "near_index": [], "near_name": [], "near_resn": [], "near_resi": [], "near_chain": []}
+                   "near_index": [], "near_name": [], "near_resn": [], "near_resi": [], "near_chain": [],
+                   "resn_name": [], "near_resn_name": []}
 for donor in stored.donor_list:
     # Find the atoms near the donor.
     stored.nearby_atoms = []
@@ -196,12 +198,14 @@ for donor in stored.donor_list:
         nucleobase_dict["resn"].append(donor[2])
         nucleobase_dict["resi"].append(donor[3])
         nucleobase_dict["chain"].append(donor[4])
+        nucleobase_dict["resn_name"].append(str(donor[2]) + "." + str(donor[1]))
         # Add the nearby atoms to the nucleobase dictionary.
         nucleobase_dict["near_index"].append(atom[0])
         nucleobase_dict["near_name"].append(atom[1])
         nucleobase_dict["near_resn"].append(atom[2])
         nucleobase_dict["near_resi"].append(atom[3])
         nucleobase_dict["near_chain"].append(atom[4])
+        nucleobase_dict["near_resn_name"].append(str(atom[2]) + "." + str(atom[1]))
 
 # Store a list of acceptors of interest from the equivalence class member RNA chains.
 stored.acceptor_list = []
@@ -221,19 +225,17 @@ for acceptor in stored.acceptor_list:
         nucleobase_dict["resn"].append(acceptor[2])
         nucleobase_dict["resi"].append(acceptor[3])
         nucleobase_dict["chain"].append(acceptor[4])
+        nucleobase_dict["resn_name"].append(str(acceptor[2]) + "." + str(acceptor[1]))
         # Add the nearby atoms to the nucleobase dictionary.
         nucleobase_dict["near_index"].append(atom[0])
         nucleobase_dict["near_name"].append(atom[1])
         nucleobase_dict["near_resn"].append(atom[2])
         nucleobase_dict["near_resi"].append(atom[3])
         nucleobase_dict["near_chain"].append(atom[4])
+        nucleobase_dict["near_resn_name"].append(str(atom[2]) + "." + str(atom[1]))
 
-# Create a dataframe based on the nucleobase dictionary. Also include two columns containing both residue and atom names
-# for nucleobase atoms and nearby atoms.
+# Create a dataframe based on the nucleobase dictionary.
 nucleobase_df_total = pd.DataFrame(nucleobase_dict)
-nucleobase_df_total["resn_name"] = str(nucleobase_df_total["resn"]) + "." + str(nucleobase_df_total["name"])
-nucleobase_df_total["near_resn_name"] = (str(nucleobase_df_total["near_resn"]) + "." +
-                                         str(nucleobase_df_total["near_name"]))
 
 # Create a new dataframe omitting nucleobases where at least one nearby atom belongs to a residue not specified within
 # const.INCLUDED_RESIDUES.
