@@ -471,8 +471,24 @@ with open(snakemake.output.b_factor, "w") as csv_file:
     writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
 b_factor_df.to_csv(snakemake.output.b_factor, index=False, mode='a', na_rep='NaN')
 
-# Save the modified structure.
-cmd.save(snakemake.output.modified_mmcif)
+# Check whether the folder exists for PyMOL to save mmCIF files into from the modified structure.
+# If it does not exist, create the folder.
+modified_mmcif_dir = snakemake.config["modified_mmcif_dir"]
+if not os.path.isdir(modified_mmcif_dir):
+    try:
+        os.mkdir(modified_mmcif_dir)
+    except FileExistsError:
+        time.sleep(5.0)
+        if not os.path.isdir(modified_mmcif_dir):
+            os.mkdir(modified_mmcif_dir)
+
+# Save the modified structure if specified.
+if snakemake.config["save_modified_mmcif"]:
+    cmd.save(modified_mmcif_dir + eq_class_mem_id + ".cif")
+
+# Remove the original mmCIF if specified.
+if snakemake.config["remove_original_mmcif"]:
+    subprocess.run(["rm", f"{eq_class_mem[1][0]}.cif".lower()])
 
 # Close files and reset stdout and stderr.
 stdout_file.close()

@@ -1,8 +1,15 @@
 # Provide the representative set file name.
 rep_set_file: "data/rep_set_files/nrlist_<id>.csv"
 
-# Where should PyMOL save mmCIF files fetched from the PDB?
+# Where should PyMOL save mmCIF files fetched from the PDB and the modified structures?
 original_mmcif_dir: "data/original_mmCIF_files/"
+modified_mmcif_dir: "data/modified_mmcif_files/"
+
+# Should the mmCIF files fetched from the PDB be removed after the run to save space?
+remove_original_mmcif: false
+
+# Should the mmCIF of the modified structures be saved?
+save_modified_mmcif: true
 
 # Should the commit hash be written to output data files?
 commit_hash: false
