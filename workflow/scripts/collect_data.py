@@ -488,7 +488,7 @@ if snakemake.config["save_modified_mmcif"]:
 
 # Remove the original mmCIF if specified.
 if snakemake.config["remove_original_mmcif"]:
-    subprocess.run(["rm", f"{eq_class_mem[1][0]}.cif".lower()])
+    subprocess.run(["rm", original_mmcif_dir + f"{eq_class_mem[1][0]}.cif".lower()])
 
 # Close files and reset stdout and stderr.
 stdout_file.close()
