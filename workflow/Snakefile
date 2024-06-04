@@ -14,7 +14,6 @@ for eq_class in eq_class_dict.values():
 
 rule all:
     input:
-        expand("data/modified_mmCIF_files/{eq_class_members}.cif", eq_class_members=eq_class_members),
         expand("data/b_factor/{eq_class_members}_b_factor.csv", eq_class_members=eq_class_members),
         expand("data/nuc/{eq_class_members}_nuc.csv", eq_class_members=eq_class_members),
         expand("data/h_bond/{eq_class_members}_h_bond.csv", eq_class_members=eq_class_members),
@@ -35,7 +34,6 @@ rule collect_data:
     input:
         rules.write_eq_class_files.output
     output:
-        modified_mmcif = "data/modified_mmCIF_files/{eq_class_members}.cif",
         b_factor = "data/b_factor/{eq_class_members}_b_factor.csv",
         nuc = "data/nuc/{eq_class_members}_nuc.csv",
         h_bond = "data/h_bond/{eq_class_members}_h_bond.csv",
