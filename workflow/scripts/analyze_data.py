@@ -31,26 +31,27 @@ neg_acceptors = pd.DataFrame({
 
 # Get the data.
 don_h_bonds = pd.read_csv(snakemake.input.don_h_bonds, na_filter=False,
-                         dtype={"don_resi": "object", "acc_resi": "object"})
+                          dtype={"don_resi": "object", "acc_resi": "object"})
 # TODO prot donor should not donate to the same atom the exo amine is donating to (e.g., C788 A5 in 6xu8)
 # noinspection PyTypeChecker
 prot_don_h_bonds = pd.read_csv(snakemake.input.prot_don_h_bonds, na_filter=False,
-                              dtype={"don_resi": "object", "acc_resi": "object"})
+                               dtype={"don_resi": "object", "acc_resi": "object"})
 # noinspection PyTypeChecker
 acc_h_bonds = pd.read_csv(snakemake.input.acc_h_bonds, keep_default_na=False,
-                         na_values={"h_acc_distance": "NaN", "h_angle": "NaN", "h_dihedral": "NaN"},
-                         dtype={"don_resi": "object", "acc_resi": "object"})
+                          na_values={"h_acc_distance": "NaN", "h_angle": "NaN", "h_dihedral": "NaN"},
+                          dtype={"don_resi": "object", "acc_resi": "object"})
 nuc_data_raw = pd.read_csv(snakemake.input.nuc, na_filter=False, dtype={"resi": "object"})
 b_factor_data = pd.read_csv(snakemake.input.b_factor, na_filter=False, dtype={"resi": "object"})
 # noinspection PyTypeChecker
 h_bond_data = pd.read_csv(snakemake.input.h_bond, keep_default_na=False,
-                         na_values={"h_acc_distance": "NaN", "h_angle": "NaN", "h_dihedral": "NaN"},
-                         dtype={"don_resi": "object", "acc_resi": "object"})
+                          na_values={"h_acc_distance": "NaN", "h_angle": "NaN", "h_dihedral": "NaN"},
+                          dtype={"don_resi": "object", "acc_resi": "object"})
 
 # Create a new dataframe of nucleobases where the mean of the b-factors are below 79.
-nuc_data = nuc_data_raw.merge(b_factor_data[b_factor_data["mean"] < 79.0], on=["resn", "resi", "chain",
-                                                                               "eq_class_members"],
-                              how='inner').drop(columns=["mean"])
+nuc_data = ((nuc_data_raw.merge(b_factor_data[(b_factor_data["subset"] == "sidechain") &
+                                              (b_factor_data["mean"] < 79.0)],
+                                on=["resn", "resi", "chain", "eq_class_members"], how='inner').drop(columns=["mean"]))
+            .drop(columns=["subset"]))
 
 # Write data on donor-acceptor pairs to csv files.
 don_acc_grp = ["don_index", "acc_index", "eq_class_members"]
@@ -93,20 +94,17 @@ dual_don_h_bonds = don_h_bonds[
     (don_h_bonds.groupby(["don_index", "eq_class_members"])["h_name"].transform("nunique") == 2) &
     (don_h_bonds.groupby(["don_index", "eq_class_members"])["acc_index"].transform("nunique") >= 2)]
 
-# Prepare dataframes of exocyclic amines for A residues.
-a_exo_amines = nuc_data[nuc_data["atom_name"] == "N6"]
-
 # Prepare dataframes of single and dual H-bonding A(N6) with H-bond information.
 a_n6_single_h_bond = (single_don_h_bonds[single_don_h_bonds["don_resn"] == "A"]
-                      .merge(a_exo_amines,
+                      .merge(nuc_data,
                              left_on=["don_resn", "don_resi", "don_chain", "eq_class_members"],
                              right_on=["resn", "resi", "chain", "eq_class_members"],
-                             how='inner').drop(columns=["index", "atom_name", "resn", "resi", "chain"]))
+                             how='inner').drop(columns=["resn", "resi", "chain"]))
 a_n6_dual_h_bond = (dual_don_h_bonds[dual_don_h_bonds["don_resn"] == "A"]
-                    .merge(a_exo_amines,
+                    .merge(nuc_data,
                            left_on=["don_resn", "don_resi", "don_chain", "eq_class_members"],
                            right_on=["resn", "resi", "chain", "eq_class_members"],
-                           how='inner').drop(columns=["index", "atom_name", "resn", "resi", "chain"]))
+                           how='inner').drop(columns=["resn", "resi", "chain"]))
 
 # Prepare dataframes of no, single, and dual H-bonding A(N6) with just residue information.
 a_n6_single_res = (a_n6_single_h_bond.loc[:, ["eq_class_members", "don_resn", "don_resi", "don_chain"]]
@@ -115,7 +113,7 @@ a_n6_dual_res = (a_n6_dual_h_bond.loc[:, ["eq_class_members", "don_resn", "don_r
                  .drop_duplicates()).rename(columns={"don_resn": "resn", "don_resi": "resi", "don_chain": "chain"})
 a_n6_no_res = (pd.concat([a_n6_single_res,
                          a_n6_dual_res,
-                         a_exo_amines.loc[:, ["eq_class_members", "resn", "resi", "chain"]]])
+                         nuc_data.loc[:, ["eq_class_members", "resn", "resi", "chain"]]])
                .drop_duplicates(keep=False))
 
 # Prepare dataframes with just residue information of A residues that accept H-bonds at their N1, N3, or N7.
@@ -188,30 +186,30 @@ a_n6_dual_a_n1_acc_h_bond_to_n1 = (a_n6_dual_a_n1_acc_res
 
 # Prepare dataframes of no, single and dual A(N6) donors that also accept via the N3 including H-bond information
 # related to the N3 H-bond acceptation.
-a_n6_no_a_n3_acc_h_bond_to_n3 = (a_n6_no_a_n1_acc_res
+a_n6_no_a_n3_acc_h_bond_to_n3 = (a_n6_no_a_n3_acc_res
                                  .rename(columns={"resn": "acc_resn", "resi": "acc_resi", "chain": "acc_chain"})
                                  .merge(acc_h_bonds[acc_h_bonds[["acc_name", "acc_resn"]].eq(["N3", "A"])
                                         .all(axis='columns')], how='inner'))
-a_n6_single_a_n3_acc_h_bond_to_n3 = (a_n6_single_a_n1_acc_res
+a_n6_single_a_n3_acc_h_bond_to_n3 = (a_n6_single_a_n3_acc_res
                                      .rename(columns={"resn": "acc_resn", "resi": "acc_resi", "chain": "acc_chain"})
                                      .merge(acc_h_bonds[acc_h_bonds[["acc_name", "acc_resn"]].eq(["N3", "A"])
                                             .all(axis='columns')], how='inner'))
-a_n6_dual_a_n3_acc_h_bond_to_n3 = (a_n6_dual_a_n1_acc_res
+a_n6_dual_a_n3_acc_h_bond_to_n3 = (a_n6_dual_a_n3_acc_res
                                    .rename(columns={"resn": "acc_resn", "resi": "acc_resi", "chain": "acc_chain"})
                                    .merge(acc_h_bonds[acc_h_bonds[["acc_name", "acc_resn"]].eq(["N3", "A"])
                                           .all(axis='columns')], how='inner'))
 
 # Prepare dataframes of no, single and dual A(N6) donors that also accept via the N7 including H-bond information
 # related to the N7 H-bond acceptation.
-a_n6_no_a_n7_acc_h_bond_to_n7 = (a_n6_no_a_n1_acc_res
+a_n6_no_a_n7_acc_h_bond_to_n7 = (a_n6_no_a_n7_acc_res
                                  .rename(columns={"resn": "acc_resn", "resi": "acc_resi", "chain": "acc_chain"})
                                  .merge(acc_h_bonds[acc_h_bonds[["acc_name", "acc_resn"]].eq(["N7", "A"])
                                         .all(axis='columns')], how='inner'))
-a_n6_single_a_n7_acc_h_bond_to_n7 = (a_n6_single_a_n1_acc_res
+a_n6_single_a_n7_acc_h_bond_to_n7 = (a_n6_single_a_n7_acc_res
                                      .rename(columns={"resn": "acc_resn", "resi": "acc_resi", "chain": "acc_chain"})
                                      .merge(acc_h_bonds[acc_h_bonds[["acc_name", "acc_resn"]].eq(["N7", "A"])
                                             .all(axis='columns')], how='inner'))
-a_n6_dual_a_n7_acc_h_bond_to_n7 = (a_n6_dual_a_n1_acc_res
+a_n6_dual_a_n7_acc_h_bond_to_n7 = (a_n6_dual_a_n7_acc_res
                                    .rename(columns={"resn": "acc_resn", "resi": "acc_resi", "chain": "acc_chain"})
                                    .merge(acc_h_bonds[acc_h_bonds[["acc_name", "acc_resn"]].eq(["N7", "A"])
                                           .all(axis='columns')], how='inner'))
@@ -730,7 +728,7 @@ a_n6_donation = pd.DataFrame({
               a_n6_no_a_n7_acc_res.shape[0], a_n6_single_a_n7_acc_no_ol.shape[0], a_n6_dual_a_n7_acc_no_ol.shape[0]],
     "total": [a_n6_no_res.shape[0], a_n6_single_res.shape[0], a_n6_dual_res.shape[0]] * 6
 })
-a_n6_donation.to_csv(snakemake.output.count, index=False)
+a_n6_donation.to_csv(snakemake.output.h_bond_count, index=False)
 
 # Write data on H-bond distances and angles for donors to the N1, N3, or N7 of A residues that also donate via their
 # N6 with no overlap in partner entity. Include data where the N6 donates to all acceptor types and where it only
