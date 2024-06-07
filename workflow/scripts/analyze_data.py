@@ -49,7 +49,7 @@ h_bond_data = pd.read_csv(snakemake.input.h_bond, keep_default_na=False,
 
 # Create a new dataframe of nucleobases where the mean of the b-factors are below 79.
 nuc_data = ((nuc_data_raw.merge(b_factor_data[(b_factor_data["subset"] == "sidechain") &
-                                              (b_factor_data["mean"] < 79.0)],
+                                              (b_factor_data["mean"] < snakemake.config["b_factor_cutoff"])],
                                 on=["resn", "resi", "chain", "eq_class_members"], how='inner').drop(columns=["mean"]))
             .drop(columns=["subset"]))
 

@@ -5,6 +5,9 @@ rep_set_file: "data/rep_set_files/nrlist_<id>.csv"
 original_mmcif_dir: "data/original_mmCIF_files/"
 modified_mmcif_dir: "data/modified_mmcif_files/"
 
+# What is the b-factor cutoff?
+b_factor_cutoff: 79.0
+
 # Should the mmCIF files fetched from the PDB be removed after the run to save space?
 remove_original_mmcif: false
 
