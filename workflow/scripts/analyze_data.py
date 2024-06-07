@@ -728,10 +728,10 @@ a_n6_donation = pd.DataFrame({
 })
 a_n6_donation.to_csv(snakemake.output.h_bond_count, index=False)
 
-# Write data on H-bond distances and angles for donors to the N1, N3, or N7 of A residues that also donate via their
-# N6 with no overlap in partner entity. Include data where the N6 donates to all acceptor types and where it only
-# donates to OD1 or OD2 of Asp, OE1 or OE2 of Glu, or OP1 or OP2 of nucleic acids.
-a_n6_donation_dist_ang = pd.DataFrame({
+# Write data on H-bond distances and angles for donors to the A(N1) that also donate via their N6 with no overlap in
+# partner entity. Include data where the N6 donates to all acceptor types and where it only donates to OD1 or OD2 of
+# Asp, OE1 or OE2 of Glu, or OP1 or OP2 of nucleic acids.
+a_n6_don_a_n1_acc_dist_ang = pd.DataFrame({
     "overlap": (["all"] * a_n6_no_a_n1_acc_h_bond_to_n1.shape[0] +
                 ["all"] * a_n6_single_a_n1_acc_h_bond_to_n1.shape[0] +
                 ["all"] * a_n6_dual_a_n1_acc_h_bond_to_n1.shape[0] +
@@ -759,33 +759,6 @@ a_n6_donation_dist_ang = pd.DataFrame({
                ["all"] * a_n6_dual_a_n1_acc_no_ol_h_bond_to_n1.shape[0] +
                ["neg"] * a_n6_single_a_n1_acc_no_ol_h_bond_to_n1_neg.shape[0] +
                ["neg"] * a_n6_dual_a_n1_acc_no_ol_h_bond_to_n1_neg.shape[0]),
-    "don_acc_distance": (a_n6_no_a_n1_acc_h_bond_to_n1["don_acc_distance"].to_list() +
-                         a_n6_single_a_n1_acc_h_bond_to_n1["don_acc_distance"].to_list() +
-                         a_n6_dual_a_n1_acc_h_bond_to_n1["don_acc_distance"].to_list() +
-                         a_n6_single_a_n1_acc_h_bond_to_n1_neg["don_acc_distance"].to_list() +
-                         a_n6_dual_a_n1_acc_h_bond_to_n1_neg["don_acc_distance"].to_list() +
-                         a_n6_single_a_n1_acc_no_ol_h_bond_to_n1["don_acc_distance"].to_list() +
-                         a_n6_dual_a_n1_acc_no_ol_h_bond_to_n1["don_acc_distance"].to_list() +
-                         a_n6_single_a_n1_acc_no_ol_h_bond_to_n1_neg["don_acc_distance"].to_list() +
-                         a_n6_dual_a_n1_acc_no_ol_h_bond_to_n1_neg["don_acc_distance"].to_list()),
-    "don_angle": (a_n6_no_a_n1_acc_h_bond_to_n1["don_angle"].to_list() +
-                  a_n6_single_a_n1_acc_h_bond_to_n1["don_angle"].to_list() +
-                  a_n6_dual_a_n1_acc_h_bond_to_n1["don_angle"].to_list() +
-                  a_n6_single_a_n1_acc_h_bond_to_n1_neg["don_angle"].to_list() +
-                  a_n6_dual_a_n1_acc_h_bond_to_n1_neg["don_angle"].to_list() +
-                  a_n6_single_a_n1_acc_no_ol_h_bond_to_n1["don_angle"].to_list() +
-                  a_n6_dual_a_n1_acc_no_ol_h_bond_to_n1["don_angle"].to_list() +
-                  a_n6_single_a_n1_acc_no_ol_h_bond_to_n1_neg["don_angle"].to_list() +
-                  a_n6_dual_a_n1_acc_no_ol_h_bond_to_n1_neg["don_angle"].to_list()),
-    "acc_angle": (a_n6_no_a_n1_acc_h_bond_to_n1["acc_angle"].to_list() +
-                  a_n6_single_a_n1_acc_h_bond_to_n1["acc_angle"].to_list() +
-                  a_n6_dual_a_n1_acc_h_bond_to_n1["acc_angle"].to_list() +
-                  a_n6_single_a_n1_acc_h_bond_to_n1_neg["acc_angle"].to_list() +
-                  a_n6_dual_a_n1_acc_h_bond_to_n1_neg["acc_angle"].to_list() +
-                  a_n6_single_a_n1_acc_no_ol_h_bond_to_n1["acc_angle"].to_list() +
-                  a_n6_dual_a_n1_acc_no_ol_h_bond_to_n1["acc_angle"].to_list() +
-                  a_n6_single_a_n1_acc_no_ol_h_bond_to_n1_neg["acc_angle"].to_list() +
-                  a_n6_dual_a_n1_acc_no_ol_h_bond_to_n1_neg["acc_angle"].to_list()),
     "h_acc_distance": (a_n6_no_a_n1_acc_h_bond_to_n1["h_acc_distance"].to_list() +
                        a_n6_single_a_n1_acc_h_bond_to_n1["h_acc_distance"].to_list() +
                        a_n6_dual_a_n1_acc_h_bond_to_n1["h_acc_distance"].to_list() +
@@ -805,4 +778,108 @@ a_n6_donation_dist_ang = pd.DataFrame({
                 a_n6_single_a_n1_acc_no_ol_h_bond_to_n1_neg["h_angle"].to_list() +
                 a_n6_dual_a_n1_acc_no_ol_h_bond_to_n1_neg["h_angle"].to_list())
 })
-a_n6_donation_dist_ang.to_csv(snakemake.output.dist_ang, index=False)
+a_n6_don_a_n1_acc_dist_ang.to_csv(snakemake.output.a_n1_acc_dist_ang, index=False)
+
+# Write data on H-bond distances and angles for donors to the A(N3) that also donate via their N6 with no overlap in
+# partner entity. Include data where the N6 donates to all acceptor types and where it only donates to OD1 or OD2 of
+# Asp, OE1 or OE2 of Glu, or OP1 or OP2 of nucleic acids.
+a_n6_don_a_n3_acc_dist_ang = pd.DataFrame({
+    "overlap": (["all"] * a_n6_no_a_n3_acc_h_bond_to_n3.shape[0] +
+                ["all"] * a_n6_single_a_n3_acc_h_bond_to_n3.shape[0] +
+                ["all"] * a_n6_dual_a_n3_acc_h_bond_to_n3.shape[0] +
+                ["all"] * a_n6_single_a_n3_acc_h_bond_to_n3_neg.shape[0] +
+                ["all"] * a_n6_dual_a_n3_acc_h_bond_to_n3_neg.shape[0] +
+                ["no"] * a_n6_single_a_n3_acc_no_ol_h_bond_to_n3.shape[0] +
+                ["no"] * a_n6_dual_a_n3_acc_no_ol_h_bond_to_n3.shape[0] +
+                ["no"] * a_n6_single_a_n3_acc_no_ol_h_bond_to_n3_neg.shape[0] +
+                ["no"] * a_n6_dual_a_n3_acc_no_ol_h_bond_to_n3_neg.shape[0]),
+    "type": ([0] * a_n6_no_a_n3_acc_h_bond_to_n3.shape[0] +
+             [1] * a_n6_single_a_n3_acc_h_bond_to_n3.shape[0] +
+             [2] * a_n6_dual_a_n3_acc_h_bond_to_n3.shape[0] +
+             [1] * a_n6_single_a_n3_acc_h_bond_to_n3_neg.shape[0] +
+             [2] * a_n6_dual_a_n3_acc_h_bond_to_n3_neg.shape[0] +
+             [1] * a_n6_single_a_n3_acc_no_ol_h_bond_to_n3.shape[0] +
+             [2] * a_n6_dual_a_n3_acc_no_ol_h_bond_to_n3.shape[0] +
+             [1] * a_n6_single_a_n3_acc_no_ol_h_bond_to_n3_neg.shape[0] +
+             [2] * a_n6_dual_a_n3_acc_no_ol_h_bond_to_n3_neg.shape[0]),
+    "charge": (["all"] * a_n6_no_a_n3_acc_h_bond_to_n3.shape[0] +
+               ["all"] * a_n6_single_a_n3_acc_h_bond_to_n3.shape[0] +
+               ["all"] * a_n6_dual_a_n3_acc_h_bond_to_n3.shape[0] +
+               ["neg"] * a_n6_single_a_n3_acc_h_bond_to_n3_neg.shape[0] +
+               ["neg"] * a_n6_dual_a_n3_acc_h_bond_to_n3_neg.shape[0] +
+               ["all"] * a_n6_single_a_n3_acc_no_ol_h_bond_to_n3.shape[0] +
+               ["all"] * a_n6_dual_a_n3_acc_no_ol_h_bond_to_n3.shape[0] +
+               ["neg"] * a_n6_single_a_n3_acc_no_ol_h_bond_to_n3_neg.shape[0] +
+               ["neg"] * a_n6_dual_a_n3_acc_no_ol_h_bond_to_n3_neg.shape[0]),
+    "h_acc_distance": (a_n6_no_a_n3_acc_h_bond_to_n3["h_acc_distance"].to_list() +
+                       a_n6_single_a_n3_acc_h_bond_to_n3["h_acc_distance"].to_list() +
+                       a_n6_dual_a_n3_acc_h_bond_to_n3["h_acc_distance"].to_list() +
+                       a_n6_single_a_n3_acc_h_bond_to_n3_neg["h_acc_distance"].to_list() +
+                       a_n6_dual_a_n3_acc_h_bond_to_n3_neg["h_acc_distance"].to_list() +
+                       a_n6_single_a_n3_acc_no_ol_h_bond_to_n3["h_acc_distance"].to_list() +
+                       a_n6_dual_a_n3_acc_no_ol_h_bond_to_n3["h_acc_distance"].to_list() +
+                       a_n6_single_a_n3_acc_no_ol_h_bond_to_n3_neg["h_acc_distance"].to_list() +
+                       a_n6_dual_a_n3_acc_no_ol_h_bond_to_n3_neg["h_acc_distance"].to_list()),
+    "h_angle": (a_n6_no_a_n3_acc_h_bond_to_n3["h_angle"].to_list() +
+                a_n6_single_a_n3_acc_h_bond_to_n3["h_angle"].to_list() +
+                a_n6_dual_a_n3_acc_h_bond_to_n3["h_angle"].to_list() +
+                a_n6_single_a_n3_acc_h_bond_to_n3_neg["h_angle"].to_list() +
+                a_n6_dual_a_n3_acc_h_bond_to_n3_neg["h_angle"].to_list() +
+                a_n6_single_a_n3_acc_no_ol_h_bond_to_n3["h_angle"].to_list() +
+                a_n6_dual_a_n3_acc_no_ol_h_bond_to_n3["h_angle"].to_list() +
+                a_n6_single_a_n3_acc_no_ol_h_bond_to_n3_neg["h_angle"].to_list() +
+                a_n6_dual_a_n3_acc_no_ol_h_bond_to_n3_neg["h_angle"].to_list())
+})
+a_n6_don_a_n3_acc_dist_ang.to_csv(snakemake.output.a_n3_acc_dist_ang, index=False)
+
+# Write data on H-bond distances and angles for donors to the A(N7) that also donate via their N6 with no overlap in
+# partner entity. Include data where the N6 donates to all acceptor types and where it only donates to OD1 or OD2 of
+# Asp, OE1 or OE2 of Glu, or OP1 or OP2 of nucleic acids.
+a_n6_don_a_n7_acc_dist_ang = pd.DataFrame({
+    "overlap": (["all"] * a_n6_no_a_n7_acc_h_bond_to_n7.shape[0] +
+                ["all"] * a_n6_single_a_n7_acc_h_bond_to_n7.shape[0] +
+                ["all"] * a_n6_dual_a_n7_acc_h_bond_to_n7.shape[0] +
+                ["all"] * a_n6_single_a_n7_acc_h_bond_to_n7_neg.shape[0] +
+                ["all"] * a_n6_dual_a_n7_acc_h_bond_to_n7_neg.shape[0] +
+                ["no"] * a_n6_single_a_n7_acc_no_ol_h_bond_to_n7.shape[0] +
+                ["no"] * a_n6_dual_a_n7_acc_no_ol_h_bond_to_n7.shape[0] +
+                ["no"] * a_n6_single_a_n7_acc_no_ol_h_bond_to_n7_neg.shape[0] +
+                ["no"] * a_n6_dual_a_n7_acc_no_ol_h_bond_to_n7_neg.shape[0]),
+    "type": ([0] * a_n6_no_a_n7_acc_h_bond_to_n7.shape[0] +
+             [1] * a_n6_single_a_n7_acc_h_bond_to_n7.shape[0] +
+             [2] * a_n6_dual_a_n7_acc_h_bond_to_n7.shape[0] +
+             [1] * a_n6_single_a_n7_acc_h_bond_to_n7_neg.shape[0] +
+             [2] * a_n6_dual_a_n7_acc_h_bond_to_n7_neg.shape[0] +
+             [1] * a_n6_single_a_n7_acc_no_ol_h_bond_to_n7.shape[0] +
+             [2] * a_n6_dual_a_n7_acc_no_ol_h_bond_to_n7.shape[0] +
+             [1] * a_n6_single_a_n7_acc_no_ol_h_bond_to_n7_neg.shape[0] +
+             [2] * a_n6_dual_a_n7_acc_no_ol_h_bond_to_n7_neg.shape[0]),
+    "charge": (["all"] * a_n6_no_a_n7_acc_h_bond_to_n7.shape[0] +
+               ["all"] * a_n6_single_a_n7_acc_h_bond_to_n7.shape[0] +
+               ["all"] * a_n6_dual_a_n7_acc_h_bond_to_n7.shape[0] +
+               ["neg"] * a_n6_single_a_n7_acc_h_bond_to_n7_neg.shape[0] +
+               ["neg"] * a_n6_dual_a_n7_acc_h_bond_to_n7_neg.shape[0] +
+               ["all"] * a_n6_single_a_n7_acc_no_ol_h_bond_to_n7.shape[0] +
+               ["all"] * a_n6_dual_a_n7_acc_no_ol_h_bond_to_n7.shape[0] +
+               ["neg"] * a_n6_single_a_n7_acc_no_ol_h_bond_to_n7_neg.shape[0] +
+               ["neg"] * a_n6_dual_a_n7_acc_no_ol_h_bond_to_n7_neg.shape[0]),
+    "h_acc_distance": (a_n6_no_a_n7_acc_h_bond_to_n7["h_acc_distance"].to_list() +
+                       a_n6_single_a_n7_acc_h_bond_to_n7["h_acc_distance"].to_list() +
+                       a_n6_dual_a_n7_acc_h_bond_to_n7["h_acc_distance"].to_list() +
+                       a_n6_single_a_n7_acc_h_bond_to_n7_neg["h_acc_distance"].to_list() +
+                       a_n6_dual_a_n7_acc_h_bond_to_n7_neg["h_acc_distance"].to_list() +
+                       a_n6_single_a_n7_acc_no_ol_h_bond_to_n7["h_acc_distance"].to_list() +
+                       a_n6_dual_a_n7_acc_no_ol_h_bond_to_n7["h_acc_distance"].to_list() +
+                       a_n6_single_a_n7_acc_no_ol_h_bond_to_n7_neg["h_acc_distance"].to_list() +
+                       a_n6_dual_a_n7_acc_no_ol_h_bond_to_n7_neg["h_acc_distance"].to_list()),
+    "h_angle": (a_n6_no_a_n7_acc_h_bond_to_n7["h_angle"].to_list() +
+                a_n6_single_a_n7_acc_h_bond_to_n7["h_angle"].to_list() +
+                a_n6_dual_a_n7_acc_h_bond_to_n7["h_angle"].to_list() +
+                a_n6_single_a_n7_acc_h_bond_to_n7_neg["h_angle"].to_list() +
+                a_n6_dual_a_n7_acc_h_bond_to_n7_neg["h_angle"].to_list() +
+                a_n6_single_a_n7_acc_no_ol_h_bond_to_n7["h_angle"].to_list() +
+                a_n6_dual_a_n7_acc_no_ol_h_bond_to_n7["h_angle"].to_list() +
+                a_n6_single_a_n7_acc_no_ol_h_bond_to_n7_neg["h_angle"].to_list() +
+                a_n6_dual_a_n7_acc_no_ol_h_bond_to_n7_neg["h_angle"].to_list())
+})
+a_n6_don_a_n7_acc_dist_ang.to_csv(snakemake.output.a_n7_acc_dist_ang, index=False)
