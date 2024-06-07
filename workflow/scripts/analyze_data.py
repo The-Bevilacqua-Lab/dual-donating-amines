@@ -64,8 +64,7 @@ a_n6_don = (h_bond_data[
       .all(axis='columns')) &
      # Only consider atom pairs where A(N6) is the donor.
      (h_bond_data[["don_resn", "don_name"]].eq(["A", "N6"])
-      .all(axis='columns'))]
- .loc[:, ["don_acc_distance", "don_angle", "acc_angle", "h_acc_distance", "h_angle"]])
+      .all(axis='columns'))])
 a_n6_don["atom"] = "A(N6) Donor"
 a_n1_acc = (h_bond_data[
      # Only include hydrogens with smaller D-H...A distances.
@@ -78,8 +77,7 @@ a_n1_acc = (h_bond_data[
       .all(axis='columns')) &
      # Only consider atom pairs where A(N1) is the acceptor.
      (h_bond_data[["acc_resn", "acc_name"]].eq(["A", "N1"])
-      .all(axis='columns'))]
- .loc[:, ["don_acc_distance", "don_angle", "acc_angle", "h_acc_distance", "h_angle"]])
+      .all(axis='columns'))])
 a_n1_acc["atom"] = "A(N1) Acceptor"
 pd.concat([a_n6_don, a_n1_acc], ignore_index=True).to_csv(snakemake.output.heatmap, index=False,
                                                           columns=["don_acc_distance", "don_angle", "acc_angle",
