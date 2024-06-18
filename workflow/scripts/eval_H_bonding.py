@@ -137,46 +137,6 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, acceptor_info, eq_class_mem
     notes = []
     # Get the D-A distance.
     don_acc_distance = cmd.get_distance(f'index {donor_atom[0]}', f'index {acceptor_atom[0]}')
-    # Collect information about the donor antecedent atom.
-    stored.don_ant = []
-    cmd.iterate(f'name {donor_info[4]} and neighbor index {donor_atom[0]}',
-                'stored.don_ant.append((index, name, resn, resi, chain))')
-    # Issue an error message if no donor antecedent atom was identified.
-    if len(stored.don_ant) == 0:
-        successful_completion = False
-        notes.append(f"Error: No antecedent atoms were identified for {donor_atom[1]}.{donor_atom[2]}.{donor_atom[3]}."
-                     f"{donor_atom[4]} of {eq_class_mem}.")
-        return [successful_completion, notes]
-    # Get the DA-D-A angle when one donor antecedent atom was identified.
-    elif len(stored.don_ant) == 1:
-        don_angle = cmd.get_angle(f'index {stored.don_ant[0][0]}', f'index {donor_atom[0]}',
-                                  f'index {acceptor_atom[0]}')
-    # Issue an error message if more than one donor antecedent atom was identified.
-    else:
-        successful_completion = False
-        notes.append(f"Error: More than one antecedent atom was identified for {donor_atom[1]}.{donor_atom[2]}."
-                     f"{donor_atom[3]}.{donor_atom[4]} of {eq_class_mem}.")
-        return [successful_completion, notes]
-    # Collect information about the acceptor antecedent atom.
-    stored.acc_ant = []
-    cmd.iterate(f'name {acceptor_info[4]} and neighbor index {acceptor_atom[0]}',
-                'stored.acc_ant.append((index, name, resn, resi, chain))')
-    # Issue an error message if no acceptor antecedent atom was identified.
-    if len(stored.acc_ant) == 0:
-        successful_completion = False
-        notes.append(f"Error: No antecedent atoms were identified for {acceptor_atom[1]}.{acceptor_atom[2]}."
-                     f"{acceptor_atom[3]}.{acceptor_atom[4]} of {eq_class_mem}.")
-        return [successful_completion, notes]
-    # Get the D-A-AA angle when one acceptor antecedent atom was identified.
-    elif len(stored.acc_ant) == 1:
-        acc_angle = cmd.get_angle(f'index {donor_atom[0]}', f'index {acceptor_atom[0]}',
-                                  f'index {stored.acc_ant[0][0]}')
-    # Issue an error message if more than one acceptor antecedent atom was identified.
-    else:
-        successful_completion = False
-        notes.append(f"Error: More than one antecedent atom was identified for {acceptor_atom[1]}.{acceptor_atom[2]}."
-                     f"{acceptor_atom[3]}.{acceptor_atom[4]} of {eq_class_mem}.")
-        return [successful_completion, notes]
     # If the donor is non-rotatable, use the donor hydrogen(s) locations to calculate the H-A distance(s) and angle(s).
     # Additionally, if the hydrogens belong to an RNA exocyclic amine, calculate the dihedral between the hydrogen
     # closest to the WCF nucleobase edge and the nearby endocyclic nitrogen that is part of the 6-membered ring. For
@@ -208,16 +168,16 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, acceptor_info, eq_class_mem
                 h_name = [stored.hydrogen[0][1], pd.NA]
                 # Return the geometry values.
                 return [successful_completion,
-                        [[don_acc_distance, don_angle, acc_angle, h_acc_distance[0], h_angle[0], h_dihedral[0],
+                        [[don_acc_distance, h_acc_distance[0], h_angle[0], h_dihedral[0],
                           h_name[0]]]]
         # Get the measurements for donors that have two hydrogens.
         elif len(stored.hydrogen) == 2:
             # Collect information about the nearby endocyclic nitrogen.
-            if donor_atom[2] in ["A", "G"]:
+            if donor_atom[2] in ["A", "G", "DA", "DG"]:
                 stored.end_n = []
                 cmd.iterate(f'name N1 and neighbor index {stored.don_ant[0][0]}',
                             'stored.end_n.append((index, name, resn, resi, chain))')
-            elif donor_atom[2] == "C":
+            elif donor_atom[2] in ["C", "DC"]:
                 stored.end_n = []
                 cmd.iterate(f'name N3 and neighbor index {stored.don_ant[0][0]}',
                             'stored.end_n.append((index, name, resn, resi, chain))')
@@ -245,8 +205,8 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, acceptor_info, eq_class_mem
             h_name = [stored.hydrogen[0][1], stored.hydrogen[1][1]]
             # Return the geometry values.
             return [successful_completion,
-                    [[don_acc_distance, don_angle, acc_angle, h_acc_distance[0], h_angle[0], h_dihedral[0], h_name[0]],
-                     [don_acc_distance, don_angle, acc_angle, h_acc_distance[1], h_angle[1], h_dihedral[1], h_name[1]]]]
+                    [[don_acc_distance, h_acc_distance[0], h_angle[0], h_dihedral[0], h_name[0]],
+                     [don_acc_distance, h_acc_distance[1], h_angle[1], h_dihedral[1], h_name[1]]]]
         # Issue an error message if there are more than two hydrogens.
         elif len(stored.hydrogen) > 2:
             successful_completion = False
@@ -260,4 +220,4 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, acceptor_info, eq_class_mem
         h_name = [pd.NA, pd.NA]
         # Return the geometry values.
         return [successful_completion,
-                [[don_acc_distance, don_angle, acc_angle, h_acc_distance[0], h_angle[0], h_dihedral[0], h_name[0]]]]
+                [[don_acc_distance, h_acc_distance[0], h_angle[0], h_dihedral[0], h_name[0]]]]

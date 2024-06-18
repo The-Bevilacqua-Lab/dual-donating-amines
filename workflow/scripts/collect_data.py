@@ -101,41 +101,33 @@ for residue in residue_library.RESIDUE_LIBRARY:
 donor_string = donor_string[:-1]
 rotatable_donor_string = rotatable_donor_string[:-1]
 
-# Construct three lists of strings containing residue and atom names that describe either donor or acceptor atoms of
-# particular interest. Additionally, construct three strings that can be used with PyMOL to select all possible donor or
+# Construct two lists of strings containing residue and atom names that describe either donor or acceptor atoms of
+# particular interest. Additionally, construct two strings that can be used with PyMOL to select all possible donor or
 # all possible acceptor atoms of particular interest.
 donors_of_interest = []
 donors_of_interest_str = ''
 for atom in snakemake.config["donors_of_interest"]:
-    donors_of_interest.append(f'{atom[0]}.{atom[1]}')
-    donors_of_interest_str += f'(resn {atom[0]} and name {atom[1]}) '
+    donors_of_interest.append(atom)
+    donors_of_interest_str += f'(resn {atom.split(".")[0]} and name {atom.split(".")[1]}) '
 donors_of_interest_str = donors_of_interest_str[:-1]
 acceptors_of_interest = []
 acceptors_of_interest_str = ''
 for atom in snakemake.config["acceptors_of_interest"]:
-    acceptors_of_interest.append(f'{atom[0]}.{atom[1]}')
-    acceptors_of_interest_str += f'(resn {atom[0]} and name {atom[1]}) '
+    acceptors_of_interest.append(atom)
+    acceptors_of_interest_str += f'(resn {atom.split(".")[0]} and name {atom.split(".")[1]}) '
 acceptors_of_interest_str = acceptors_of_interest_str[:-1]
 
 # Define the donor and acceptor atoms of the RNA nucleobases.
 nuc_donors = ["A.N6", "C.N4", "G.N1", "G.N2", "U.N3"]
 nuc_acceptors = ["A.N1", "A.N3", "A.N7", "C.O2", "C.N3", "G.N3", "G.O6", "G.N7", "U.O2", "U.O4"]
 
-# Using the library provided by the const module, create a new library including protonated adenine.
-expanded_library = residue_library.RESIDUE_LIBRARY
-for res in expanded_library:
-    if res['res'] == 'A':
-        res['don'].append(["N1", "N", False, 1, "C2"])
-        res['don'].append(["N3", "N", False, 1, "C2"])
-        res['don'].append(["N7", "N", False, 1, "C5"])
-
 # Define the distance used to search for nearby donor or acceptor atoms.
 search_dist = 4.1
 
 # Identify the chains of all the equivalence class member RNAs.
 rna_list = []
-for i in range(len(eq_class_mem[2])):
-    rna_list.append(f"chain {eq_class_mem[3][i]}")
+for idx in range(len(eq_class_mem[2])):
+    rna_list.append(f"chain {eq_class_mem[3][idx]}")
 mem_rna_chains = " ".join(rna_list)
 
 # Retrieve the structure that contains the equivalence class member RNA chains.
@@ -305,17 +297,16 @@ for atom_pair in acc_df.itertuples():
             acc_df = acc_df[acc_df["don_index"] != atom_pair.don_index]
 
 # Acquire the H-bonding geometry measurements for all acceptors near each donor of interest.
-don_h_bonds_dict = {
-    "don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "acc_index": [], "acc_name": [],
-    "acc_resn": [], "acc_resi": [], "acc_chain": [], "don_acc_distance": [], "don_angle": [], "acc_angle": [],
-    "h_acc_distance": [], "h_angle": [], "h_dihedral": [], "h_name": []
-}
+blank_h_bonds_dict = {"don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "acc_index": [],
+                      "acc_name": [], "acc_resn": [], "acc_resi": [], "acc_chain": [], "don_acc_distance": [],
+                      "h_acc_distance": [], "h_angle": [], "h_dihedral": [], "h_name": []}
+don_h_bonds_dict = copy.deepcopy(blank_h_bonds_dict)
 for atom_pair in don_df.itertuples():
     # Store the donor and acceptor atom values for the dataframe row.
     don_list = [atom_pair.don_index, atom_pair.don_name, atom_pair.don_resn, atom_pair.don_resi, atom_pair.don_chain]
     acc_list = [atom_pair.acc_index, atom_pair.acc_name, atom_pair.acc_resn, atom_pair.acc_resi, atom_pair.acc_chain]
     # Retrieve the H-bond measurements for the atom pair.
-    h_bond_list = eval_H_bonding.evaluate(don_list, acc_list, eq_class_mem_id, expanded_library)
+    h_bond_list = eval_H_bonding.evaluate(don_list, acc_list, eq_class_mem_id, residue_library.RESIDUE_LIBRARY)
     # If the H-bond evaluation is not successful, print the error message(s) and exit.
     successful_completion = h_bond_list[0]
     if not successful_completion:
@@ -336,17 +327,13 @@ don_h_bonds_df = pd.DataFrame(don_h_bonds_dict)
 don_h_bonds_df["cat"] = "don"
 
 # Acquire the H-bonding geometry measurements for all donors near each acceptor of interest.
-acc_h_bonds_dict = {
-    "don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "acc_index": [], "acc_name": [],
-    "acc_resn": [], "acc_resi": [], "acc_chain": [], "don_acc_distance": [], "don_angle": [], "acc_angle": [],
-    "h_acc_distance": [], "h_angle": [], "h_dihedral": [], "h_name": []
-}
+acc_h_bonds_dict = copy.deepcopy(blank_h_bonds_dict)
 for atom_pair in acc_df.itertuples():
     # Store the donor and acceptor atom values for the dictionary row.
     don_list = [atom_pair.don_index, atom_pair.don_name, atom_pair.don_resn, atom_pair.don_resi, atom_pair.don_chain]
     acc_list = [atom_pair.acc_index, atom_pair.acc_name, atom_pair.acc_resn, atom_pair.acc_resi, atom_pair.acc_chain]
     # Retrieve the H-bond measurements for the atom pair.
-    h_bond_list = eval_H_bonding.evaluate(don_list, acc_list, eq_class_mem_id, expanded_library)
+    h_bond_list = eval_H_bonding.evaluate(don_list, acc_list, eq_class_mem_id, residue_library.RESIDUE_LIBRARY)
     # If the H-bond evaluation is not successful, print the error message(s) and exit.
     successful_completion = h_bond_list[0]
     if not successful_completion:
