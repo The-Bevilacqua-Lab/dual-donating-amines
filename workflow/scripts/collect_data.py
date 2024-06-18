@@ -166,142 +166,40 @@ stored.donor_list = []
 cmd.iterate(f'({mem_rna_chains}) and ({donors_of_interest_str})',
             'stored.donor_list.append((index, name, resn, resi, chain))')
 
-# Store a list of atoms near the donors of interest within a dictionary of nucleobases. Also include two keys which have
-# values containing both residue and atom names for nucleobase atoms and nearby atoms.
-blank_nucleobase_dict = {"index": [], "name": [], "resn": [], "resi": [], "chain": [],
-                         "near_index": [], "near_name": [], "near_resn": [], "near_resi": [], "near_chain": [],
-                         "resn_name": [], "near_resn_name": []}
-nucleobase_dict = copy.deepcopy(blank_nucleobase_dict)
+# Store a list of acceptors near the donors of interest within a dictionary of nucleobases. Also include two keys which
+# have values containing both residue and atom names for donor and acceptor atoms.
+nucleobase_dict = {"don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [],
+                   "acc_index": [], "acc_name": [], "acc_resn": [], "acc_resi": [], "acc_chain": [],
+                   "don_resn_name": [], "acc_resn_name": []}
 for donor in stored.donor_list:
-    # Find the atoms near the donor.
-    stored.nearby_atoms = []
-    cmd.iterate(f'index {donor[0]} around {search_dist}',
-                'stored.nearby_atoms.append((index, name, resn, resi, chain))')
-    for atom in stored.nearby_atoms:
+    # Find the acceptors near the donor.
+    stored.acceptors = []
+    cmd.iterate(f'(acceptors within {search_dist} of index {donor[0]}) and (organic or polymer) and not '
+                f'(sidechain and byres index {donor[0]})', 'stored.acceptors.append((index, name, resn, resi, chain))')
+    for acceptor in stored.acceptors:
         # Add the donor to the nucleobase dictionary.
-        nucleobase_dict["index"].append(donor[0])
-        nucleobase_dict["name"].append(donor[1])
-        nucleobase_dict["resn"].append(donor[2])
-        nucleobase_dict["resi"].append(donor[3])
-        nucleobase_dict["chain"].append(donor[4])
-        nucleobase_dict["resn_name"].append(str(donor[2]) + "." + str(donor[1]))
-        # Add the nearby atoms to the nucleobase dictionary.
-        nucleobase_dict["near_index"].append(atom[0])
-        nucleobase_dict["near_name"].append(atom[1])
-        nucleobase_dict["near_resn"].append(atom[2])
-        nucleobase_dict["near_resi"].append(atom[3])
-        nucleobase_dict["near_chain"].append(atom[4])
-        nucleobase_dict["near_resn_name"].append(str(atom[2]) + "." + str(atom[1]))
-
-# Store a list of acceptors of interest from the equivalence class member RNA chains.
-stored.acceptor_list = []
-cmd.iterate(f'({mem_rna_chains}) and ({acceptors_of_interest_str})',
-            'stored.acceptor_list.append((index, name, resn, resi, chain))')
-
-# Store a list of atoms near the acceptors of interest within the dictionary of nucleobases.
-for acceptor in stored.acceptor_list:
-    # Find the atoms near the acceptor.
-    stored.nearby_atoms = []
-    cmd.iterate(f'index {acceptor[0]} around {search_dist}',
-                'stored.nearby_atoms.append((index, name, resn, resi, chain))')
-    for atom in stored.nearby_atoms:
-        # Add the acceptor to the nucleobase dictionary.
-        nucleobase_dict["index"].append(acceptor[0])
-        nucleobase_dict["name"].append(acceptor[1])
-        nucleobase_dict["resn"].append(acceptor[2])
-        nucleobase_dict["resi"].append(acceptor[3])
-        nucleobase_dict["chain"].append(acceptor[4])
-        nucleobase_dict["resn_name"].append(str(acceptor[2]) + "." + str(acceptor[1]))
-        # Add the nearby atoms to the nucleobase dictionary.
-        nucleobase_dict["near_index"].append(atom[0])
-        nucleobase_dict["near_name"].append(atom[1])
-        nucleobase_dict["near_resn"].append(atom[2])
-        nucleobase_dict["near_resi"].append(atom[3])
-        nucleobase_dict["near_chain"].append(atom[4])
-        nucleobase_dict["near_resn_name"].append(str(atom[2]) + "." + str(atom[1]))
+        nucleobase_dict["don_index"].append(donor[0])
+        nucleobase_dict["don_name"].append(donor[1])
+        nucleobase_dict["don_resn"].append(donor[2])
+        nucleobase_dict["don_resi"].append(donor[3])
+        nucleobase_dict["don_chain"].append(donor[4])
+        nucleobase_dict["don_resn_name"].append(str(donor[2]) + "." + str(donor[1]))
+        # Add the acceptors to the nucleobase dictionary.
+        nucleobase_dict["acc_index"].append(acceptor[0])
+        nucleobase_dict["acc_name"].append(acceptor[1])
+        nucleobase_dict["acc_resn"].append(acceptor[2])
+        nucleobase_dict["acc_resi"].append(acceptor[3])
+        nucleobase_dict["acc_chain"].append(acceptor[4])
+        nucleobase_dict["acc_resn_name"].append(str(acceptor[2]) + "." + str(acceptor[1]))
 
 # Create a dataframe based on the nucleobase dictionary.
-nucleobase_df_total = pd.DataFrame(nucleobase_dict)
-
-# Create a new dataframe omitting nucleobases where at least one nearby atom belongs to a residue not specified within
-# the included_residues list in the configuration file.
-nuc_grp = ["resn", "resi", "chain"]
-nucleobase_df = (nucleobase_df_total[nucleobase_df_total.groupby(nuc_grp)["near_resn"]
-                 .transform(lambda mem: all(mem.isin(snakemake.config["included_residues"])))])
-# If the dataframe is empty, recreate it using the blank dictionary so that it has the appropriate column names.
-if len(nucleobase_df) == 0:
-    nucleobase_df = pd.DataFrame(blank_nucleobase_dict)
-
-# For each omitted nucleobase, print out the identity of the nearby residues not listed in the configuration file.
-omitted_nuc_df = nucleobase_df.merge(nucleobase_df_total, how='right', indicator=True)
-omitted_nuc_df = (omitted_nuc_df[(omitted_nuc_df["_merge"] == "right_only") &
-                                 ~(omitted_nuc_df["near_resn"].isin(snakemake.config["included_residues"]))]
-                  .drop(columns=["_merge"]))
-total_nuc = len(nucleobase_df_total.loc[:, nuc_grp].drop_duplicates())
-keep_nuc = len(nucleobase_df.loc[:, nuc_grp].drop_duplicates())
-omit_nuc = len(omitted_nuc_df.loc[:, nuc_grp].drop_duplicates())
-if not total_nuc == keep_nuc + omit_nuc:
-    print(f"Error: The number of retained and omitted nucleobases does not equal the total number of nucleobases in "
-          f"equivalence class member {snakemake.wildcards.eq_class_members}.")
-    sys.exit(1)
-print(f"Note: There are {keep_nuc} retained nucleobases.")
-print(f"Note: There are {omit_nuc} omitted nucleobases.")
-with open(snakemake.output.omitted_nuc, "w") as csv_file:
-    writer = csv.writer(csv_file)
-    if commit_hash:
-        writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
-    writer.writerow([f"# input file: {snakemake.input[0]}"])
-    writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
-omitted_nuc_df.drop(columns=["resn_name", "near_resn_name"]).to_csv(snakemake.output.omitted_nuc, index=False, mode='a',
-                                                                    na_rep='NaN')
-
-# Create a new dataframe containing donors of interest and omitting nucleobases that do not have any nearby acceptor
-# atoms. Additionally, atoms near the donor of interest that are not acceptors are filtered out along with atoms
-# belonging to the nucleobase.
-don_df = nucleobase_df[nucleobase_df["resn_name"].isin(donors_of_interest)]
-don_df = don_df[don_df["near_resn_name"].isin(acceptor_atoms)]
-don_df = don_df[~((don_df["resn"] == don_df["near_resn"]) &
-                  (don_df["resi"] == don_df["near_resi"]) &
-                  (don_df["chain"] == don_df["near_chain"]) &
-                  (don_df["near_resn_name"].isin(nuc_acceptors)))]
-don_df.rename(columns={"index": "don_index", "name": "don_name",
-                       "resn": "don_resn", "resi": "don_resi", "chain": "don_chain",
-                       "near_index": "acc_index", "near_name": "acc_name",
-                       "near_resn": "acc_resn", "near_resi": "acc_resi", "near_chain": "acc_chain",
-                       "resn_name": "don_resn_name", "near_resn_name": "acc_resn_name"},
-              inplace=True)
-
-# Create a new dataframe containing acceptors of interest and omitting nucleobases that do not have any nearby donor
-# atoms. Additionally, atoms near the acceptors of interest that are not donors are filtered out along with atoms
-# belonging to the nucleobase. Temporarily consider O5' and O3' atoms to be donors.
-o5_o3_list = ["A.O5'", "A.O3'", "C.O5'", "C.O3'", "G.O5'", "G.O3'", "U.O5'", "U.O3'",
-              "DA.O5'", "DA.O3'", "DC.O5'", "DC.O3'", "DG.O5'", "DG.O3'", "DT.O5'", "DT.O3'"]
-acc_df = nucleobase_df[nucleobase_df["resn_name"].isin(acceptors_of_interest)]
-acc_df = acc_df[acc_df["near_resn_name"].isin(donor_atoms + o5_o3_list)]
-acc_df = acc_df[~((acc_df["resn"] == acc_df["near_resn"]) &
-                  (acc_df["resi"] == acc_df["near_resi"]) &
-                  (acc_df["chain"] == acc_df["near_chain"]) &
-                  (acc_df["near_resn_name"].isin(nuc_donors)))]
-acc_df.rename(columns={"index": "acc_index", "name": "acc_name",
-                       "resn": "acc_resn", "resi": "acc_resi", "chain": "acc_chain",
-                       "near_index": "don_index", "near_name": "don_name",
-                       "near_resn": "don_resn", "near_resi": "don_resi", "near_chain": "don_chain",
-                       "resn_name": "acc_resn_name", "near_resn_name": "don_resn_name"},
-              inplace=True)
-
-# Iterate through the acceptor dataframe and remove any O5' or O3' that cannot donate an H-bond.
-for atom_pair in acc_df.itertuples():
-    donor_atom = (atom_pair.don_index, atom_pair.don_name, atom_pair.don_resn, atom_pair.don_resi, atom_pair.don_chain)
-    if atom_pair.don_resn_name in o5_o3_list:
-        if not eval_H_bonding.terminal_donor(donor_atom):
-            acc_df = acc_df[acc_df["don_index"] != atom_pair.don_index]
+nucleobase_df = pd.DataFrame(nucleobase_dict)
 
 # Acquire the H-bonding geometry measurements for all acceptors near each donor of interest.
-blank_h_bonds_dict = {"don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "acc_index": [],
-                      "acc_name": [], "acc_resn": [], "acc_resi": [], "acc_chain": [], "don_acc_distance": [],
-                      "h_acc_distance": [], "h_angle": [], "h_dihedral": [], "h_name": []}
-don_h_bonds_dict = copy.deepcopy(blank_h_bonds_dict)
-for atom_pair in don_df.itertuples():
+don_h_bonds_dict = {"don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "acc_index": [],
+                    "acc_name": [], "acc_resn": [], "acc_resi": [], "acc_chain": [], "don_acc_distance": [],
+                    "h_acc_distance": [], "h_angle": [], "h_dihedral": [], "h_name": []}
+for atom_pair in nucleobase_df.itertuples():
     # Store the donor and acceptor atom values for the dataframe row.
     don_list = [atom_pair.don_index, atom_pair.don_name, atom_pair.don_resn, atom_pair.don_resi, atom_pair.don_chain]
     acc_list = [atom_pair.acc_index, atom_pair.acc_name, atom_pair.acc_resn, atom_pair.acc_resi, atom_pair.acc_chain]
@@ -323,45 +221,12 @@ for atom_pair in don_df.itertuples():
                 idx += 1
 # Create a dataframe based on the dictionary.
 don_h_bonds_df = pd.DataFrame(don_h_bonds_dict)
-# Add a category column defining this data as being specific to the donors of interest.
-don_h_bonds_df["cat"] = "don"
-
-# Acquire the H-bonding geometry measurements for all donors near each acceptor of interest.
-acc_h_bonds_dict = copy.deepcopy(blank_h_bonds_dict)
-for atom_pair in acc_df.itertuples():
-    # Store the donor and acceptor atom values for the dictionary row.
-    don_list = [atom_pair.don_index, atom_pair.don_name, atom_pair.don_resn, atom_pair.don_resi, atom_pair.don_chain]
-    acc_list = [atom_pair.acc_index, atom_pair.acc_name, atom_pair.acc_resn, atom_pair.acc_resi, atom_pair.acc_chain]
-    # Retrieve the H-bond measurements for the atom pair.
-    h_bond_list = eval_H_bonding.evaluate(don_list, acc_list, eq_class_mem_id, residue_library.RESIDUE_LIBRARY)
-    # If the H-bond evaluation is not successful, print the error message(s) and exit.
-    successful_completion = h_bond_list[0]
-    if not successful_completion:
-        for note in h_bond_list[1]:
-            print(note)
-        sys.exit(1)
-    # Add the H-bond measurements to the dictionary.
-    else:
-        for h_bond in h_bond_list[1]:
-            row = don_list + acc_list + h_bond
-            idx = 0
-            for key in acc_h_bonds_dict:
-                acc_h_bonds_dict[key].append(row[idx])
-                idx += 1
-# Create a dataframe based on the dictionary.
-acc_h_bonds_df = pd.DataFrame(acc_h_bonds_dict)
-# Add a category column defining this data as being specific to the acceptors of interest.
-acc_h_bonds_df["cat"] = "acc"
 
 # Create a dataframe of residues that are involved in potential H-bonding interactions.
 res_df = pd.concat([
-    don_df.loc[:, ["don_resn", "don_resi", "don_chain"]]
+    nucleobase_df.loc[:, ["don_resn", "don_resi", "don_chain"]]
     .rename(columns={"don_resn": "resn", "don_resi": "resi", "don_chain": "chain"}),
-    don_df.loc[:, ["acc_resn", "acc_resi", "acc_chain"]]
-    .rename(columns={"acc_resn": "resn", "acc_resi": "resi", "acc_chain": "chain"}),
-    acc_df.loc[:, ["don_resn", "don_resi", "don_chain"]]
-    .rename(columns={"don_resn": "resn", "don_resi": "resi", "don_chain": "chain"}),
-    acc_df.loc[:, ["acc_resn", "acc_resi", "acc_chain"]]
+    nucleobase_df.loc[:, ["acc_resn", "acc_resi", "acc_chain"]]
     .rename(columns={"acc_resn": "resn", "acc_resi": "resi", "acc_chain": "chain"})]).drop_duplicates()
 
 # Create a dataframe with the b-factors of heavy atoms for residues involved in potential H-bonding interactions.
@@ -393,9 +258,10 @@ with open(snakemake.output.h_bond, "w") as csv_file:
         writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
     writer.writerow([f"# input file: {snakemake.input[0]}"])
     writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
-pd.concat([don_h_bonds_df, acc_h_bonds_df]).to_csv(snakemake.output.h_bond, index=False, mode='a', na_rep='NaN')
+don_h_bonds_df.to_csv(snakemake.output.h_bond, index=False, mode='a', na_rep='NaN')
 
-# Write a csv file that stores applicable nucleobases containing donors and acceptors of interest.
+# Write a csv file that stores applicable nucleobases containing donors of interest.
+nuc_grp = ["resn", "resi", "chain"]
 with open(snakemake.output.nuc, "w") as csv_file:
     writer = csv.writer(csv_file)
     if commit_hash:
