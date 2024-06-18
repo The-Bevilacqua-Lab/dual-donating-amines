@@ -35,15 +35,19 @@ sys.stdout = stdout_file
 sys.stderr = stderr_file
 
 # If commit_hash is set to true in the Snakemake configuration file, check if any changes have been made to the repo and
-# get the hash of the current git commit. If uncommitted changes have been made to anything other than
-# config/config.yaml, print an error message and exit.
+# get the hash of the current git commit. If uncommitted changes have been made to anything other than files listed in
+# the acceptable_changes variable defined below, print an error message and exit.
 repo_changes = []
 commit_hash = ""
 if snakemake.config["commit_hash"]:
     repo_changes = list(subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"],
                                                 cwd=os.path.dirname(os.path.realpath(__file__)))
                         .decode('ascii').strip().split("\n"))
-    if repo_changes == [""] or (len(repo_changes) == 1 and "config/config.yaml" in repo_changes[0]):
+    acceptable_changes = ['config/config.yaml', snakemake.config["rep_set_file"], snakemake.config["add_res_file"]]
+    for file in repo_changes:
+        if file.split(' ')[-1] in acceptable_changes:
+            repo_changes.remove(file)
+    if len(repo_changes) == 0:
         commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"],
                                               cwd=os.path.dirname(os.path.realpath(__file__))).decode('ascii').strip()
     else:
