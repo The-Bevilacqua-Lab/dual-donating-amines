@@ -328,10 +328,11 @@ for atom_pair in acc_df.itertuples():
             acc_df = acc_df[acc_df["don_index"] != atom_pair.don_index]
 
 # Acquire the H-bonding geometry measurements for all acceptors near each donor of interest.
-don_h_bonds_df = pd.DataFrame(
-    {"don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "acc_index": [], "acc_name": [],
-     "acc_resn": [], "acc_resi": [], "acc_chain": [], "don_acc_distance": [], "don_angle": [], "acc_angle": [],
-     "h_acc_distance": [], "h_angle": [], "h_dihedral": [], "h_name": []})
+don_h_bonds_dict = {
+    "don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "acc_index": [], "acc_name": [],
+    "acc_resn": [], "acc_resi": [], "acc_chain": [], "don_acc_distance": [], "don_angle": [], "acc_angle": [],
+    "h_acc_distance": [], "h_angle": [], "h_dihedral": [], "h_name": []
+}
 for atom_pair in don_df.itertuples():
     # Store the donor and acceptor atom values for the dataframe row.
     don_list = [atom_pair.don_index, atom_pair.don_name, atom_pair.don_resn, atom_pair.don_resi, atom_pair.don_chain]
@@ -344,18 +345,25 @@ for atom_pair in don_df.itertuples():
         for note in h_bond_list[1]:
             print(note)
         sys.exit(1)
-    # Add the H-bond measurements to the dataframe.
+    # Add the H-bond measurements to the dictionary.
     else:
         for h_bond in h_bond_list[1]:
-            don_h_bonds_df.loc[len(don_h_bonds_df)] = don_list + acc_list + h_bond
+            row = don_list + acc_list + h_bond
+            idx = 0
+            for key in don_h_bonds_dict:
+                don_h_bonds_dict[key].append(row[idx])
+                idx += 1
+# Create a dataframe based on the dictionary.
+don_h_bonds_df = pd.DataFrame(don_h_bonds_dict)
 # Add a category column defining this data as being specific to the donors of interest.
 don_h_bonds_df["cat"] = "don"
 
 # Acquire the H-bonding geometry measurements for all acceptors near each protonated donor of interest.
-prot_don_h_bonds_df = pd.DataFrame(
-    {"don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "acc_index": [], "acc_name": [],
-     "acc_resn": [], "acc_resi": [], "acc_chain": [], "don_acc_distance": [], "don_angle": [], "acc_angle": [],
-     "h_acc_distance": [], "h_angle": [], "h_dihedral": [], "h_name": []})
+prot_don_h_bonds_dict = {
+    "don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "acc_index": [], "acc_name": [],
+    "acc_resn": [], "acc_resi": [], "acc_chain": [], "don_acc_distance": [], "don_angle": [], "acc_angle": [],
+    "h_acc_distance": [], "h_angle": [], "h_dihedral": [], "h_name": []
+}
 for atom_pair in prot_don_df.itertuples():
     # Store the donor and acceptor atom values for the dataframe row.
     don_list = [atom_pair.don_index, atom_pair.don_name, atom_pair.don_resn, atom_pair.don_resi, atom_pair.don_chain]
@@ -368,10 +376,16 @@ for atom_pair in prot_don_df.itertuples():
         for note in h_bond_list[1]:
             print(note)
         sys.exit(1)
-    # Add the H-bond measurements to the dataframe.
+    # Add the H-bond measurements to the dictionary.
     else:
         for h_bond in h_bond_list[1]:
-            prot_don_h_bonds_df.loc[len(prot_don_h_bonds_df)] = don_list + acc_list + h_bond
+            row = don_list + acc_list + h_bond
+            idx = 0
+            for key in prot_don_h_bonds_dict:
+                prot_don_h_bonds_dict[key].append(row[idx])
+                idx += 1
+# Create a dataframe based on the dictionary.
+prot_don_h_bonds_df = pd.DataFrame(prot_don_h_bonds_dict)
 # Add a category column defining this data as being specific to the protonated donors of interest.
 prot_don_h_bonds_df["cat"] = "prot_don"
 
