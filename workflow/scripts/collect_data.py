@@ -84,8 +84,8 @@ rotatable_donor_atoms = []
 acceptor_atoms = []
 donor_string = ''
 rotatable_donor_string = ''
-for residue in const.RESIDUE_LIBRARY:
-    if residue["res"] in const.INCLUDED_RESIDUES:
+for residue in residue_library.RESIDUE_LIBRARY:
+    if residue["res"] in snakemake.config["included_residues"]:
         for donor in residue['don']:
             donor_atoms.append(f'{residue["res"]}.{donor[0]}')
             donor_string += f'(resn {residue["res"]} and name {donor[0]}) '
@@ -97,25 +97,18 @@ for residue in const.RESIDUE_LIBRARY:
 donor_string = donor_string[:-1]
 rotatable_donor_string = rotatable_donor_string[:-1]
 
-# Construct three lists of strings containing residue and atom names that describe either donor, protonated donor
-# (formal charge of +1), or acceptor atoms of particular interest. Additionally, construct three strings that can be
-# used with PyMOL to select all possible donor, all possible protonated donor, or all possible acceptor atoms of
-# particular interest.
+# Construct three lists of strings containing residue and atom names that describe either donor or acceptor atoms of
+# particular interest. Additionally, construct three strings that can be used with PyMOL to select all possible donor or
+# all possible acceptor atoms of particular interest.
 donors_of_interest = []
 donors_of_interest_str = ''
-for atom in const.DONORS_OF_INTEREST:
+for atom in snakemake.config["donors_of_interest"]:
     donors_of_interest.append(f'{atom[0]}.{atom[1]}')
     donors_of_interest_str += f'(resn {atom[0]} and name {atom[1]}) '
 donors_of_interest_str = donors_of_interest_str[:-1]
-prot_donors_of_interest = []
-prot_donors_of_interest_str = ''
-for atom in const.PROT_DONORS_OF_INTEREST:
-    prot_donors_of_interest.append(f'{atom[0]}.{atom[1]}')
-    prot_donors_of_interest_str += f'(resn {atom[0]} and name {atom[1]}) '
-prot_donors_of_interest_str = prot_donors_of_interest_str[:-1]
 acceptors_of_interest = []
 acceptors_of_interest_str = ''
-for atom in const.ACCEPTORS_OF_INTEREST:
+for atom in snakemake.config["acceptors_of_interest"]:
     acceptors_of_interest.append(f'{atom[0]}.{atom[1]}')
     acceptors_of_interest_str += f'(resn {atom[0]} and name {atom[1]}) '
 acceptors_of_interest_str = acceptors_of_interest_str[:-1]
@@ -125,7 +118,7 @@ nuc_donors = ["A.N6", "C.N4", "G.N1", "G.N2", "U.N3"]
 nuc_acceptors = ["A.N1", "A.N3", "A.N7", "C.O2", "C.N3", "G.N3", "G.O6", "G.N7", "U.O2", "U.O4"]
 
 # Using the library provided by the const module, create a new library including protonated adenine.
-expanded_library = const.RESIDUE_LIBRARY
+expanded_library = residue_library.RESIDUE_LIBRARY
 for res in expanded_library:
     if res['res'] == 'A':
         res['don'].append(["N1", "N", False, 1, "C2"])
@@ -159,16 +152,11 @@ if not successful_completion:
         print(note)
     sys.exit(1)
 
-# Change the formal charge on A(N1), A(N3), and A(N7) to +1. With a formal charge of +1, PyMOL will add hydrogens to
-# these atoms when the following h_add command is used.
-cmd.alter(prot_donors_of_interest_str, 'formal_charge=1')
-
 # Remove any hydrogens that loaded with the structure.
 cmd.remove('elem H')
 
 # Add hydrogens to non-rotatable donors that are a part of or near the equivalence class member RNA.
-cmd.h_add(f'(({donor_string} {prot_donors_of_interest_str}) and not ({rotatable_donor_string})) within {search_dist} '
-          f'of ({mem_rna_chains})')
+cmd.h_add(f'(({donor_string}) and not ({rotatable_donor_string})) within {search_dist} of ({mem_rna_chains})')
 
 # Randomly sample 100 atom indices in the structure and record the info of the associated atoms for later comparison.
 num_atoms = cmd.count_atoms('all')
@@ -240,18 +228,19 @@ for acceptor in stored.acceptor_list:
 nucleobase_df_total = pd.DataFrame(nucleobase_dict)
 
 # Create a new dataframe omitting nucleobases where at least one nearby atom belongs to a residue not specified within
-# const.INCLUDED_RESIDUES.
+# the included_residues list in the configuration file.
 nuc_grp = ["resn", "resi", "chain"]
 nucleobase_df = (nucleobase_df_total[nucleobase_df_total.groupby(nuc_grp)["near_resn"]
-                 .transform(lambda mem: all(mem.isin(const.INCLUDED_RESIDUES)))])
+                 .transform(lambda mem: all(mem.isin(snakemake.config["included_residues"])))])
 # If the dataframe is empty, recreate it using the blank dictionary so that it has the appropriate column names.
 if len(nucleobase_df) == 0:
     nucleobase_df = pd.DataFrame(blank_nucleobase_dict)
 
-# For each omitted nucleobase, print out the identity of the nearby residues not listed in const.INCLUDED_RESIDUES.
+# For each omitted nucleobase, print out the identity of the nearby residues not listed in the configuration file.
 omitted_nuc_df = nucleobase_df.merge(nucleobase_df_total, how='right', indicator=True)
-omitted_nuc_df = omitted_nuc_df[(omitted_nuc_df["_merge"] == "right_only") &
-                                ~(omitted_nuc_df["near_resn"].isin(const.INCLUDED_RESIDUES))].drop(columns=["_merge"])
+omitted_nuc_df = (omitted_nuc_df[(omitted_nuc_df["_merge"] == "right_only") &
+                                 ~(omitted_nuc_df["near_resn"].isin(snakemake.config["included_residues"]))]
+                  .drop(columns=["_merge"]))
 total_nuc = len(nucleobase_df_total.loc[:, nuc_grp].drop_duplicates())
 keep_nuc = len(nucleobase_df.loc[:, nuc_grp].drop_duplicates())
 omit_nuc = len(omitted_nuc_df.loc[:, nuc_grp].drop_duplicates())
@@ -285,22 +274,6 @@ don_df.rename(columns={"index": "don_index", "name": "don_name",
                        "near_resn": "acc_resn", "near_resi": "acc_resi", "near_chain": "acc_chain",
                        "resn_name": "don_resn_name", "near_resn_name": "acc_resn_name"},
               inplace=True)
-
-# Create a new dataframe containing protonated donors of interest (formal charge of +1) and omitting nucleobases that do
-# not have any nearby acceptor atoms. Additionally, atoms near the protonated donors of interest that are not acceptors
-# are filtered out along with atoms belonging to the nucleobase.
-prot_don_df = nucleobase_df[nucleobase_df["resn_name"].isin(prot_donors_of_interest)]
-prot_don_df = prot_don_df[prot_don_df["near_resn_name"].isin(acceptor_atoms)]
-prot_don_df = prot_don_df[~((prot_don_df["resn"] == prot_don_df["near_resn"]) &
-                            (prot_don_df["resi"] == prot_don_df["near_resi"]) &
-                            (prot_don_df["chain"] == prot_don_df["near_chain"]) &
-                            (prot_don_df["near_resn_name"].isin(nuc_acceptors)))]
-prot_don_df.rename(columns={"index": "don_index", "name": "don_name",
-                            "resn": "don_resn", "resi": "don_resi", "chain": "don_chain",
-                            "near_index": "acc_index", "near_name": "acc_name",
-                            "near_resn": "acc_resn", "near_resi": "acc_resi", "near_chain": "acc_chain",
-                            "resn_name": "don_resn_name", "near_resn_name": "acc_resn_name"},
-                   inplace=True)
 
 # Create a new dataframe containing acceptors of interest and omitting nucleobases that do not have any nearby donor
 # atoms. Additionally, atoms near the acceptors of interest that are not donors are filtered out along with atoms
@@ -358,37 +331,6 @@ don_h_bonds_df = pd.DataFrame(don_h_bonds_dict)
 # Add a category column defining this data as being specific to the donors of interest.
 don_h_bonds_df["cat"] = "don"
 
-# Acquire the H-bonding geometry measurements for all acceptors near each protonated donor of interest.
-prot_don_h_bonds_dict = {
-    "don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "acc_index": [], "acc_name": [],
-    "acc_resn": [], "acc_resi": [], "acc_chain": [], "don_acc_distance": [], "don_angle": [], "acc_angle": [],
-    "h_acc_distance": [], "h_angle": [], "h_dihedral": [], "h_name": []
-}
-for atom_pair in prot_don_df.itertuples():
-    # Store the donor and acceptor atom values for the dataframe row.
-    don_list = [atom_pair.don_index, atom_pair.don_name, atom_pair.don_resn, atom_pair.don_resi, atom_pair.don_chain]
-    acc_list = [atom_pair.acc_index, atom_pair.acc_name, atom_pair.acc_resn, atom_pair.acc_resi, atom_pair.acc_chain]
-    # Retrieve the H-bond measurements for the atom pair.
-    h_bond_list = eval_H_bonding.evaluate(don_list, acc_list, eq_class_mem_id, expanded_library)
-    # If the H-bond evaluation is not successful, print the error message(s) and exit.
-    successful_completion = h_bond_list[0]
-    if not successful_completion:
-        for note in h_bond_list[1]:
-            print(note)
-        sys.exit(1)
-    # Add the H-bond measurements to the dictionary.
-    else:
-        for h_bond in h_bond_list[1]:
-            row = don_list + acc_list + h_bond
-            idx = 0
-            for key in prot_don_h_bonds_dict:
-                prot_don_h_bonds_dict[key].append(row[idx])
-                idx += 1
-# Create a dataframe based on the dictionary.
-prot_don_h_bonds_df = pd.DataFrame(prot_don_h_bonds_dict)
-# Add a category column defining this data as being specific to the protonated donors of interest.
-prot_don_h_bonds_df["cat"] = "prot_don"
-
 # Acquire the H-bonding geometry measurements for all donors near each acceptor of interest.
 acc_h_bonds_dict = {
     "don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "acc_index": [], "acc_name": [],
@@ -426,10 +368,6 @@ res_df = pd.concat([
     .rename(columns={"don_resn": "resn", "don_resi": "resi", "don_chain": "chain"}),
     don_df.loc[:, ["acc_resn", "acc_resi", "acc_chain"]]
     .rename(columns={"acc_resn": "resn", "acc_resi": "resi", "acc_chain": "chain"}),
-    prot_don_df.loc[:, ["don_resn", "don_resi", "don_chain"]]
-    .rename(columns={"don_resn": "resn", "don_resi": "resi", "don_chain": "chain"}),
-    prot_don_df.loc[:, ["acc_resn", "acc_resi", "acc_chain"]]
-    .rename(columns={"acc_resn": "resn", "acc_resi": "resi", "acc_chain": "chain"}),
     acc_df.loc[:, ["don_resn", "don_resi", "don_chain"]]
     .rename(columns={"don_resn": "resn", "don_resi": "resi", "don_chain": "chain"}),
     acc_df.loc[:, ["acc_resn", "acc_resi", "acc_chain"]]
@@ -464,8 +402,7 @@ with open(snakemake.output.h_bond, "w") as csv_file:
         writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
     writer.writerow([f"# input file: {snakemake.input[0]}"])
     writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
-pd.concat([don_h_bonds_df, prot_don_h_bonds_df, acc_h_bonds_df]).to_csv(snakemake.output.h_bond, index=False, mode='a',
-                                                                        na_rep='NaN')
+pd.concat([don_h_bonds_df, acc_h_bonds_df]).to_csv(snakemake.output.h_bond, index=False, mode='a', na_rep='NaN')
 
 # Write a csv file that stores applicable nucleobases containing donors and acceptors of interest.
 with open(snakemake.output.nuc, "w") as csv_file:
