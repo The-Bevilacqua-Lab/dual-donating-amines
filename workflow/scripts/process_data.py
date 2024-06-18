@@ -6,8 +6,8 @@ import pandas as pd
 import const
 
 # Set the H-bonding criteria.
-H_DIST_MAX = 2.5
-H_ANG_TOL = 40.0
+H_DIST_MAX = snakemake.config["h_dist_max"]
+H_ANG_MIN = snakemake.config["h_ang_min"]
 
 # Construct a list of tuples containing atom and residue names that describe atoms capable of both donating and
 # accepting an H-bond.
@@ -48,7 +48,7 @@ def process_data(h_bond_file, nuc_file, b_factor_file, eq_class_members_file):
 
     # Identify atom pairs that meet the H-bond criteria and include a donor of interest.
     don_h_bonds = (h_bond_data[(h_bond_data["h_acc_distance"] <= H_DIST_MAX) &
-                               (h_bond_data["h_angle"] >= 180.0 - H_ANG_TOL)]
+                               (h_bond_data["h_angle"] >= H_ANG_MIN)]
                    .merge(pd.DataFrame(const.DONORS_OF_INTEREST, columns=["don_resn", "don_name"]), how='inner')
                    .merge(eq_class_members_data, left_on="don_chain", right_on="chain", how='inner')
                    .drop(columns=["pdb_id", "model", "chain"]))
@@ -56,7 +56,7 @@ def process_data(h_bond_file, nuc_file, b_factor_file, eq_class_members_file):
     # Identify atom pairs that meet the H-bond criteria and include a protonated donor of interest. Values in the _merge
     # column matching left_only indicate acceptors that cannot typically also donate an H-bond.
     prot_don_h_bonds_unfiltered = (h_bond_data[(h_bond_data["h_acc_distance"] <= H_DIST_MAX) &
-                                               (h_bond_data["h_angle"] >= 180.0 - H_ANG_TOL)]
+                                               (h_bond_data["h_angle"] >= H_ANG_MIN)]
                                    .merge(pd.DataFrame(const.PROT_DONORS_OF_INTEREST, columns=["don_resn", "don_name"]),
                                           how='inner')
                                    .merge(pd.DataFrame(don_acc_atoms, columns=["acc_resn", "acc_name"]), how='left',
@@ -71,7 +71,7 @@ def process_data(h_bond_file, nuc_file, b_factor_file, eq_class_members_file):
 
     # Identify atom pairs that meet the H-bond criteria and include an acceptor of interest.
     acc_h_bonds = (h_bond_data[(h_bond_data["h_acc_distance"].notna()) & (h_bond_data["h_acc_distance"] <= H_DIST_MAX) &
-                               (h_bond_data["h_angle"] >= 180.0 - H_ANG_TOL)]
+                               (h_bond_data["h_angle"] >= H_ANG_MIN)]
                    .merge(pd.DataFrame(const.ACCEPTORS_OF_INTEREST, columns=["acc_resn", "acc_name"]), how='inner')
                    .merge(eq_class_members_data, left_on="acc_chain", right_on="chain", how='inner')
                    .drop(columns=["pdb_id", "model", "chain"]))
