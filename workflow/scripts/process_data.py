@@ -3,7 +3,7 @@ This module will eventually do something.
 """
 
 import pandas as pd
-import const
+import residue_library
 
 # Set the H-bonding criteria.
 H_DIST_MAX = snakemake.config["h_dist_max"]

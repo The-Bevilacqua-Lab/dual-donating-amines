@@ -3,7 +3,7 @@ Add a description for this module.
 """
 
 from datetime import datetime
-import const
+import residue_library
 
 
 # Create a new python script with PyMOL commands to review the identified H-bonds. The function takes four arguments

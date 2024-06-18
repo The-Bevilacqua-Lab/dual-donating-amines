@@ -20,7 +20,7 @@ from pymol import stored
 import numpy as np
 import pandas as pd
 from datetime import datetime
-import const
+import residue_library
 import eval_H_bonding
 import remove_alt_conf
 

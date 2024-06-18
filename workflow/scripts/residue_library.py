@@ -1,15 +1,6 @@
 """
-This module contains various constants that are used by scripts in this repo.
+This module contains the main residue library for this repo.
 """
-
-# Construct three lists of tuples containing atom and residue names that describe either donor, protonated donor
-# (formal charge of +1), or acceptor atoms of particular interest.
-DONORS_OF_INTEREST = [('A', 'N6')]
-PROT_DONORS_OF_INTEREST = [('A', 'N1'), ('A', 'N3'), ('A', 'N7')]
-ACCEPTORS_OF_INTEREST = [('A', 'N1'), ('A', 'N3'), ('A', 'N7')]
-
-# Construct a tuple of residue names that are included in the data collection and analysis.
-INCLUDED_RESIDUES = ("A", "C", "G", "U", "DA", "DC", "DG", "DT", "HOH")
 
 # Define a list of dictionaries that provides information on the canonical protein and RNA/DNA residues. The indices of
 # each donor or acceptor atom list specifies the following:

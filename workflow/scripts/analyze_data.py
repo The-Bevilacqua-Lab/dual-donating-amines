@@ -3,7 +3,7 @@ This script will eventually do something.
 """
 
 import pandas as pd
-import const
+import residue_library
 
 # Prepare a list of acceptor residue names and atom names that have substantially greater negative charge.
 neg_acc_resn = []
