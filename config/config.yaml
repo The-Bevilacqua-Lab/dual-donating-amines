@@ -17,6 +17,8 @@ b_factor_cutoff: 79.0
 # What are the residue and atom names of the donors and acceptors of interest?
 donors_of_interest:
   - 'A.N6'
+  - 'C.N4'
+  - 'G.N2'
 
 # Should the mmCIF files fetched from the PDB be removed after the run to save space?
 remove_original_mmcif: false
