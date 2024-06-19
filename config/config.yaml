@@ -17,20 +17,6 @@ b_factor_cutoff: 79.0
 # What are the residue and atom names of the donors and acceptors of interest?
 donors_of_interest:
   - 'A.N6'
-acceptors_of_interest:
-  - ''
-
-# What residues are included in the data collection and analysis?
-included_residues:
-  - "A"
-  - "C"
-  - "G"
-  - "U"
-  - "DA"
-  - "DC"
-  - "DG"
-  - "DT"
-  - "HOH"
 
 # Should the mmCIF files fetched from the PDB be removed after the run to save space?
 remove_original_mmcif: false

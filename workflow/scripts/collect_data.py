@@ -80,42 +80,26 @@ if not os.path.isdir(original_mmcif_dir):
 # Change fetch_path to original_mmcif_dir so that PyMOL drops the mmCIF files into this folder when running fetch.
 cmd.set('fetch_path', cmd.exp_path(original_mmcif_dir))
 
-# Construct three lists of strings containing residue and atom names that describe either donor, rotatable donor, or
-# acceptor atoms. Additionally, construct two strings that can be used with PyMOL to select donor and rotatable donor
-# atoms.
-donor_atoms = []
-rotatable_donor_atoms = []
-acceptor_atoms = []
+# Construct two strings that can be used with PyMOL to select donor and rotatable donor atoms.
 donor_string = ''
 rotatable_donor_string = ''
 for residue in residue_library.RESIDUE_LIBRARY:
-    if residue["res"] in snakemake.config["included_residues"]:
-        for donor in residue['don']:
-            donor_atoms.append(f'{residue["res"]}.{donor[0]}')
-            donor_string += f'(resn {residue["res"]} and name {donor[0]}) '
-            if donor[2]:
-                rotatable_donor_atoms.append(f'{residue["res"]}.{donor[0]}')
-                rotatable_donor_string += f'(resn {residue["res"]} and name {donor[0]}) '
-        for acceptor in residue['acc']:
-            acceptor_atoms.append(f'{residue["res"]}.{acceptor[0]}')
+    for donor in residue['don']:
+        donor_string += f'(resn {residue["res"]} and name {donor[0]}) '
+        if donor[2]:
+            rotatable_donor_string += f'(resn {residue["res"]} and name {donor[0]}) '
 donor_string = donor_string[:-1]
 rotatable_donor_string = rotatable_donor_string[:-1]
 
-# Construct two lists of strings containing residue and atom names that describe either donor or acceptor atoms of
-# particular interest. Additionally, construct two strings that can be used with PyMOL to select all possible donor or
-# all possible acceptor atoms of particular interest.
+# Construct a list of strings containing residue and atom names that describe either donor or acceptor atoms of
+# particular interest. Additionally, construct a string that can be used with PyMOL to select all possible donor atoms
+# of particular interest.
 donors_of_interest = []
 donors_of_interest_str = ''
 for atom in snakemake.config["donors_of_interest"]:
     donors_of_interest.append(atom)
     donors_of_interest_str += f'(resn {atom.split(".")[0]} and name {atom.split(".")[1]}) '
 donors_of_interest_str = donors_of_interest_str[:-1]
-acceptors_of_interest = []
-acceptors_of_interest_str = ''
-for atom in snakemake.config["acceptors_of_interest"]:
-    acceptors_of_interest.append(atom)
-    acceptors_of_interest_str += f'(resn {atom.split(".")[0]} and name {atom.split(".")[1]}) '
-acceptors_of_interest_str = acceptors_of_interest_str[:-1]
 
 # Define the donor and acceptor atoms of the RNA nucleobases.
 nuc_donors = ["A.N6", "C.N4", "G.N1", "G.N2", "U.N3"]
