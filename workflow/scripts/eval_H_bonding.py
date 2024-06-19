@@ -85,35 +85,12 @@ def evaluate(donor_atom, acceptor_atom, eq_class_mem, library):
         successful_completion = False
         notes.append(f"Error: The donor atom {donor_atom[1]}.{donor_atom[2]}.{donor_atom[3]}.{donor_atom[4]} of "
                      f"{eq_class_mem} was not found in the residue library when evaluating a potential H-bond.")
-    # Determine whether the acceptor atom is listed in the residue library.
-    # If found, collect other information about that atom.
-    acceptor_res = ''
-    acceptor_info = []
-    for residue in library:
-        if acceptor_atom[2] == residue['res']:
-            acceptor_res = residue['res']
-            for atom in residue['acc']:
-                if acceptor_atom[1] == atom[0]:
-                    acceptor_info = atom
-                    # break the loop since the atom was found
-                    break
-            # break the loop since the residue was found
-            break
-    if not acceptor_res:
-        successful_completion = False
-        notes.append(f"Error: The acceptor residue {acceptor_atom[2]}.{acceptor_atom[3]}.{acceptor_atom[4]} of "
-                     f"{eq_class_mem} was not found in the residue library when evaluating a potential H-bond.")
-    if not acceptor_info:
-        successful_completion = False
-        notes.append(f"Error: The acceptor atom {acceptor_atom[1]}.{acceptor_atom[2]}.{acceptor_atom[3]}."
-                     f"{acceptor_atom[4]} of {eq_class_mem} was not found in the residue library when evaluating a "
-                     f"potential H-bond.")
-    # If any of the residues of the donor or acceptor atoms or the atoms themselves were not found in the residue
-    # library, return a non-successful completion with the relevant notes.
+    # If any of the residues of the donor atoms or the atoms themselves were not found in the residue library, return a
+    # non-successful completion with the relevant notes.
     if not successful_completion:
         return [successful_completion, notes]
     # Get the distance and angle values for the donor/acceptor pair.
-    geometry = calc_geom(donor_atom, acceptor_atom, donor_info, acceptor_info, eq_class_mem)
+    geometry = calc_geom(donor_atom, acceptor_atom, donor_info, eq_class_mem)
     # If the geometry calculation was not successful, return an explanation of what went wrong.
     geometry_successful = geometry[0]
     if not geometry_successful:
@@ -130,7 +107,7 @@ def evaluate(donor_atom, acceptor_atom, eq_class_mem, library):
             return [geometry_successful, [first_set, second_set]]
 
 
-def calc_geom(donor_atom, acceptor_atom, donor_info, acceptor_info, eq_class_mem):
+def calc_geom(donor_atom, acceptor_atom, donor_info, eq_class_mem):
     # Initially assume that the evaluation will complete successfully.
     successful_completion = True
     # Initialize an empty list that can be used to document why an evaluation was not completed successfully.
