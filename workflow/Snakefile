@@ -16,8 +16,7 @@ rule all:
     input:
         expand("data/b_factor/{eq_class_members}_b_factor.csv", eq_class_members=eq_class_members),
         expand("data/nuc/{eq_class_members}_nuc.csv", eq_class_members=eq_class_members),
-        expand("data/h_bond/{eq_class_members}_h_bond.csv", eq_class_members=eq_class_members),
-        expand("data/omitted_nuc/{eq_class_members}_omitted_nuc.csv", eq_class_members=eq_class_members)
+        expand("data/h_bond/{eq_class_members}_h_bond.csv", eq_class_members=eq_class_members)
 
 rule write_eq_class_files:
     output:
@@ -36,8 +35,7 @@ rule collect_data:
     output:
         b_factor = "data/b_factor/{eq_class_members}_b_factor.csv",
         nuc = "data/nuc/{eq_class_members}_nuc.csv",
-        h_bond = "data/h_bond/{eq_class_members}_h_bond.csv",
-        omitted_nuc = "data/omitted_nuc/{eq_class_members}_omitted_nuc.csv"
+        h_bond = "data/h_bond/{eq_class_members}_h_bond.csv"
     log:
         stdout = "data/logs/collect_data/{eq_class_members}.stdout",
         stderr = "data/logs/collect_data/{eq_class_members}.stderr"
