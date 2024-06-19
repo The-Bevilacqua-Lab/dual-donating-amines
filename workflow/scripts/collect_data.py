@@ -245,7 +245,7 @@ with open(snakemake.output.h_bond, "w") as csv_file:
 don_h_bonds_df.to_csv(snakemake.output.h_bond, index=False, mode='a', na_rep='NaN')
 
 # Write a csv file that stores applicable nucleobases containing donors of interest.
-nuc_grp = ["resn", "resi", "chain"]
+nuc_grp = ["don_resn", "don_resi", "don_chain"]
 with open(snakemake.output.nuc, "w") as csv_file:
     writer = csv.writer(csv_file)
     if commit_hash:
