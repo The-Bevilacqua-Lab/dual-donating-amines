@@ -137,6 +137,16 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, acceptor_info, eq_class_mem
     notes = []
     # Get the D-A distance.
     don_acc_distance = cmd.get_distance(f'index {donor_atom[0]}', f'index {acceptor_atom[0]}')
+    # Collect information about the donor antecedent atom.
+    stored.don_ant = []
+    cmd.iterate(f'name {donor_info[4]} and neighbor index {donor_atom[0]}',
+                'stored.don_ant.append((index, name, resn, resi, chain))')
+    # Issue an error message if the number of identified donor antecedent atoms does not equal one.
+    if len(stored.don_ant) != 1:
+        successful_completion = False
+        notes.append(f"Error: The number of identified donor antecedent atoms does not equal one for {donor_atom[1]}."
+                     f"{donor_atom[2]}.{donor_atom[3]}.{donor_atom[4]} of {eq_class_mem}.")
+        return [successful_completion, notes]
     # If the donor is non-rotatable, use the donor hydrogen(s) locations to calculate the H-A distance(s) and angle(s).
     # Additionally, if the hydrogens belong to an RNA exocyclic amine, calculate the dihedral between the hydrogen
     # closest to the WCF nucleobase edge and the nearby endocyclic nitrogen that is part of the 6-membered ring. For
