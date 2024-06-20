@@ -17,26 +17,29 @@ don_h_bonds_combined = pd.DataFrame(columns=["don_index", "don_name", "don_resn"
 
 # Combine the dataframes from the different equivalence class members. Do not incorporate empty dataframes.
 for idx in range(len(snakemake.input.h_bond)):
-    h_bond_df = pd.read_csv(snakemake.input.h_bond[idx], keep_default_na=False, na_values="NaN")
-    nuc_df = pd.read_csv(snakemake.input.nuc[idx], keep_default_na=False, na_values="NaN")
-    b_factor_df = pd.read_csv(snakemake.input.b_factor[idx], keep_default_na=False, na_values="NaN")
-    don_h_bonds_df = pd.read_csv(snakemake.input.don_h_bonds[idx], keep_default_na=False, na_values="NaN")
-    if h_bond_combined.empty and not h_bond_df.empty:
-        h_bond_combined = h_bond_df.copy()
-    elif not h_bond_df.empty:
-        h_bond_combined = pd.concat([h_bond_combined, h_bond_df])
-    if nuc_combined.empty and not nuc_df.empty:
-        nuc_combined = nuc_df.copy()
-    elif not nuc_df.empty:
-        nuc_combined = pd.concat([nuc_combined, nuc_df])
-    if b_factor_combined.empty and not b_factor_df.empty:
-        b_factor_combined = b_factor_df.copy()
-    elif not b_factor_df.empty:
-        b_factor_combined = pd.concat([b_factor_combined, b_factor_df])
-    if don_h_bonds_combined.empty and not don_h_bonds_df.empty:
-        don_h_bonds_combined = don_h_bonds_df.copy()
-    elif not don_h_bonds_df.empty:
-        don_h_bonds_combined = pd.concat([don_h_bonds_combined, don_h_bonds_df])
+    try:
+        h_bond_df = pd.read_csv(snakemake.input.h_bond[idx], keep_default_na=False, na_values="NaN")
+        nuc_df = pd.read_csv(snakemake.input.nuc[idx], keep_default_na=False, na_values="NaN")
+        b_factor_df = pd.read_csv(snakemake.input.b_factor[idx], keep_default_na=False, na_values="NaN")
+        don_h_bonds_df = pd.read_csv(snakemake.input.don_h_bonds[idx], keep_default_na=False, na_values="NaN")
+        if h_bond_combined.empty and not h_bond_df.empty:
+            h_bond_combined = h_bond_df.copy()
+        elif not h_bond_df.empty:
+            h_bond_combined = pd.concat([h_bond_combined, h_bond_df])
+        if nuc_combined.empty and not nuc_df.empty:
+            nuc_combined = nuc_df.copy()
+        elif not nuc_df.empty:
+            nuc_combined = pd.concat([nuc_combined, nuc_df])
+        if b_factor_combined.empty and not b_factor_df.empty:
+            b_factor_combined = b_factor_df.copy()
+        elif not b_factor_df.empty:
+            b_factor_combined = pd.concat([b_factor_combined, b_factor_df])
+        if don_h_bonds_combined.empty and not don_h_bonds_df.empty:
+            don_h_bonds_combined = don_h_bonds_df.copy()
+        elif not don_h_bonds_df.empty:
+            don_h_bonds_combined = pd.concat([don_h_bonds_combined, don_h_bonds_df])
+    except FileNotFoundError:
+        continue
 
 # Write to csv files.
 h_bond_combined.to_csv(snakemake.output.h_bond, index=False, na_rep='NaN')
