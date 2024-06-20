@@ -1,49 +1,45 @@
 """
-This script will eventually do something.
+This script combines dataframes from individual equivalence class members, stored as csv files in the process/ folder,
+into combined dataframes. The combined dataframes are then written to csv files.
 """
 
-import os
 import pandas as pd
 
-# The working directory should house the analysis/ folder.
-working_dir = os.getcwd()
+# Initialize combined dataframes.
+h_bond_combined = pd.DataFrame(columns=["don_index", "don_name", "don_resn", "don_resi", "don_chain", "acc_index",
+                                        "acc_name", "acc_resn", "acc_resi", "acc_chain", "don_acc_distance",
+                                        "h_acc_distance", "h_angle", "h_dihedral", "h_name", "eq_class_members"])
+nuc_combined = pd.DataFrame(columns=["don_resn", "don_resi", "don_chain", "eq_class_members"])
+b_factor_combined = pd.DataFrame(columns=["resn", "resi", "chain", "subset", "mean", "eq_class_members"])
+don_h_bonds_combined = pd.DataFrame(columns=["don_index", "don_name", "don_resn", "don_resi", "don_chain", "acc_index",
+                                             "acc_name", "acc_resn", "acc_resi", "acc_chain", "don_acc_distance",
+                                             "h_acc_distance", "h_angle", "h_dihedral", "h_name", "eq_class_members"])
 
-# Create a dictionary that will contain all the data categories and their associated files.
-categories = {
-    "nuc_data": [],
-    "b_factor_data": [],
-    "don_hbonds_nr": [],
-    "prot_don_hbonds_nr": [],
-    "acc_hbonds_nr": [],
-    "hbond_data": []
-}
+# Combine the dataframes from the different equivalence class members. Do not incorporate empty dataframes.
+for idx in range(len(snakemake.input.h_bond)):
+    h_bond_df = pd.read_csv(snakemake.input.h_bond[idx], keep_default_na=False, na_values="NaN")
+    nuc_df = pd.read_csv(snakemake.input.nuc[idx], keep_default_na=False, na_values="NaN")
+    b_factor_df = pd.read_csv(snakemake.input.b_factor[idx], keep_default_na=False, na_values="NaN")
+    don_h_bonds_df = pd.read_csv(snakemake.input.don_h_bonds[idx], keep_default_na=False, na_values="NaN")
+    if h_bond_combined.empty and not h_bond_df.empty:
+        h_bond_combined = h_bond_df.copy()
+    elif not h_bond_df.empty:
+        h_bond_combined = pd.concat([h_bond_combined, h_bond_df])
+    if nuc_combined.empty and not nuc_df.empty:
+        nuc_combined = nuc_df.copy()
+    elif not nuc_df.empty:
+        nuc_combined = pd.concat([nuc_combined, nuc_df])
+    if b_factor_combined.empty and not b_factor_df.empty:
+        b_factor_combined = b_factor_df.copy()
+    elif not b_factor_df.empty:
+        b_factor_combined = pd.concat([b_factor_combined, b_factor_df])
+    if don_h_bonds_combined.empty and not don_h_bonds_df.empty:
+        don_h_bonds_combined = don_h_bonds_df.copy()
+    elif not don_h_bonds_df.empty:
+        don_h_bonds_combined = pd.concat([don_h_bonds_combined, don_h_bonds_df])
 
-# Prepare a list of files from each category folder to combine.
-for cat in categories.keys():
-    for file in os.listdir(working_dir + "/analysis/" + cat):
-        # select files with the correct suffix
-        if file[-(len(cat) + 5):] == "_" + cat + ".csv":
-            # find out which files actually contain data
-            contains_data = False
-            with open(working_dir + "/analysis/" + cat + "/" + file, "r") as read_file:
-                num_lines = 0
-                for lines in read_file:
-                    if num_lines > 0:
-                        contains_data = True
-                        break
-                    else:
-                        num_lines += 1
-            # only include files that contain data
-            if contains_data:
-                categories[cat].append(working_dir + "/analysis/" + cat + "/" + file)
-
-# Create the combined/ folder to write csv files to.
-os.mkdir(working_dir + "/combined")
-
-# Create the combined dataframes and write to csv files.
-pd.concat([pd.read_csv(file, na_filter=False) for file in categories["nuc_data"]]).to_csv("combined/nuc_data.csv", index=False)
-pd.concat([pd.read_csv(file, na_filter=False) for file in categories["b_factor_data"]]).to_csv("combined/b_factor_data.csv", index=False)
-pd.concat([pd.read_csv(file, na_filter=False) for file in categories["don_hbonds_nr"]]).to_csv("combined/don_hbonds_nr.csv", index=False)
-pd.concat([pd.read_csv(file, na_filter=False) for file in categories["prot_don_hbonds_nr"]]).to_csv("combined/prot_don_hbonds_nr.csv", index=False)
-pd.concat([pd.read_csv(file, na_filter=False) for file in categories["acc_hbonds_nr"]]).to_csv("combined/acc_hbonds_nr.csv", index=False)
-pd.concat([pd.read_csv(file, na_filter=False) for file in categories["hbond_data"]]).to_csv("combined/hbond_data.csv", index=False)
+# Write to csv files.
+h_bond_combined.to_csv(snakemake.output.h_bond, index=False, na_rep='NaN')
+nuc_combined.to_csv(snakemake.output.nuc, index=False, na_rep='NaN')
+b_factor_combined.to_csv(snakemake.output.b_factor, index=False, na_rep='NaN')
+don_h_bonds_combined.to_csv(snakemake.output.don_h_bonds, index=False, na_rep='NaN')
