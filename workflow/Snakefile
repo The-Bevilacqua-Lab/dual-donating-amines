@@ -14,9 +14,10 @@ for eq_class in eq_class_dict.values():
 
 rule all:
     input:
-        expand("data/b_factor/{eq_class_members}_b_factor.csv", eq_class_members=eq_class_members),
-        expand("data/nuc/{eq_class_members}_nuc.csv", eq_class_members=eq_class_members),
-        expand("data/h_bond/{eq_class_members}_h_bond.csv", eq_class_members=eq_class_members)
+        "combined/h_bond.csv",
+        "combined/nuc.csv",
+        "combined/b_factor.csv",
+        "combined/don_h_bonds.csv"
 
 rule write_eq_class_files:
     output:
@@ -33,15 +34,51 @@ rule collect_data:
     input:
         rules.write_eq_class_files.output
     output:
-        b_factor = "data/b_factor/{eq_class_members}_b_factor.csv",
+        h_bond = "data/h_bond/{eq_class_members}_h_bond.csv",
         nuc = "data/nuc/{eq_class_members}_nuc.csv",
-        h_bond = "data/h_bond/{eq_class_members}_h_bond.csv"
+        b_factor = "data/b_factor/{eq_class_members}_b_factor.csv"
     log:
         stdout = "data/logs/collect_data/{eq_class_members}.stdout",
         stderr = "data/logs/collect_data/{eq_class_members}.stderr"
-    benchmark:
-        "data/benchmark/{eq_class_members}.tsv"
     conda:
         "envs/general.yaml"
     script:
         "scripts/collect_data.py"
+
+rule process_data:
+    input:
+        h_bond = "data/h_bond/{eq_class_members}_h_bond.csv",
+        nuc = "data/nuc/{eq_class_members}_nuc.csv",
+        b_factor = "data/b_factor/{eq_class_members}_b_factor.csv",
+        eq_class_members = "data/eq_class_members_files/{eq_class_members}_info.csv"
+    output:
+        h_bond = "processed/h_bond/{eq_class_members}_h_bond.csv",
+        nuc = "processed/nuc/{eq_class_members}_nuc.csv",
+        b_factor = "processed/b_factor/{eq_class_members}_b_factor.csv",
+        don_h_bonds = "processed/don_h_bonds/{eq_class_members}_don_h_bonds.csv"
+    log:
+        stdout = "data/logs/process_data/{eq_class_members}.stdout",
+        stderr = "data/logs/process_data/{eq_class_members}.stderr"
+    conda:
+        "envs/general.yaml"
+    script:
+        "scripts/process_data.py"
+
+rule combine_data:
+    input:
+        h_bond = expand("processed/h_bond/{eq_class_members}_h_bond.csv", eq_class_members=eq_class_members),
+        nuc = expand("processed/nuc/{eq_class_members}_nuc.csv", eq_class_members=eq_class_members),
+        b_factor = expand("processed/b_factor/{eq_class_members}_b_factor.csv", eq_class_members=eq_class_members),
+        don_h_bonds = expand("processed/don_h_bonds/{eq_class_members}_don_h_bonds.csv", eq_class_members=eq_class_members)
+    output:
+        h_bond = "combined/h_bond.csv",
+        nuc = "combined/nuc.csv",
+        b_factor = "combined/b_factor.csv",
+        don_h_bonds = "combined/don_h_bonds.csv"
+    log:
+        stdout = "data/logs/combine_data/output.stdout",
+        stderr = "data/logs/combine_data/error.stderr"
+    conda:
+        "envs/general.yaml"
+    script:
+        "scripts/combine_data.py"
