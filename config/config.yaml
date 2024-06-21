@@ -9,6 +9,10 @@ add_res_file: "config/<file_name>.csv"
 original_mmcif_dir: "data/original_mmCIF_files/"
 modified_mmcif_dir: "data/modified_mmcif_files/"
 
+# What are the search radii?
+search_dist: 4.1
+density_dist: 7.0
+
 # What are the cutoffs?
 h_dist_max: 2.5
 h_ang_min: 140.0
