@@ -63,7 +63,7 @@ with open(snakemake.input[0], mode='r') as read_file:
             eq_class_mem.append(line)
 
 # Create an identifier for the equivalence class member.
-eq_class_mem_id = (f'{eq_class_mem[0][0]}_{eq_class_mem[1][0]}_{eq_class_mem[2][0]}_'
+eq_class_mem_id = (f'{eq_class_mem[0][0]}_{eq_class_mem[1][0]}_'
                    f'{"".join([chain + "_" for chain in eq_class_mem[3]])}')[:-1]
 
 # Check whether the folder exists for PyMOL to save mmCIF files into that are fetched from the PDB.

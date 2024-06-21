@@ -14,7 +14,7 @@ def parse_nrlist(nrlist_file, all_members=False):
     eq_class = {}
     with open(nrlist_file, mode='r') as read_file:
         for line in csv.reader(read_file):
-            eq_class[line[0]] = []
+            eq_class[line[0]] = {'PDB_ID': [], 'model': [], 'chain_list': []}
             for class_member in line[2].split(','):
                 pdb_id_list = []
                 model_list = []
@@ -56,9 +56,9 @@ def parse_nrlist(nrlist_file, all_members=False):
                     if model != model_list[0]:
                         print(f"Error: The models for a member of equivalence class {line[0]} do not match.")
                         sys.exit(1)
-                eq_class[line[0]].append(f'{line[0]}_{pdb_id_list[0]}_{model_list[0]}')
-                for chain in chain_list:
-                    eq_class[line[0]][-1] = eq_class[line[0]][-1] + "_" + chain
+                eq_class[line[0]]['PDB_ID'].append(pdb_id_list[0])
+                eq_class[line[0]]['model'].append(model_list[0])
+                eq_class[line[0]]['chain_list'].append(chain_list)
                 if not all_members:
                     break
     return eq_class
