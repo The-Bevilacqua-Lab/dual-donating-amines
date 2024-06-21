@@ -80,6 +80,9 @@ if not os.path.isdir(original_mmcif_dir):
 # Change fetch_path to original_mmcif_dir so that PyMOL drops the mmCIF files into this folder when running fetch.
 cmd.set('fetch_path', cmd.exp_path(original_mmcif_dir))
 
+# Change assembly to 1 so that PyMOL loads biological assembly 1 of the structure.
+cmd.set('assembly', 1)
+
 # Construct two strings that can be used with PyMOL to select donor and rotatable donor atoms.
 donor_string = ''
 rotatable_donor_string = ''
@@ -110,12 +113,10 @@ mem_rna_chains = " ".join(rna_list)
 # Retrieve the structure that contains the equivalence class member RNA chains.
 cmd.fetch(eq_class_mem[1][0])
 
-# If the structure contains more than one model (or "state" in PyMOL), create a new PyMOL object of just that model.
-if cmd.count_states(eq_class_mem[1][0]) > 1:
-    cmd.create(f'{eq_class_mem[1][0]}_state_{eq_class_mem[2][0]}', selection=eq_class_mem[1][0],
-               source_state=eq_class_mem[2][0],
-               target_state=1)
-    cmd.delete(eq_class_mem[1][0])
+# Check whether atoms exist after loading biological assembly 1 of the structure.
+if cmd.count_atoms('all') == 0:
+    print(f"No atoms are present after loading biological assembly 1 of equivalence class member {eq_class_mem_id}.")
+    sys.exit(1)
 
 # Remove atoms representing alternative conformations.
 remove_status = remove_alt_conf.remove(eq_class_mem_id)
