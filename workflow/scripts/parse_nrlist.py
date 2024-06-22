@@ -2,9 +2,9 @@
 This script iterates through the lines of a representative set file and collects the equivalence class names, PDB IDs,
 model info, and chain info of the equivalence class members that serve as the representative structures of their
 corresponding equivalence classes. Information for the equivalence class members are returned as a single list of
-strings. The model info is omitted from this returned list. The name of the representative set file must be provided as
-the first argument. If True is provided as the second argument, information for all members (not just the representative
-structures) of the equivalence classes will be compiled.
+strings. The name of the representative set file must be provided as the first argument. If True is provided as the
+second argument, information for all members (not just the representative structures) of the equivalence classes will be
+compiled.
 """
 
 import sys
@@ -64,8 +64,8 @@ def parse_nrlist(nrlist_file, all_members=False):
                 eq_class_dict[line[0]]['chain_list'].append(chain_list)
                 if not all_members:
                     break
-    # Prepare a list of strings where each string includes the equivalence class name, PDB ID, and chain info for the
-    # equivalence class members.
+    # Prepare a list of strings where each string includes the equivalence class name, PDB ID, model info, and chain
+    # info for the equivalence class members.
     eq_class_members = []
     for eq_class in eq_class_dict:
         if not (len(eq_class_dict[eq_class]['PDB_ID']) == len(eq_class_dict[eq_class]['model']) ==
@@ -74,7 +74,8 @@ def parse_nrlist(nrlist_file, all_members=False):
                   f"Snakefile.")
             sys.exit(1)
         for idx in range(len(eq_class_dict[eq_class]['PDB_ID'])):
-            eq_class_members.append(f'{eq_class}_{eq_class_dict[eq_class]["PDB_ID"][idx]}')
+            eq_class_members.append(f'{eq_class}_{eq_class_dict[eq_class]["PDB_ID"][idx]}_'
+                                    f'{eq_class_dict[eq_class]["model"][idx]}')
             for chain in eq_class_dict[eq_class]["chain_list"][idx]:
                 eq_class_members[-1] = eq_class_members[-1] + "_" + chain
     return eq_class_members

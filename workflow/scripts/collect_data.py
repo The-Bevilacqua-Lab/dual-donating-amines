@@ -54,9 +54,11 @@ if snakemake.config["commit_hash"]:
         print(f"Error: Uncommitted changes have been made to the repo.")
         sys.exit(1)
 
-# Collect the equivalence class name, PDB ID, and chain info from the string describing the equivalence class member.
+# Collect the equivalence class name, PDB ID, model info, and chain info from the string describing the equivalence
+# class member.
 eq_class_build = []
 pdb_id_build = []
+model_build = []
 chain_build = []
 index = 0
 track = 0
@@ -65,6 +67,8 @@ for char in snakemake.wildcards.eq_class_members:
         eq_class_build.append(char)
     elif char != '_' and index == 3:
         pdb_id_build.append(char)
+    elif char != '_' and index == 4:
+        model_build.append(char)
     elif char != '_' and index > 4:
         if index != track:
             chain_build.append([char])
@@ -75,12 +79,13 @@ for char in snakemake.wildcards.eq_class_members:
         index += 1
 eq_class = "".join(eq_class_build[:-1])
 pdb_id = "".join(pdb_id_build)
+model = "".join(model_build)
 chain_list = []
 for chain in chain_build:
     chain_list.append("".join(chain))
 
 # Create an identifier for the equivalence class member.
-eq_class_mem_id = f'{eq_class}_{pdb_id}{"".join(["_" + chain for chain in chain_list])}'
+eq_class_mem_id = f'{eq_class}_{pdb_id}_{model}{"".join(["_" + chain for chain in chain_list])}'
 
 # Check whether the folder exists for PyMOL to save mmCIF files into that are fetched from the PDB.
 # If it does not exist, create the folder.
@@ -95,9 +100,6 @@ if not os.path.isdir(original_mmcif_dir):
 
 # Change fetch_path to original_mmcif_dir so that PyMOL drops the mmCIF files into this folder when running fetch.
 cmd.set('fetch_path', cmd.exp_path(original_mmcif_dir))
-
-# Change assembly to 1 so that PyMOL loads biological assembly 1 of the structure.
-cmd.set('assembly', 1)
 
 # Construct two strings that can be used with PyMOL to select donor and rotatable donor atoms.
 donor_string = ''
@@ -126,10 +128,12 @@ mem_rna_chains = " ".join(["chain " + chain for chain in chain_list])
 # Retrieve the structure that contains the equivalence class member RNA chains.
 cmd.fetch(pdb_id)
 
-# Check whether atoms exist after loading biological assembly 1 of the structure.
-if cmd.count_atoms('all') == 0:
-    print(f"No atoms are present after loading biological assembly 1 of equivalence class member {eq_class_mem_id}.")
-    sys.exit(1)
+# If the structure contains more than one model (or "state" in PyMOL), create a new PyMOL object of just that model.
+if cmd.count_states(pdb_id) > 1:
+    cmd.create(f'{pdb_id}_state_{model}', selection=pdb_id,
+               source_state=model,
+               target_state=1)
+    cmd.delete(pdb_id)
 
 # Remove atoms representing alternative conformations.
 remove_status = remove_alt_conf.remove(eq_class_mem_id)
