@@ -162,27 +162,24 @@ stored.donor_list = []
 cmd.iterate(f'({mem_rna_chains}) and ({donors_of_interest_str})',
             'stored.donor_list.append((index, name, resn, resi, chain))')
 
-# Store a list of distances for heavy atoms near the donors of interest within a dictionary.
-distance_dict = {"index": [], "name": [], "resn": [], "resi": [], "chain": [], "distance": []}
+# Store the number of heavy atoms belonging to organic molecules or polymers near the donor of interest within a
+# dictionary.
+count_dict = {"index": [], "name": [], "resn": [], "resi": [], "chain": [], "count": []}
 for donor in stored.donor_list:
-    # Get the distances of heavy atoms belonging to organic molecules or polymers near the donor. Exclude the nucleobase
+    # Count the number of heavy atoms belonging to organic molecules or polymers near the donor. Exclude the nucleobase
     # of the donor.
-    stored.distances = []
-    stored.donor_index = donor[0]
-    cmd.iterate(f'((organic or polymer) within {snakemake.config["density_dist"]} of index {stored.donor_index}) and '
-                f'not ((sidechain and byres index {stored.donor_index}) or elem H)',
-                'stored.distances.append(cmd.get_distance(f"index {stored.donor_index}", f"index {index}"))')
-    # Add the donor and corresponding distances to the distance dictionary.
-    for distance in stored.distances:
-        distance_dict["index"].append(donor[0])
-        distance_dict["name"].append(donor[1])
-        distance_dict["resn"].append(donor[2])
-        distance_dict["resi"].append(donor[3])
-        distance_dict["chain"].append(donor[4])
-        distance_dict["distance"].append(distance)
+    count = cmd.count_atoms(f'((organic or polymer) within {snakemake.config["count_dist"]} of index {donor[0]}) and '
+                            f'not ((sidechain and byres index {donor[0]}) or elem H)')
+    # Add the donor and heavy atom count to the count dictionary.
+    count_dict["index"].append(donor[0])
+    count_dict["name"].append(donor[1])
+    count_dict["resn"].append(donor[2])
+    count_dict["resi"].append(donor[3])
+    count_dict["chain"].append(donor[4])
+    count_dict["count"].append(count)
 
-# Create a dataframe based on the distance dictionary.
-distance_df = pd.DataFrame(distance_dict)
+# Create a dataframe based on the count dictionary.
+count_df = pd.DataFrame(count_dict)
 
 # Store a list of acceptors near the donors of interest within a dictionary of nucleobases. Also include two keys which
 # have values containing both residue and atom names for donor and acceptor atoms.
@@ -390,7 +387,7 @@ with open(snakemake.output.distances, "w") as csv_file:
         writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
     writer.writerow([f"# representative set file: {snakemake.config['rep_set_file']}"])
     writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
-distance_df.to_csv(snakemake.output.distances, index=False, mode='a', na_rep='NaN')
+count_df.to_csv(snakemake.output.counts, index=False, mode='a', na_rep='NaN')
 
 # Write a csv containing all H-bonding information.
 with open(snakemake.output.h_bond, "w") as csv_file:

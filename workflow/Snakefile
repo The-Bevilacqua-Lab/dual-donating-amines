@@ -15,7 +15,7 @@ rule all:
 
 rule collect_data:
     output:
-        distances = "data/distances/{eq_class_members}_distances.csv",
+        counts = "data/counts/{eq_class_members}_counts.csv",
         h_bond = "data/h_bond/{eq_class_members}_h_bond.csv",
         nuc = "data/nuc/{eq_class_members}_nuc.csv",
         b_factor = "data/b_factor/{eq_class_members}_b_factor.csv"
