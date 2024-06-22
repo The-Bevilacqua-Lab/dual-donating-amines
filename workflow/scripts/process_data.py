@@ -29,11 +29,22 @@ b_factor_data = pd.read_csv(snakemake.input.b_factor, comment="#", na_filter=Fal
 b_factor_data["mean"] = b_factor_data.groupby(b_factor_grp)["b-factor"].transform("mean")
 b_factor_data = b_factor_data.drop_duplicates(subset=b_factor_grp).drop(columns=["index", "name", "b-factor"])
 
-# Extract the data from the equivalence class file.
-eq_class_members_data = (pd.read_csv(snakemake.input.eq_class_members, header=None, comment="#",
-                                     skiprows=[3 if snakemake.config["commit_hash"] else 2],
-                                     na_filter=False, dtype="object")
-                         .set_index(pd.Series(["pdb_id", "chain"])).transpose())
+# Prepare a list of chains based on the string describing the equivalence class member.
+chain_build = []
+index = 0
+track = 0
+for char in snakemake.wildcards.eq_class_members:
+    if char != '_' and index > 4:
+        if index != track:
+            chain_build.append([char])
+            track = index
+        else:
+            chain_build[-1].append(char)
+    if char == '_':
+        index += 1
+chain_list = []
+for chain in chain_build:
+    chain_list.append("".join(chain))
 
 # Prepare a list containing the residue and atom names of the donors of interest.
 donors_of_interest = []
@@ -44,8 +55,7 @@ for donor in snakemake.config["donors_of_interest"]:
 don_h_bonds = (h_bond_data[(h_bond_data["h_acc_distance"] <= H_DIST_MAX) &
                            (h_bond_data["h_angle"] >= H_ANG_MIN)]
                .merge(pd.DataFrame(donors_of_interest, columns=["don_resn", "don_name"]), how='inner')
-               .merge(eq_class_members_data, left_on="don_chain", right_on="chain", how='inner')
-               .drop(columns=["pdb_id", "chain"]))
+               .merge(pd.DataFrame({'don_chain': chain_list}), how='inner'))
 
 # Specify the ID of the equivalence class member within an additional column in the dataframes.
 h_bond_data["eq_class_members"] = snakemake.wildcards.eq_class_members
