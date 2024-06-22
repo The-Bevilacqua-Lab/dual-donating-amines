@@ -15,6 +15,7 @@ rule all:
 
 rule collect_data:
     output:
+        distances = "data/distances/{eq_class_members}_distances.csv",
         h_bond = "data/h_bond/{eq_class_members}_h_bond.csv",
         nuc = "data/nuc/{eq_class_members}_nuc.csv",
         b_factor = "data/b_factor/{eq_class_members}_b_factor.csv"
@@ -30,8 +31,7 @@ rule process_data:
     input:
         h_bond = "data/h_bond/{eq_class_members}_h_bond.csv",
         nuc = "data/nuc/{eq_class_members}_nuc.csv",
-        b_factor = "data/b_factor/{eq_class_members}_b_factor.csv",
-        eq_class_members = "data/eq_class_members_files/{eq_class_members}_info.csv"
+        b_factor = "data/b_factor/{eq_class_members}_b_factor.csv"
     output:
         h_bond = "processed/h_bond/{eq_class_members}_h_bond.csv",
         nuc = "processed/nuc/{eq_class_members}_nuc.csv",
