@@ -33,7 +33,7 @@ b_factor_data = b_factor_data.drop_duplicates(subset=b_factor_grp).drop(columns=
 eq_class_members_data = (pd.read_csv(snakemake.input.eq_class_members, header=None, comment="#",
                                      skiprows=[3 if snakemake.config["commit_hash"] else 2],
                                      na_filter=False, dtype="object")
-                         .set_index(pd.Series(["pdb_id", "model", "chain"])).transpose())
+                         .set_index(pd.Series(["pdb_id", "chain"])).transpose())
 
 # Prepare a list containing the residue and atom names of the donors of interest.
 donors_of_interest = []
@@ -45,7 +45,7 @@ don_h_bonds = (h_bond_data[(h_bond_data["h_acc_distance"] <= H_DIST_MAX) &
                            (h_bond_data["h_angle"] >= H_ANG_MIN)]
                .merge(pd.DataFrame(donors_of_interest, columns=["don_resn", "don_name"]), how='inner')
                .merge(eq_class_members_data, left_on="don_chain", right_on="chain", how='inner')
-               .drop(columns=["pdb_id", "model", "chain"]))
+               .drop(columns=["pdb_id", "chain"]))
 
 # Specify the ID of the equivalence class member within an additional column in the dataframes.
 h_bond_data["eq_class_members"] = snakemake.wildcards.eq_class_members

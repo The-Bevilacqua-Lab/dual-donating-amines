@@ -54,17 +54,33 @@ if snakemake.config["commit_hash"]:
         print(f"Error: Uncommitted changes have been made to the repo.")
         sys.exit(1)
 
-# Iterate through the lines of the equivalence class file and collect the equivalence class name, PDB ID, model info,
-# and chain info for the equivalence class member.
-with open(snakemake.input[0], mode='r') as read_file:
-    eq_class_mem = []
-    for line in csv.reader(read_file):
-        if line[0][0] != "#":
-            eq_class_mem.append(line)
+# Collect the equivalence class name, PDB ID, and chain info from the string describing the equivalence class member.
+eq_class_build = []
+pdb_id_build = []
+chain_build = []
+index = 0
+track = 0
+for char in snakemake.wildcards.eq_class_members:
+    if index < 3:
+        eq_class_build.append(char)
+    elif char != '_' and index == 3:
+        pdb_id_build.append(char)
+    elif char != '_' and index > 4:
+        if index != track:
+            chain_build.append([char])
+            track = index
+        else:
+            chain_build[-1].append(char)
+    if char == '_':
+        index += 1
+eq_class = "".join(eq_class_build[:-1])
+pdb_id = "".join(pdb_id_build)
+chain_list = []
+for chain in chain_build:
+    chain_list.append("".join(chain))
 
 # Create an identifier for the equivalence class member.
-eq_class_mem_id = (f'{eq_class_mem[0][0]}_{eq_class_mem[1][0]}_'
-                   f'{"".join([chain + "_" for chain in eq_class_mem[3]])}')[:-1]
+eq_class_mem_id = f'{eq_class}_{pdb_id}{"".join(["_" + chain for chain in chain_list])}'
 
 # Check whether the folder exists for PyMOL to save mmCIF files into that are fetched from the PDB.
 # If it does not exist, create the folder.
@@ -104,14 +120,11 @@ donors_of_interest_str = donors_of_interest_str[:-1]
 nuc_donors = ["A.N6", "C.N4", "G.N1", "G.N2", "U.N3"]
 nuc_acceptors = ["A.N1", "A.N3", "A.N7", "C.O2", "C.N3", "G.N3", "G.O6", "G.N7", "U.O2", "U.O4"]
 
-# Identify the chains of all the equivalence class member RNAs.
-rna_list = []
-for idx in range(len(eq_class_mem[2])):
-    rna_list.append(f"chain {eq_class_mem[3][idx]}")
-mem_rna_chains = " ".join(rna_list)
+# Prepare as string that can be used with PyMOL to identify the chains of all the equivalence class member RNAs.
+mem_rna_chains = " ".join(["chain " + chain for chain in chain_list])
 
 # Retrieve the structure that contains the equivalence class member RNA chains.
-cmd.fetch(eq_class_mem[1][0])
+cmd.fetch(pdb_id)
 
 # Check whether atoms exist after loading biological assembly 1 of the structure.
 if cmd.count_atoms('all') == 0:
@@ -421,7 +434,7 @@ if snakemake.config["save_modified_mmcif"]:
 
 # Remove the original mmCIF if specified.
 if snakemake.config["remove_original_mmcif"]:
-    subprocess.run(["rm", original_mmcif_dir + f"{eq_class_mem[1][0]}.cif".lower()])
+    subprocess.run(["rm", original_mmcif_dir + f"{pdb_id}.cif".lower()])
 
 # Close files and reset stdout and stderr.
 stdout_file.close()

@@ -1,8 +1,9 @@
 """
-This script iterates through the lines of a representative set file and collects the equivalence class name, PDB ID,
-model info, and chain info of the representative structures for each equivalence class. The info for all equivalence
-classes is returned as a single dictionary. The name of the representative set file must be provided as the first
-argument. If True is provided as the second argument, information for all members (not just the representative
+This script iterates through the lines of a representative set file and collects the equivalence class names, PDB IDs,
+model info, and chain info of the equivalence class members that serve as the representative structures of their
+corresponding equivalence classes. Information for the equivalence class members are returned as a single list of
+strings. The model info is omitted from this returned list. The name of the representative set file must be provided as
+the first argument. If True is provided as the second argument, information for all members (not just the representative
 structures) of the equivalence classes will be compiled.
 """
 
@@ -11,10 +12,12 @@ import csv
 
 
 def parse_nrlist(nrlist_file, all_members=False):
-    eq_class = {}
+    # Prepare a dictionary of the equivalence classes that includes the PDB ID, model info, and chain info for the
+    # equivalence class members.
+    eq_class_dict = {}
     with open(nrlist_file, mode='r') as read_file:
         for line in csv.reader(read_file):
-            eq_class[line[0]] = {'PDB_ID': [], 'model': [], 'chain_list': []}
+            eq_class_dict[line[0]] = {'PDB_ID': [], 'model': [], 'chain_list': []}
             for class_member in line[2].split(','):
                 pdb_id_list = []
                 model_list = []
@@ -56,9 +59,22 @@ def parse_nrlist(nrlist_file, all_members=False):
                     if model != model_list[0]:
                         print(f"Error: The models for a member of equivalence class {line[0]} do not match.")
                         sys.exit(1)
-                eq_class[line[0]]['PDB_ID'].append(pdb_id_list[0])
-                eq_class[line[0]]['model'].append(model_list[0])
-                eq_class[line[0]]['chain_list'].append(chain_list)
+                eq_class_dict[line[0]]['PDB_ID'].append(pdb_id_list[0])
+                eq_class_dict[line[0]]['model'].append(model_list[0])
+                eq_class_dict[line[0]]['chain_list'].append(chain_list)
                 if not all_members:
                     break
-    return eq_class
+    # Prepare a list of strings where each string includes the equivalence class name, PDB ID, and chain info for the
+    # equivalence class members.
+    eq_class_members = []
+    for eq_class in eq_class_dict:
+        if not (len(eq_class_dict[eq_class]['PDB_ID']) == len(eq_class_dict[eq_class]['model']) ==
+                len(eq_class_dict[eq_class]['chain_list'])):
+            print(f"Error: There is an issue with the information for a member of equivalence class {eq_class} in the "
+                  f"Snakefile.")
+            sys.exit(1)
+        for idx in range(len(eq_class_dict[eq_class]['PDB_ID'])):
+            eq_class_members.append(f'{eq_class}_{eq_class_dict[eq_class]["PDB_ID"][idx]}')
+            for chain in eq_class_dict[eq_class]["chain_list"][idx]:
+                eq_class_members[-1] = eq_class_members[-1] + "_" + chain
+    return eq_class_members

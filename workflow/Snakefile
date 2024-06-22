@@ -1,23 +1,10 @@
-import sys
 import scripts.parse_nrlist
 
 configfile: "config/config.yaml"
 
-# Retrieve information from each equivalence class listed in the representative set file.
-eq_class_dict = scripts.parse_nrlist.parse_nrlist(config["rep_set_file"], config["all_members"])
-
-# Prepare a list including the equivalence class name, PDB ID, and chain info for each equivalence class member.
-eq_class_members = []
-for eq_class in eq_class_dict:
-    if not (len(eq_class_dict[eq_class]['PDB_ID']) == len(eq_class_dict[eq_class]['model']) ==
-            len(eq_class_dict[eq_class]['chain_list'])):
-        print(f"Error: There is an issue with the information for a member of equivalence class {eq_class} in the "
-              f"Snakefile.")
-        sys.exit(1)
-    for idx in range(len(eq_class_dict[eq_class]['PDB_ID'])):
-        eq_class_members.append(f'{eq_class}_{eq_class_dict[eq_class]["PDB_ID"][idx]}')
-        for chain in eq_class_dict[eq_class]["chain_list"][idx]:
-            eq_class_members[-1] = eq_class_members[-1] + "_" + chain
+# Prepare a list of strings where each string includes the equivalence class name, PDB ID, and chain info for the
+# equivalence class members.
+eq_class_members = scripts.parse_nrlist.parse_nrlist(config["rep_set_file"], config["all_members"])
 
 rule all:
     input:
@@ -26,20 +13,7 @@ rule all:
         "combined/b_factor.csv",
         "combined/don_h_bonds.csv"
 
-rule write_eq_class_files:
-    output:
-        "data/eq_class_members_files/{eq_class_members}_info.csv"
-    log:
-        stdout = "data/logs/write_eq_class_files/{eq_class_members}.stdout",
-        stderr = "data/logs/write_eq_class_files/{eq_class_members}.stderr"
-    conda:
-        "envs/general.yaml"
-    script:
-        "scripts/write_eq_class_files.py"
-
 rule collect_data:
-    input:
-        rules.write_eq_class_files.output
     output:
         h_bond = "data/h_bond/{eq_class_members}_h_bond.csv",
         nuc = "data/nuc/{eq_class_members}_nuc.csv",
