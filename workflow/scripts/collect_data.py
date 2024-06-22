@@ -380,8 +380,8 @@ if not stored.check_one == stored.check_two:
     print(f"Error: The indices in equivalence class member {snakemake.wildcards.eq_class_members} changed.")
     sys.exit(1)
 
-# Write a csv containing heavy atom to donor of interest distances.
-with open(snakemake.output.distances, "w") as csv_file:
+# Write a csv containing the number of heavy atoms near each donor of interest.
+with open(snakemake.output.counts, "w") as csv_file:
     writer = csv.writer(csv_file)
     if commit_hash:
         writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
