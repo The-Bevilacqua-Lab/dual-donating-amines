@@ -6,7 +6,8 @@ into combined dataframes. The combined dataframes are then written to csv files.
 import pandas as pd
 
 # Initialize combined dataframes.
-counts_combined = pd.DataFrame(columns=["index", "name", "resn", "resi", "chain", "count_1", "count_2"])
+counts_combined = pd.DataFrame(columns=["index", "name", "resn", "resi", "chain", "count_1", "count_2",
+                                        "eq_class_members"])
 h_bond_combined = pd.DataFrame(columns=["don_index", "don_name", "don_resn", "don_resi", "don_chain", "acc_index",
                                         "acc_name", "acc_resn", "acc_resi", "acc_chain", "don_acc_distance",
                                         "h_acc_distance", "h_angle", "h_dihedral", "h_name", "eq_class_members"])
