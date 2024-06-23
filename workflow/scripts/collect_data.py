@@ -210,7 +210,7 @@ count_df = pd.DataFrame(count_dict)
 
 # Store a list of acceptors near the donors of interest within a dictionary of nucleobases. Also include two keys which
 # have values containing both residue and atom names for donor and acceptor atoms.
-nucleobase_dict = {"don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [],
+atom_pair_dict = {"don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [],
                    "acc_index": [], "acc_name": [], "acc_resn": [], "acc_resi": [], "acc_chain": []}
 for donor in stored.donor_list:
     # Find the acceptors near the donor. Exclude the nucleobase of the donor.
@@ -220,26 +220,26 @@ for donor in stored.donor_list:
                 'stored.acceptors.append((index, name, resn, resi, chain))')
     for acceptor in stored.acceptors:
         # Add the donor to the nucleobase dictionary.
-        nucleobase_dict["don_index"].append(donor[0])
-        nucleobase_dict["don_name"].append(donor[1])
-        nucleobase_dict["don_resn"].append(donor[2])
-        nucleobase_dict["don_resi"].append(donor[3])
-        nucleobase_dict["don_chain"].append(donor[4])
+        atom_pair_dict["don_index"].append(donor[0])
+        atom_pair_dict["don_name"].append(donor[1])
+        atom_pair_dict["don_resn"].append(donor[2])
+        atom_pair_dict["don_resi"].append(donor[3])
+        atom_pair_dict["don_chain"].append(donor[4])
         # Add the acceptors to the nucleobase dictionary.
-        nucleobase_dict["acc_index"].append(acceptor[0])
-        nucleobase_dict["acc_name"].append(acceptor[1])
-        nucleobase_dict["acc_resn"].append(acceptor[2])
-        nucleobase_dict["acc_resi"].append(acceptor[3])
-        nucleobase_dict["acc_chain"].append(acceptor[4])
+        atom_pair_dict["acc_index"].append(acceptor[0])
+        atom_pair_dict["acc_name"].append(acceptor[1])
+        atom_pair_dict["acc_resn"].append(acceptor[2])
+        atom_pair_dict["acc_resi"].append(acceptor[3])
+        atom_pair_dict["acc_chain"].append(acceptor[4])
 
 # Create a dataframe based on the nucleobase dictionary.
-nucleobase_df = pd.DataFrame(nucleobase_dict)
+atom_pair_df = pd.DataFrame(atom_pair_dict)
 
 # Acquire the H-bonding geometry measurements for all acceptors near each donor of interest.
 don_h_bonds_dict = {"don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "acc_index": [],
                     "acc_name": [], "acc_resn": [], "acc_resi": [], "acc_chain": [], "don_acc_distance": [],
                     "h_acc_distance": [], "h_angle": [], "h_dihedral": [], "h_name": []}
-for atom_pair in nucleobase_df.itertuples():
+for atom_pair in atom_pair_df.itertuples():
     # Store the donor and acceptor atom values for the dataframe row.
     don_list = [atom_pair.don_index, atom_pair.don_name, atom_pair.don_resn, atom_pair.don_resi, atom_pair.don_chain]
     acc_list = [atom_pair.acc_index, atom_pair.acc_name, atom_pair.acc_resn, atom_pair.acc_resi, atom_pair.acc_chain]
@@ -372,16 +372,10 @@ for atom_pair in u_n3_df.itertuples():
 # Create a dataframe based on the dictionary.
 u_n3_h_bonds_df = pd.DataFrame(u_n3_h_bonds_dict)
 
-# Create a dataframe of residues that are involved in potential H-bonding interactions.
-res_df = pd.concat([
-    nucleobase_df.loc[:, ["don_resn", "don_resi", "don_chain"]]
-    .rename(columns={"don_resn": "resn", "don_resi": "resi", "don_chain": "chain"}),
-    nucleobase_df.loc[:, ["acc_resn", "acc_resi", "acc_chain"]]
-    .rename(columns={"acc_resn": "resn", "acc_resi": "resi", "acc_chain": "chain"})]).drop_duplicates()
-
-# Create a dataframe with the b-factors of heavy atoms for residues involved in potential H-bonding interactions.
+# Create a dataframe with the b-factors of heavy atoms for residues containing donors of interest.
+nuc_grp = ["resn", "resi", "chain"]
 b_factor_df = pd.DataFrame({"index": [], "name": [], "resn": [], "resi": [], "chain": [], "b-factor": [], "subset": []})
-for res in res_df.itertuples():
+for res in count_df.loc[:, nuc_grp].drop_duplicates().itertuples():
     stored.atoms = []
     # Collect the b-factors for backbone atoms.
     cmd.iterate(f"resn {res.resn} and resi {res.resi} and chain {res.chain} and backbone and not elem H",
@@ -419,15 +413,14 @@ with open(snakemake.output.h_bond, "w") as csv_file:
 pd.concat([don_h_bonds_df, g_n1_h_bonds_df, u_n3_h_bonds_df]).to_csv(snakemake.output.h_bond, index=False, mode='a',
                                                                      na_rep='NaN')
 
-# Write a csv file that stores applicable nucleobases containing donors of interest.
-nuc_grp = ["don_resn", "don_resi", "don_chain"]
+# Write a csv file that stores nucleobases containing donors of interest.
 with open(snakemake.output.nuc, "w") as csv_file:
     writer = csv.writer(csv_file)
     if commit_hash:
         writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
     writer.writerow([f"# representative set file: {snakemake.config['rep_set_file']}"])
     writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
-nucleobase_df.loc[:, nuc_grp].drop_duplicates().to_csv(snakemake.output.nuc, index=False, mode='a', na_rep='NaN')
+count_df.loc[:, nuc_grp].drop_duplicates().to_csv(snakemake.output.nuc, index=False, mode='a', na_rep='NaN')
 
 # Write a csv containing the b-factors.
 with open(snakemake.output.b_factor, "w") as csv_file:
