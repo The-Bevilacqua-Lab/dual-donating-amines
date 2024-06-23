@@ -3,7 +3,10 @@ This script will eventually do something.
 """
 
 import pandas as pd
-import residue_library
+
+# Set the H-bonding criteria.
+H_DIST_MAX = snakemake.config["h_dist_max"]
+H_ANG_MIN = snakemake.config["h_ang_min"]
 
 # Prepare a list of acceptor residue names and atom names that have substantially greater negative charge.
 neg_acc_resn = []
@@ -30,8 +33,6 @@ neg_acceptors = pd.DataFrame({
 })
 
 # Get the data.
-don_h_bonds = pd.read_csv(snakemake.input.don_h_bonds, na_filter=False,
-                          dtype={"don_resi": "object", "acc_resi": "object"})
 # TODO prot donor should not donate to the same atom the exo amine is donating to (e.g., C788 A5 in 6xu8)
 # noinspection PyTypeChecker
 prot_don_h_bonds = pd.read_csv(snakemake.input.prot_don_h_bonds, na_filter=False,
@@ -82,6 +83,34 @@ a_n1_acc["atom"] = "A(N1) Acceptor"
 pd.concat([a_n6_don, a_n1_acc], ignore_index=True).to_csv(snakemake.output.heatmap, index=False,
                                                           columns=["don_acc_distance", "don_angle", "acc_angle",
                                                                    "h_acc_distance", "h_angle", "atom"])
+
+# Prepare a list of chains based on the string describing the equivalence class member.
+chain_build = []
+index = 0
+track = 0
+for char in snakemake.wildcards.eq_class_members:
+    if char != '_' and index > 4:
+        if index != track:
+            chain_build.append([char])
+            track = index
+        else:
+            chain_build[-1].append(char)
+    if char == '_':
+        index += 1
+chain_list = []
+for chain in chain_build:
+    chain_list.append("".join(chain))
+
+# Prepare a list containing the residue and atom names of the donors of interest.
+donors_of_interest = []
+for donor in snakemake.config["donors_of_interest"]:
+    donors_of_interest.append([donor.split(".")[0], donor.split(".")[1]])
+
+# Identify atom pairs that meet the H-bond criteria and include a donor of interest.
+don_h_bonds = (h_bond_data[(h_bond_data["h_acc_distance"] <= H_DIST_MAX) &
+                           (h_bond_data["h_angle"] >= H_ANG_MIN)]
+               .merge(pd.DataFrame(donors_of_interest, columns=["don_resn", "don_name"]), how='inner')
+               .merge(pd.DataFrame({'don_chain': chain_list}), how='inner'))
 
 # Identify nucleobases that donate either one or at least two H-bonds via their exocyclic amines. The H-bonds from the
 # latter nucleobases must involve both exocyclic amine hydrogens and at least two different acceptors.

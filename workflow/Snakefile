@@ -37,8 +37,7 @@ rule process_data:
         counts = "processed/counts/{eq_class_members}_counts.csv",
         h_bond = "processed/h_bond/{eq_class_members}_h_bond.csv",
         nuc = "processed/nuc/{eq_class_members}_nuc.csv",
-        b_factor = "processed/b_factor/{eq_class_members}_b_factor.csv",
-        don_h_bonds = "processed/don_h_bonds/{eq_class_members}_don_h_bonds.csv"
+        b_factor = "processed/b_factor/{eq_class_members}_b_factor.csv"
     log:
         stdout = "data/logs/process_data/{eq_class_members}.stdout",
         stderr = "data/logs/process_data/{eq_class_members}.stderr"
@@ -52,14 +51,12 @@ rule combine_data:
         counts = expand("processed/counts/{eq_class_members}_counts.csv", eq_class_members=eq_class_members),
         h_bond = expand("processed/h_bond/{eq_class_members}_h_bond.csv", eq_class_members=eq_class_members),
         nuc = expand("processed/nuc/{eq_class_members}_nuc.csv", eq_class_members=eq_class_members),
-        b_factor = expand("processed/b_factor/{eq_class_members}_b_factor.csv", eq_class_members=eq_class_members),
-        don_h_bonds = expand("processed/don_h_bonds/{eq_class_members}_don_h_bonds.csv", eq_class_members=eq_class_members)
+        b_factor = expand("processed/b_factor/{eq_class_members}_b_factor.csv", eq_class_members=eq_class_members)
     output:
         counts = "combined/counts.csv",
         h_bond = "combined/h_bond.csv",
         nuc = "combined/nuc.csv",
-        b_factor = "combined/b_factor.csv",
-        don_h_bonds = "combined/don_h_bonds.csv"
+        b_factor = "combined/b_factor.csv"
     log:
         stdout = "data/logs/combine_data/output.stdout",
         stderr = "data/logs/combine_data/error.stderr"
