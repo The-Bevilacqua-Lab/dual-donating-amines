@@ -10,8 +10,7 @@ rule all:
     input:
         "combined/h_bond.csv",
         "combined/nuc.csv",
-        "combined/b_factor.csv",
-        "combined/don_h_bonds.csv"
+        "combined/b_factor.csv"
 
 rule collect_data:
     output:
