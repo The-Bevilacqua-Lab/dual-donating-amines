@@ -12,6 +12,9 @@ H_ANG_MIN = snakemake.config["h_ang_min"]
 # Set the name of the H-bond file.
 h_bond_file = snakemake.input.h_bond
 
+# Extract the data from the count csv file.
+count_data = pd.read_csv(snakemake.input.count, comment="#", na_filter=False, dtype={"chain": "object"})
+
 # Extract the data from the h_bond csv file and remove redundant lines.
 unique_col_comb = ["don_index", "acc_index", "h_name"]
 # noinspection PyTypeChecker
@@ -58,12 +61,14 @@ don_h_bonds = (h_bond_data[(h_bond_data["h_acc_distance"] <= H_DIST_MAX) &
                .merge(pd.DataFrame({'don_chain': chain_list}), how='inner'))
 
 # Specify the ID of the equivalence class member within an additional column in the dataframes.
+count_data["eq_class_members"] = snakemake.wildcards.eq_class_members
 h_bond_data["eq_class_members"] = snakemake.wildcards.eq_class_members
 nuc_data["eq_class_members"] = snakemake.wildcards.eq_class_members
 b_factor_data["eq_class_members"] = snakemake.wildcards.eq_class_members
 don_h_bonds["eq_class_members"] = snakemake.wildcards.eq_class_members
 
 # Write to csv files.
+count_data.to_csv(snakemake.output.count, index=False, na_rep='NaN')
 h_bond_data.to_csv(snakemake.output.h_bond, index=False, na_rep='NaN')
 nuc_data.to_csv(snakemake.output.nuc, index=False, na_rep='NaN')
 b_factor_data.to_csv(snakemake.output.b_factor, index=False, na_rep='NaN')

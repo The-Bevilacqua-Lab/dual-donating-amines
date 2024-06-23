@@ -6,6 +6,7 @@ into combined dataframes. The combined dataframes are then written to csv files.
 import pandas as pd
 
 # Initialize combined dataframes.
+counts_combined = pd.DataFrame(columns=["index", "name", "resn", "resi", "chain", "count_1", "count_2"])
 h_bond_combined = pd.DataFrame(columns=["don_index", "don_name", "don_resn", "don_resi", "don_chain", "acc_index",
                                         "acc_name", "acc_resn", "acc_resi", "acc_chain", "don_acc_distance",
                                         "h_acc_distance", "h_angle", "h_dihedral", "h_name", "eq_class_members"])
@@ -18,10 +19,15 @@ don_h_bonds_combined = pd.DataFrame(columns=["don_index", "don_name", "don_resn"
 # Combine the dataframes from the different equivalence class members. Do not incorporate empty dataframes.
 for idx in range(len(snakemake.input.h_bond)):
     try:
+        counts_df = pd.read_csv(snakemake.input.counts[idx], keep_default_na=False, na_values="NaN")
         h_bond_df = pd.read_csv(snakemake.input.h_bond[idx], keep_default_na=False, na_values="NaN")
         nuc_df = pd.read_csv(snakemake.input.nuc[idx], keep_default_na=False, na_values="NaN")
         b_factor_df = pd.read_csv(snakemake.input.b_factor[idx], keep_default_na=False, na_values="NaN")
         don_h_bonds_df = pd.read_csv(snakemake.input.don_h_bonds[idx], keep_default_na=False, na_values="NaN")
+        if counts_combined.empty and not counts_df.empty:
+            counts_combined = counts_df.copy()
+        elif not counts_df.empty:
+            counts_combined = pd.concat([counts_combined, counts_df])
         if h_bond_combined.empty and not h_bond_df.empty:
             h_bond_combined = h_bond_df.copy()
         elif not h_bond_df.empty:
@@ -42,6 +48,7 @@ for idx in range(len(snakemake.input.h_bond)):
         continue
 
 # Write to csv files.
+counts_combined.to_csv(snakemake.output.counts, index=False, na_rep='NaN')
 h_bond_combined.to_csv(snakemake.output.h_bond, index=False, na_rep='NaN')
 nuc_combined.to_csv(snakemake.output.nuc, index=False, na_rep='NaN')
 b_factor_combined.to_csv(snakemake.output.b_factor, index=False, na_rep='NaN')
