@@ -34,6 +34,33 @@ stderr_file = open(snakemake.log.stderr, mode='w')
 sys.stdout = stdout_file
 sys.stderr = stderr_file
 
+
+# This function is to be run if an error is encountered.
+def error(msg_list):
+
+    # Create the output files expected by Snakemake.
+    subprocess.run(["touch", snakemake.output.counts, snakemake.output.h_bond, snakemake.output.nuc,
+                    snakemake.output.b_factor])
+
+    # If the structure has already been loaded, save the modified structure if specified.
+    if cmd.count_atoms('all') > 0 and snakemake.config["save_modified_mmcif"]:
+        cmd.save(modified_mmcif_dir + eq_class_mem_id + ".cif")
+
+    # If the structure has already been loaded, remove the original mmCIF if specified.
+    if cmd.count_atoms('all') > 0 and snakemake.config["remove_original_mmcif"]:
+        subprocess.run(["rm", original_mmcif_dir + f"{pdb_id}.cif".lower()])
+
+    # Print the error message(s).
+    for msg in msg_list:
+        print(msg)
+
+    # Close files, reset stdout and stderr, and exit.
+    stdout_file.close()
+    stderr_file.close()
+    sys.stdout = stdout
+    sys.stderr = stderr
+    sys.exit(0)
+
 # If commit_hash is set to true in the Snakemake configuration file, check if any changes have been made to the repo and
 # get the hash of the current git commit. If uncommitted changes have been made to anything other than files listed in
 # the acceptable_changes variable defined below, print an error message and exit.
@@ -51,8 +78,7 @@ if snakemake.config["commit_hash"]:
         commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"],
                                               cwd=os.path.dirname(os.path.realpath(__file__))).decode('ascii').strip()
     else:
-        print(f"Error: Uncommitted changes have been made to the repo.")
-        sys.exit(1)
+        error([f"Error: Uncommitted changes have been made to the repo."])
 
 # Collect the equivalence class name, PDB ID, model info, and chain info from the string describing the equivalence
 # class member.
@@ -139,9 +165,7 @@ if cmd.count_states(pdb_id) > 1:
 remove_status = remove_alt_conf.remove(eq_class_mem_id)
 successful_completion = remove_status[0]
 if not successful_completion:
-    for note in remove_status[1]:
-        print(note)
-    sys.exit(1)
+    error(remove_status[1])
 
 # Remove any hydrogens that loaded with the structure.
 cmd.remove('elem H')
@@ -224,9 +248,7 @@ for atom_pair in nucleobase_df.itertuples():
     # If the H-bond evaluation is not successful, print the error message(s) and exit.
     successful_completion = h_bond_list[0]
     if not successful_completion:
-        for note in h_bond_list[1]:
-            print(note)
-        sys.exit(1)
+        error(h_bond_list[1])
     # Add the H-bond measurements to the dictionary.
     else:
         for h_bond in h_bond_list[1]:
@@ -282,9 +304,7 @@ for atom_pair in g_n1_df.itertuples():
     # If the H-bond evaluation is not successful, print the error message(s) and exit.
     successful_completion = h_bond_list[0]
     if not successful_completion:
-        for note in h_bond_list[1]:
-            print(note)
-        sys.exit(1)
+        error(h_bond_list[1])
     # Add the H-bond measurements to the dictionary.
     else:
         for h_bond in h_bond_list[1]:
@@ -340,9 +360,7 @@ for atom_pair in u_n3_df.itertuples():
     # If the H-bond evaluation is not successful, print the error message(s) and exit.
     successful_completion = h_bond_list[0]
     if not successful_completion:
-        for note in h_bond_list[1]:
-            print(note)
-        sys.exit(1)
+        error(h_bond_list[1])
     # Add the H-bond measurements to the dictionary.
     else:
         for h_bond in h_bond_list[1]:
@@ -380,8 +398,7 @@ stored.check_two = []
 for index in indices:
     cmd.iterate(f'index {index}', 'stored.check_two.append((index, name, resn, resi, chain))')
 if not stored.check_one == stored.check_two:
-    print(f"Error: The indices in equivalence class member {snakemake.wildcards.eq_class_members} changed.")
-    sys.exit(1)
+    error([f"Error: The indices in equivalence class member {snakemake.wildcards.eq_class_members} changed."])
 
 # Write a csv containing the number of heavy atoms near each donor of interest.
 with open(snakemake.output.counts, "w") as csv_file:
