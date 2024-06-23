@@ -164,19 +164,22 @@ cmd.iterate(f'({mem_rna_chains}) and ({donors_of_interest_str})',
 
 # Store the number of heavy atoms belonging to organic molecules or polymers near the donor of interest within a
 # dictionary.
-count_dict = {"index": [], "name": [], "resn": [], "resi": [], "chain": [], "count": []}
+count_dict = {"index": [], "name": [], "resn": [], "resi": [], "chain": [], "count_1": [], "count_2": []}
 for donor in stored.donor_list:
     # Count the number of heavy atoms belonging to organic molecules or polymers near the donor. Exclude the nucleobase
     # of the donor.
-    count = cmd.count_atoms(f'((organic or polymer) within {snakemake.config["count_dist"]} of index {donor[0]}) and '
-                            f'not ((sidechain and byres index {donor[0]}) or elem H)')
+    count_1 = cmd.count_atoms(f'((organic or polymer) within {snakemake.config["count_dist_1"]} of index {donor[0]}) '
+                              f'and not ((sidechain and byres index {donor[0]}) or elem H)')
+    count_2 = cmd.count_atoms(f'((organic or polymer) within {snakemake.config["count_dist_2"]} of index {donor[0]}) '
+                              f'and not ((sidechain and byres index {donor[0]}) or elem H)')
     # Add the donor and heavy atom count to the count dictionary.
     count_dict["index"].append(donor[0])
     count_dict["name"].append(donor[1])
     count_dict["resn"].append(donor[2])
     count_dict["resi"].append(donor[3])
     count_dict["chain"].append(donor[4])
-    count_dict["count"].append(count)
+    count_dict["count_1"].append(count_1)
+    count_dict["count_2"].append(count_2)
 
 # Create a dataframe based on the count dictionary.
 count_df = pd.DataFrame(count_dict)

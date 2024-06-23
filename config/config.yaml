@@ -11,7 +11,8 @@ modified_mmcif_dir: "data/modified_mmcif_files/"
 
 # What are the search radii?
 search_dist: 4.1
-count_dist: 7.0
+count_dist_1: 5.0
+count_dist_2: 10.0
 
 # What are the cutoffs?
 h_dist_max: 2.5
