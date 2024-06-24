@@ -33,84 +33,48 @@ neg_acceptors = pd.DataFrame({
 })
 
 # Get the data.
-# TODO prot donor should not donate to the same atom the exo amine is donating to (e.g., C788 A5 in 6xu8)
-# noinspection PyTypeChecker
-prot_don_h_bonds = pd.read_csv(snakemake.input.prot_don_h_bonds, na_filter=False,
-                               dtype={"don_resi": "object", "acc_resi": "object"})
-# noinspection PyTypeChecker
-acc_h_bonds = pd.read_csv(snakemake.input.acc_h_bonds, keep_default_na=False,
-                          na_values={"h_acc_distance": "NaN", "h_angle": "NaN", "h_dihedral": "NaN"},
-                          dtype={"don_resi": "object", "acc_resi": "object"})
 nuc_data_raw = pd.read_csv(snakemake.input.nuc, na_filter=False, dtype={"resi": "object"})
 b_factor_data = pd.read_csv(snakemake.input.b_factor, na_filter=False, dtype={"resi": "object"})
-# noinspection PyTypeChecker
-h_bond_data = pd.read_csv(snakemake.input.h_bond, keep_default_na=False,
-                          na_values={"h_acc_distance": "NaN", "h_angle": "NaN", "h_dihedral": "NaN"},
+h_bond_data = pd.read_csv(snakemake.input.h_bond, keep_default_na=False, na_values="NaN",
                           dtype={"don_resi": "object", "acc_resi": "object"})
 
-# Create a new dataframe of nucleobases where the mean of the b-factors are below 79.
-nuc_data = ((nuc_data_raw.merge(b_factor_data[(b_factor_data["subset"] == "sidechain") &
-                                              (b_factor_data["mean"] < snakemake.config["b_factor_cutoff"])],
-                                on=["resn", "resi", "chain", "eq_class_members"], how='inner').drop(columns=["mean"]))
-            .drop(columns=["subset"]))
-
-# Write data on donor-acceptor pairs to csv files.
-don_acc_grp = ["don_index", "acc_index", "eq_class_members"]
-a_n6_don = (h_bond_data[
-     # Only include hydrogens with smaller D-H...A distances.
-     (h_bond_data.groupby(don_acc_grp)["h_acc_distance"]
-      .transform(lambda grp: [mem == grp.min() for mem in grp])) &
-     # Do not consider A(N6)-U(O4) atom pairs.
-     (~h_bond_data[["don_resn", "don_name", "acc_resn", "acc_name"]].eq(["A", "N6", "U", "O4"])
-      .all(axis='columns')) &
-     # Only consider atom pairs where A(N6) is the donor.
-     (h_bond_data[["don_resn", "don_name"]].eq(["A", "N6"])
-      .all(axis='columns'))])
-a_n6_don["atom"] = "A(N6) Donor"
-a_n1_acc = (h_bond_data[
-     # Only include hydrogens with smaller D-H...A distances.
-     (h_bond_data.groupby(don_acc_grp)["h_acc_distance"]
-      .transform(lambda grp: [mem == grp.min() for mem in grp])) &
-     # Only consider non-rotatable donors.
-     (h_bond_data["h_acc_distance"].notna()) &
-     # Do not consider U(N3)-A(N1) atom pairs.
-     (~h_bond_data[["don_resn", "don_name", "acc_resn", "acc_name"]].eq(["U", "N3", "A", "N1"])
-      .all(axis='columns')) &
-     # Only consider atom pairs where A(N1) is the acceptor.
-     (h_bond_data[["acc_resn", "acc_name"]].eq(["A", "N1"])
-      .all(axis='columns'))])
-a_n1_acc["atom"] = "A(N1) Acceptor"
-pd.concat([a_n6_don, a_n1_acc], ignore_index=True).to_csv(snakemake.output.heatmap, index=False,
-                                                          columns=["don_acc_distance", "don_angle", "acc_angle",
-                                                                   "h_acc_distance", "h_angle", "atom"])
-
-# Prepare a list of chains based on the string describing the equivalence class member.
-chain_build = []
-index = 0
-track = 0
-for char in snakemake.wildcards.eq_class_members:
-    if char != '_' and index > 4:
-        if index != track:
-            chain_build.append([char])
-            track = index
-        else:
-            chain_build[-1].append(char)
-    if char == '_':
-        index += 1
-chain_list = []
-for chain in chain_build:
-    chain_list.append("".join(chain))
+# Create a new dataframe of nucleobases containing a donor of interest where the mean of the b-factors are below the
+# cutoff.
+nuc_data = (nuc_data_raw.merge(b_factor_data[(b_factor_data["subset"] == "sidechain") &
+                                             (b_factor_data["mean"] < snakemake.config["b_factor_cutoff"])],
+                               on=["resn", "resi", "chain", "eq_class_members"], how='inner')
+            .drop(columns=["mean", "subset"]))
 
 # Prepare a list containing the residue and atom names of the donors of interest.
 donors_of_interest = []
 for donor in snakemake.config["donors_of_interest"]:
     donors_of_interest.append([donor.split(".")[0], donor.split(".")[1]])
 
-# Identify atom pairs that meet the H-bond criteria and include a donor of interest.
+# Identify atom pairs that meet the H-bond criteria and include a donor of interest. The nucleobase containing the donor
+# of interest must also meet the b-factor criteria.
 don_h_bonds = (h_bond_data[(h_bond_data["h_acc_distance"] <= H_DIST_MAX) &
                            (h_bond_data["h_angle"] >= H_ANG_MIN)]
                .merge(pd.DataFrame(donors_of_interest, columns=["don_resn", "don_name"]), how='inner')
-               .merge(pd.DataFrame({'don_chain': chain_list}), how='inner'))
+               .merge(nuc_data, left_on=["don_resn", "don_resi", "don_chain", "eq_class_members"],
+                      right_on=["resn", "resi", "chain", "eq_class_members"], how='inner')
+               .drop(columns=["resn", "resi", "chain"]))
+
+# Write data on donor-acceptor pairs involving donors of interest to csv files.
+don_acc_grp = ["don_index", "acc_index", "eq_class_members"]
+don_atom_pairs = (don_h_bonds[
+     # Only include hydrogens with smaller D-H...A distances.
+     (don_h_bonds.groupby(don_acc_grp)["h_acc_distance"]
+      .transform(lambda grp: [mem == grp.min() for mem in grp])) &
+     # Do not consider A(N6)-U(O4), C(N4)-G(O6), G(N2)-C(O2), or G(N2)-C(N3) atom pairs.
+     (~don_h_bonds[["don_resn", "don_name", "acc_resn", "acc_name"]].eq(["A", "N6", "U", "O4"])
+      .all(axis='columns')) &
+     (~don_h_bonds[["don_resn", "don_name", "acc_resn", "acc_name"]].eq(["C", "N4", "G", "O6"])
+      .all(axis='columns')) &
+     (~don_h_bonds[["don_resn", "don_name", "acc_resn", "acc_name"]].eq(["G", "N2", "C", "O2"])
+      .all(axis='columns')) &
+     (~don_h_bonds[["don_resn", "don_name", "acc_resn", "acc_name"]].eq(["G", "N2", "C", "N3"])
+      .all(axis='columns'))])
+don_atom_pairs.to_csv(snakemake.output.heatmap, index=False, columns=["don_acc_distance", "h_acc_distance", "h_angle"])
 
 # Identify nucleobases that donate either one or at least two H-bonds via their exocyclic amines. The H-bonds from the
 # latter nucleobases must involve both exocyclic amine hydrogens and at least two different acceptors.
