@@ -8,9 +8,8 @@ eq_class_members = scripts.parse_nrlist.parse_nrlist(config["rep_set_file"], con
 
 rule all:
     input:
-        "combined/h_bond.csv",
-        "combined/nuc.csv",
-        "combined/b_factor.csv"
+        "analysis/atom_pairs.csv",
+        "analysis/counts.csv"
 
 rule collect_data:
     output:
@@ -63,3 +62,20 @@ rule combine_data:
         "envs/general.yaml"
     script:
         "scripts/combine_data.py"
+
+rule analyze_data:
+    input:
+        counts = "combined/counts.csv",
+        h_bond = "combined/h_bond.csv",
+        nuc = "combined/nuc.csv",
+        b_factor = "combined/b_factor.csv"
+    output:
+        atom_pairs = "analysis/atom_pairs.csv",
+        counts = "analysis/counts.csv"
+    log:
+        stdout = "data/logs/analyze_data/output.stdout",
+        stderr = "data/logs/analyze_data/error.stderr"
+    conda:
+        "envs/general.yaml"
+    script:
+        "scripts/analyze_data.py"
