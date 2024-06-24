@@ -4,6 +4,7 @@ This script will eventually do something.
 
 import numpy as np
 import pandas as pd
+import residue_library
 
 # Set the H-bonding criteria.
 H_DIST_MAX = snakemake.config["h_dist_max"]
@@ -12,7 +13,7 @@ H_ANG_MIN = snakemake.config["h_ang_min"]
 # Prepare a list of acceptor residue names and atom names that have substantially greater negative charge.
 neg_acc_resn = []
 neg_acc_name = []
-for residue in const.RESIDUE_LIBRARY:
+for residue in residue_library.RESIDUE_LIBRARY:
     for acceptor in residue['acc']:
         if acceptor[3] < 0:
             neg_acc_resn.append(residue['res'])
@@ -96,9 +97,12 @@ no_don_res = pd.concat([single_don_res, dual_don_res, nuc_data]).drop_duplicates
 
 # Prepare a dataframe of residues that contain donors of interest with nearby heavy atom counts and H-bonding type
 # (no, single, or dual) information.
-no_count = no_don_res.merge(count_data, how='inner').drop(columns=["index", "name"])
-single_count = single_don_res.merge(count_data, how='inner').drop(columns=["index", "name"])
-dual_count = dual_don_res.merge(count_data, how='inner').drop(columns=["index", "name"])
+no_count = (no_don_res.merge(count_data, how='inner')
+            .drop(columns=["index", "name", "resi", "chain", "eq_class_members"]))
+single_count = (single_don_res.merge(count_data, how='inner')
+                .drop(columns=["index", "name", "resi", "chain", "eq_class_members"]))
+dual_count = (dual_don_res.merge(count_data, how='inner')
+              .drop(columns=["index", "name", "resi", "chain", "eq_class_members"]))
 no_count["type"] = 0
 single_count["type"] = 1
 dual_count["type"] = 2
