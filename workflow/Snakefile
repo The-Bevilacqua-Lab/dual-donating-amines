@@ -13,13 +13,10 @@ rule all:
 
 rule collect_data:
     output:
-        counts = "data/counts/{eq_class_members}_counts.csv",
-        h_bond = "data/h_bond/{eq_class_members}_h_bond.csv",
-        nuc = "data/nuc/{eq_class_members}_nuc.csv",
-        b_factor = "data/b_factor/{eq_class_members}_b_factor.csv"
+        data = "data/collect_data/{eq_class_members}.csv"
     log:
-        stdout = "data/logs/collect_data/{eq_class_members}.stdout",
-        stderr = "data/logs/collect_data/{eq_class_members}.stderr"
+        stdout = "misc/logs/collect_data/{eq_class_members}.stdout",
+        stderr = "misc/logs/collect_data/{eq_class_members}.stderr"
     conda:
         "envs/general.yaml"
     script:
@@ -27,18 +24,15 @@ rule collect_data:
 
 rule process_data:
     input:
-        counts = "data/counts/{eq_class_members}_counts.csv",
-        h_bond = "data/h_bond/{eq_class_members}_h_bond.csv",
-        nuc = "data/nuc/{eq_class_members}_nuc.csv",
-        b_factor = "data/b_factor/{eq_class_members}_b_factor.csv"
+        data = "data/collect_data/{eq_class_members}.csv"
     output:
         counts = "processed/counts/{eq_class_members}_counts.csv",
         h_bond = "processed/h_bond/{eq_class_members}_h_bond.csv",
         nuc = "processed/nuc/{eq_class_members}_nuc.csv",
         b_factor = "processed/b_factor/{eq_class_members}_b_factor.csv"
     log:
-        stdout = "data/logs/process_data/{eq_class_members}.stdout",
-        stderr = "data/logs/process_data/{eq_class_members}.stderr"
+        stdout = "misc/logs/process_data/{eq_class_members}.stdout",
+        stderr = "misc/logs/process_data/{eq_class_members}.stderr"
     conda:
         "envs/general.yaml"
     script:
@@ -56,8 +50,8 @@ rule combine_data:
         nuc = "combined/nuc.csv",
         b_factor = "combined/b_factor.csv"
     log:
-        stdout = "data/logs/combine_data/output.stdout",
-        stderr = "data/logs/combine_data/error.stderr"
+        stdout = "misc/logs/combine_data/output.stdout",
+        stderr = "misc/logs/combine_data/error.stderr"
     conda:
         "envs/general.yaml"
     script:
@@ -73,8 +67,8 @@ rule analyze_data:
         atom_pairs = "analysis/atom_pairs.csv",
         counts = "analysis/counts.csv"
     log:
-        stdout = "data/logs/analyze_data/output.stdout",
-        stderr = "data/logs/analyze_data/error.stderr"
+        stdout = "misc/logs/analyze_data/output.stdout",
+        stderr = "misc/logs/analyze_data/error.stderr"
     conda:
         "envs/general.yaml"
     script:

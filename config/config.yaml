@@ -6,8 +6,8 @@ rep_set_file: "config/nrlist_<id>.csv"
 add_res_file: "config/<file_name>.csv"
 
 # Where should PyMOL save mmCIF files fetched from the PDB and the modified structures?
-original_mmcif_dir: "data/original_mmCIF_files/"
-modified_mmcif_dir: "data/modified_mmcif_files/"
+original_mmcif_dir: "misc/original_mmCIF_files/"
+modified_mmcif_dir: "misc/modified_mmcif_files/"
 
 # What are the search radii?
 search_dist: 4.1
