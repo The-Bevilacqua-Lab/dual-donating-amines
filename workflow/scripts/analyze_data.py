@@ -6,9 +6,91 @@ import numpy as np
 import pandas as pd
 import residue_library
 
+# Initialize the combined dataframe.
+combined_df = pd.DataFrame(columns=["don_index", "don_name", "don_resn", "don_resi", "don_chain", "don_segi", "count_1",
+                                    "count_2", "b-factor", "DOI", "acc_index", "acc_name", "acc_resn", "acc_resi",
+                                    "acc_chain", "acc_segi", "don_acc_distance", "h_acc_distance", "h_angle",
+                                    "h_dihedral", "h_name", "model", "PDB", "eq_class_member"])
+
+# Combine the dataframes from the different equivalence class members. Do not incorporate empty dataframes.
+for idx in range(len(snakemake.input.data)):
+    try:
+        member_df = pd.read_csv(snakemake.input.data[idx], comment="#", keep_default_na=False, na_values="NaN",
+                                dtype={"don_resi": "object", "acc_resi": "object", "don_chain": "object",
+                                       "acc_chain": "object"})
+        if combined_df.empty and not member_df.empty:
+            combined_df = member_df.copy()
+        elif not member_df.empty:
+            combined_df = pd.concat([combined_df, member_df])
+    except FileNotFoundError:
+        continue
+
+# Filter out nucleobases containing donors of interest that do not meet the b-factor criteria.
+combined_df = combined_df[(combined_df["DOI"] == 0) | ((combined_df["DOI"] == 1) &
+                                                       (combined_df["b-factor"] < snakemake.config["b_factor_cutoff"]))]
+
+# Write data on donor-acceptor pairs involving donors of interest to csv files.
+don_acc_grp = ["don_index", "acc_index", "eq_class_members"]
+(combined_df[
+    # Only include atom pairs involving donors of interest.
+    (combined_df["DOI"] == 1) &
+    # For a given donor-acceptor pair, only include the hydrogen with the smaller D-H...A distance.
+    (combined_df.groupby(don_acc_grp)["h_acc_distance"]
+     .transform(lambda grp: [mem == grp.min() for mem in grp])) &
+    # Do not consider A(N6)-U(O4), C(N4)-G(O6), G(N2)-C(O2), or G(N2)-C(N3) atom pairs.
+    (~combined_df[["don_resn", "don_name", "acc_resn", "acc_name"]].eq(["A", "N6", "U", "O4"])
+     .all(axis='columns')) &
+    (~combined_df[["don_resn", "don_name", "acc_resn", "acc_name"]].eq(["C", "N4", "G", "O6"])
+     .all(axis='columns')) &
+    (~combined_df[["don_resn", "don_name", "acc_resn", "acc_name"]].eq(["G", "N2", "C", "O2"])
+     .all(axis='columns')) &
+    (~combined_df[["don_resn", "don_name", "acc_resn", "acc_name"]].eq(["G", "N2", "C", "N3"])
+     .all(axis='columns'))]
+ .to_csv(snakemake.output.atom_pairs, index=False, columns=["don_acc_distance", "h_acc_distance", "h_angle"]))
+
 # Set the H-bonding criteria.
 H_DIST_MAX = snakemake.config["h_dist_max"]
 H_ANG_MIN = snakemake.config["h_ang_min"]
+
+# Add a new column to identify whether each donor-acceptor pair meets the H-bond criteria.
+combined_df["h_bond"] = (combined_df["h_acc_distance"] <= H_DIST_MAX) & (combined_df["h_angle"] >= H_ANG_MIN)
+
+
+# Define a function to classify donors of interest as no (0), single (1), or dual (2), H-bonding. The donors that meet
+# the dual classification must use two of its hydrogens in the H-bonding interactions which must involve at least two
+# different acceptors.
+def classify(grp):
+    h_name_list = []
+    acc_index_list = []
+    for row in grp.itertuples():
+        if not pd.isna(row.h_bond):
+            if row.h_bond and row.h_name not in h_name_list:
+                h_name_list.append(row.h_name)
+            if row.h_bond and row.acc_index not in acc_index_list:
+                acc_index_list.append(row.acc_index)
+    if len(h_name_list) == 1 or len(acc_index_list) == 1:
+        grp['type'] = 1
+        return grp
+    elif len(h_name_list) == 2 and len(acc_index_list) >= 2:
+        grp['type'] = 2
+        return grp
+    else:
+        grp['type'] = 0
+        return grp
+
+
+# Add a new column that classifies the donors of interest as being no (0), single (1), or dual (2), H-bonding.
+combined_df = combined_df.assign(type=pd.NA)
+combined_df.loc[combined_df['DOI'] == 1, combined_df.columns != "don_index"] = (combined_df[combined_df['DOI'] == 1]
+                                                                                .groupby('don_index', group_keys=False)
+                                                                                .apply(classify, include_groups=False))
+
+# Write data on residues that contain donors of interest with nearby heavy atom counts and H-bonding type (no, single,
+# or dual) information.
+(combined_df.loc[combined_df['DOI'] == 1, ["don_index", "don_resn", "count_1", "count_2", "eq_class_member", "type"]]
+ .drop_duplicates(subset=["don_index", "eq_class_member"])
+ .assign(volume_1=(4/3)*np.pi*snakemake.config["count_dist_1"]**3,
+         volume_2=(4/3)*np.pi*snakemake.config["count_dist_2"]**3).to_csv(snakemake.output.counts, index=False))
 
 # Prepare a list of acceptor residue names and atom names that have substantially greater negative charge.
 neg_acc_resn = []
@@ -33,80 +115,3 @@ neg_acceptors = pd.DataFrame({
     "acc_resn": neg_acc_resn,
     "acc_name": neg_acc_name
 })
-
-# Get the data.
-count_data = pd.read_csv(snakemake.input.counts, keep_default_na=False, na_values="NaN", dtype={"resi": "object"})
-h_bond_data = pd.read_csv(snakemake.input.h_bond, keep_default_na=False, na_values="NaN",
-                          dtype={"don_resi": "object", "acc_resi": "object"})
-nuc_data_raw = pd.read_csv(snakemake.input.nuc, keep_default_na=False, na_values="NaN", dtype={"resi": "object"})
-b_factor_data = pd.read_csv(snakemake.input.b_factor, keep_default_na=False, na_values="NaN", dtype={"resi": "object"})
-
-# Create a new dataframe of nucleobases containing a donor of interest where the mean of the b-factors are below the
-# cutoff.
-nuc_data = (nuc_data_raw.merge(b_factor_data[(b_factor_data["subset"] == "sidechain") &
-                                             (b_factor_data["mean"] < snakemake.config["b_factor_cutoff"])],
-                               on=["resn", "resi", "chain", "eq_class_members"], how='inner')
-            .drop(columns=["mean", "subset"]))
-
-# Prepare a list containing the residue and atom names of the donors of interest.
-donors_of_interest = []
-for donor in snakemake.config["donors_of_interest"]:
-    donors_of_interest.append([donor.split(".")[0], donor.split(".")[1]])
-
-# Identify atom pairs that meet the H-bond criteria and include a donor of interest. The nucleobase containing the donor
-# of interest must also meet the b-factor criteria.
-don_h_bonds = (h_bond_data[(h_bond_data["h_acc_distance"] <= H_DIST_MAX) &
-                           (h_bond_data["h_angle"] >= H_ANG_MIN)]
-               .merge(pd.DataFrame(donors_of_interest, columns=["don_resn", "don_name"]), how='inner')
-               .merge(nuc_data, left_on=["don_resn", "don_resi", "don_chain", "eq_class_members"],
-                      right_on=["resn", "resi", "chain", "eq_class_members"], how='inner')
-               .drop(columns=["resn", "resi", "chain"]))
-
-# Write data on donor-acceptor pairs involving donors of interest to csv files.
-don_acc_grp = ["don_index", "acc_index", "eq_class_members"]
-don_atom_pairs = (don_h_bonds[
-     # Only include hydrogens with smaller D-H...A distances.
-     (don_h_bonds.groupby(don_acc_grp)["h_acc_distance"]
-      .transform(lambda grp: [mem == grp.min() for mem in grp])) &
-     # Do not consider A(N6)-U(O4), C(N4)-G(O6), G(N2)-C(O2), or G(N2)-C(N3) atom pairs.
-     (~don_h_bonds[["don_resn", "don_name", "acc_resn", "acc_name"]].eq(["A", "N6", "U", "O4"])
-      .all(axis='columns')) &
-     (~don_h_bonds[["don_resn", "don_name", "acc_resn", "acc_name"]].eq(["C", "N4", "G", "O6"])
-      .all(axis='columns')) &
-     (~don_h_bonds[["don_resn", "don_name", "acc_resn", "acc_name"]].eq(["G", "N2", "C", "O2"])
-      .all(axis='columns')) &
-     (~don_h_bonds[["don_resn", "don_name", "acc_resn", "acc_name"]].eq(["G", "N2", "C", "N3"])
-      .all(axis='columns'))])
-don_atom_pairs.to_csv(snakemake.output.atom_pairs, index=False, columns=["don_acc_distance", "h_acc_distance", "h_angle"])
-
-# Identify nucleobases that donate either one or at least two H-bonds via their exocyclic amines. The H-bonds from the
-# latter nucleobases must involve both exocyclic amine hydrogens and at least two different acceptors.
-single_don_h_bonds = don_h_bonds[
-    (don_h_bonds.groupby(["don_index", "eq_class_members"])["h_name"].transform("nunique") == 1) |
-    (don_h_bonds.groupby(["don_index", "eq_class_members"])["acc_index"].transform("nunique") == 1)]
-dual_don_h_bonds = don_h_bonds[
-    (don_h_bonds.groupby(["don_index", "eq_class_members"])["h_name"].transform("nunique") == 2) &
-    (don_h_bonds.groupby(["don_index", "eq_class_members"])["acc_index"].transform("nunique") >= 2)]
-
-# Prepare dataframes of no, single, and dual H-bonding donors of interest with just residue information.
-single_don_res = (single_don_h_bonds.loc[:, ["eq_class_members", "don_resn", "don_resi", "don_chain"]]
-                  .drop_duplicates().rename(columns={"don_resn": "resn", "don_resi": "resi", "don_chain": "chain"}))
-dual_don_res = (dual_don_h_bonds.loc[:, ["eq_class_members", "don_resn", "don_resi", "don_chain"]]
-                .drop_duplicates().rename(columns={"don_resn": "resn", "don_resi": "resi", "don_chain": "chain"}))
-no_don_res = pd.concat([single_don_res, dual_don_res, nuc_data]).drop_duplicates(keep=False)
-
-# Prepare a dataframe of residues that contain donors of interest with nearby heavy atom counts and H-bonding type
-# (no, single, or dual) information.
-no_count = (no_don_res.merge(count_data, how='inner')
-            .drop(columns=["index", "name", "resi", "chain", "eq_class_members"]))
-single_count = (single_don_res.merge(count_data, how='inner')
-                .drop(columns=["index", "name", "resi", "chain", "eq_class_members"]))
-dual_count = (dual_don_res.merge(count_data, how='inner')
-              .drop(columns=["index", "name", "resi", "chain", "eq_class_members"]))
-no_count["type"] = 0
-single_count["type"] = 1
-dual_count["type"] = 2
-organized_count = pd.concat([no_count, single_count, dual_count])
-organized_count["volume_1"] = (4/3)*np.pi*np.power(snakemake.config["count_dist_1"], 3)
-organized_count["volume_2"] = (4/3)*np.pi*np.power(snakemake.config["count_dist_2"], 3)
-organized_count.to_csv(snakemake.output.counts, index=False)

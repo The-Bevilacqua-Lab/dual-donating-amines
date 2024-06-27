@@ -13,59 +13,21 @@ rule all:
 
 rule collect_data:
     output:
-        data = "data/collect_data/{eq_class_members}.csv"
+        data = "data/collect_data/{eq_class_member}.csv"
     log:
-        stdout = "misc/logs/collect_data/{eq_class_members}.stdout",
-        stderr = "misc/logs/collect_data/{eq_class_members}.stderr"
+        stdout = "misc/logs/collect_data/{eq_class_member}.stdout",
+        stderr = "misc/logs/collect_data/{eq_class_member}.stderr"
     conda:
         "envs/general.yaml"
     script:
         "scripts/collect_data.py"
 
-rule process_data:
-    input:
-        data = "data/collect_data/{eq_class_members}.csv"
-    output:
-        counts = "processed/counts/{eq_class_members}_counts.csv",
-        h_bond = "processed/h_bond/{eq_class_members}_h_bond.csv",
-        nuc = "processed/nuc/{eq_class_members}_nuc.csv",
-        b_factor = "processed/b_factor/{eq_class_members}_b_factor.csv"
-    log:
-        stdout = "misc/logs/process_data/{eq_class_members}.stdout",
-        stderr = "misc/logs/process_data/{eq_class_members}.stderr"
-    conda:
-        "envs/general.yaml"
-    script:
-        "scripts/process_data.py"
-
-rule combine_data:
-    input:
-        counts = expand("processed/counts/{eq_class_members}_counts.csv", eq_class_members=eq_class_members),
-        h_bond = expand("processed/h_bond/{eq_class_members}_h_bond.csv", eq_class_members=eq_class_members),
-        nuc = expand("processed/nuc/{eq_class_members}_nuc.csv", eq_class_members=eq_class_members),
-        b_factor = expand("processed/b_factor/{eq_class_members}_b_factor.csv", eq_class_members=eq_class_members)
-    output:
-        counts = "combined/counts.csv",
-        h_bond = "combined/h_bond.csv",
-        nuc = "combined/nuc.csv",
-        b_factor = "combined/b_factor.csv"
-    log:
-        stdout = "misc/logs/combine_data/output.stdout",
-        stderr = "misc/logs/combine_data/error.stderr"
-    conda:
-        "envs/general.yaml"
-    script:
-        "scripts/combine_data.py"
-
 rule analyze_data:
     input:
-        counts = "combined/counts.csv",
-        h_bond = "combined/h_bond.csv",
-        nuc = "combined/nuc.csv",
-        b_factor = "combined/b_factor.csv"
+        data = expand("data/collect_data/{eq_class_member}.csv", eq_class_member=eq_class_members)
     output:
-        atom_pairs = "analysis/atom_pairs.csv",
-        counts = "analysis/counts.csv"
+        atom_pairs = "data/analysis/atom_pairs.csv",
+        counts = "data/analysis/counts.csv"
     log:
         stdout = "misc/logs/analyze_data/output.stdout",
         stderr = "misc/logs/analyze_data/error.stderr"
