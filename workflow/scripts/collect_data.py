@@ -99,7 +99,7 @@ model_build = []
 chain_build = []
 index = 0
 track = 0
-for char in snakemake.wildcards.eq_class_members:
+for char in snakemake.wildcards.eq_class_member:
     if index < 3:
         eq_class_build.append(char)
     elif char != '_' and index == 3:
@@ -369,7 +369,7 @@ stored.check_two = []
 for index in indices:
     cmd.iterate(f'index {index}', 'stored.check_two.append([index, name, resn, resi, chain])')
 if not stored.check_one == stored.check_two:
-    error([f"Error: The indices in equivalence class member {snakemake.wildcards.eq_class_members} changed."])
+    error([f"Error: The indices in equivalence class member {snakemake.wildcards.eq_class_member} changed."])
 
 # Prepare a master dataframe containing heavy atom count, b-factor, H-bonding data, and other relevant information.
 master_df = info_df.merge(don_h_bonds_df, how='outer').merge(g_n1_h_bonds_df, how='outer').merge(u_n3_h_bonds_df,
