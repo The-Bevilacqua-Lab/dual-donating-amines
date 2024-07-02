@@ -8,8 +8,9 @@ eq_class_members = scripts.parse_nrlist.parse_nrlist(config["rep_set_file"], con
 
 rule all:
     input:
-        "analysis/atom_pairs.csv",
-        "analysis/counts.csv"
+        "data/analysis/atom_pairs.csv",
+        "data/analysis/counts.csv",
+        "data/analysis/base_pair.csv"
 
 rule collect_data:
     output:
@@ -27,7 +28,8 @@ rule analyze_data:
         data = expand("data/collect_data/{eq_class_member}.csv", eq_class_member=eq_class_members)
     output:
         atom_pairs = "data/analysis/atom_pairs.csv",
-        counts = "data/analysis/counts.csv"
+        counts = "data/analysis/counts.csv",
+        base_pair = "data/analysis/base_pair.csv"
     log:
         stdout = "misc/logs/analyze_data/output.stdout",
         stderr = "misc/logs/analyze_data/error.stderr"

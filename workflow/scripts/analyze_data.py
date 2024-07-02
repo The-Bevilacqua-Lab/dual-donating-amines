@@ -30,7 +30,7 @@ combined_df = combined_df[(combined_df["DOI"] == 0) | ((combined_df["DOI"] == 1)
                                                        (combined_df["b-factor"] < snakemake.config["b_factor_cutoff"]))]
 
 # Write data on donor-acceptor pairs involving donors of interest to csv files.
-don_acc_grp = ["don_index", "acc_index", "eq_class_members"]
+don_acc_grp = ["don_index", "acc_index", "eq_class_member"]
 (combined_df[
     # Only include atom pairs involving donors of interest.
     (combined_df["DOI"] == 1) &
@@ -91,6 +91,51 @@ combined_df.loc[combined_df['DOI'] == 1, combined_df.columns != "don_index"] = (
  .drop_duplicates(subset=["don_index", "eq_class_member"])
  .assign(volume_1=(4/3)*np.pi*snakemake.config["count_dist_1"]**3,
          volume_2=(4/3)*np.pi*snakemake.config["count_dist_2"]**3).to_csv(snakemake.output.counts, index=False))
+
+# Create dataframes of specific H-bonding interactions.
+n6_o4_h_bond = (combined_df[combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
+                .eq(["N6", "A", "O4", "U", True]).all(axis='columns')].rename(columns=lambda col: f'{col}_N6_O4'))
+n3_n1_h_bond = (combined_df[combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
+                .eq(["N3", "U", "N1", "A", True]).all(axis='columns')].rename(columns=lambda col: f'{col}_N3_N1'))
+n4_o6_h_bond = (combined_df[combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
+                .eq(["N4", "C", "O6", "G", True]).all(axis='columns')].rename(columns=lambda col: f'{col}_N4_O6'))
+n1_n3_h_bond = (combined_df[combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
+                .eq(["N1", "G", "N3", "C", True]).all(axis='columns')].rename(columns=lambda col: f'{col}_N1_N3'))
+n2_o2_h_bond = (combined_df[combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
+                .eq(["N2", "G", "O2", "C", True]).all(axis='columns')].rename(columns=lambda col: f'{col}_N2_O2'))
+
+# Write a csv of nucleobases containing a donor of interest and involved in a canonical base pair.
+(n6_o4_h_bond[n6_o4_h_bond["DOI_N6_O4"] == 1]
+ .merge(n3_n1_h_bond,
+        left_on=["don_resn_N6_O4", "don_resi_N6_O4", "don_chain_N6_O4", "acc_resn_N6_O4", "acc_resi_N6_O4",
+                 "acc_chain_N6_O4"],
+        right_on=["acc_resn_N3_N1", "acc_resi_N3_N1", "acc_chain_N3_N1", "don_resn_N3_N1", "don_resi_N3_N1",
+                  "don_chain_N3_N1"], how='inner').assign(base_pair="AU")
+ .to_csv(snakemake.output.base_pair, index=False))
+(n4_o6_h_bond[n4_o6_h_bond["DOI_N4_O6"] == 1]
+ .merge(n1_n3_h_bond,
+        left_on=["don_resn_N4_O6", "don_resi_N4_O6", "don_chain_N4_O6", "acc_resn_N4_O6", "acc_resi_N4_O6",
+                 "acc_chain_N4_O6"],
+        right_on=["acc_resn_N1_N3", "acc_resi_N1_N3", "acc_chain_N1_N3", "don_resn_N1_N3", "don_resi_N1_N3",
+                  "don_chain_N1_N3"], how='inner')
+ .merge(n2_o2_h_bond,
+        left_on=["don_resn_N4_O6", "don_resi_N4_O6", "don_chain_N4_O6", "acc_resn_N4_O6", "acc_resi_N4_O6",
+                 "acc_chain_N4_O6"],
+        right_on=["acc_resn_N2_O2", "acc_resi_N2_O2", "acc_chain_N2_O2", "don_resn_N2_O2", "don_resi_N2_O2",
+                  "don_chain_N2_O2"], how='inner').assign(base_pair="CG")
+ .to_csv(snakemake.output.base_pair, index=False, mode='a'))
+(n2_o2_h_bond[n2_o2_h_bond["DOI_N2_O2"] == 1]
+ .merge(n1_n3_h_bond,
+        left_on=["don_resn_N2_O2", "don_resi_N2_O2", "don_chain_N2_O2", "acc_resn_N2_O2", "acc_resi_N2_O2",
+                 "acc_chain_N2_O2"],
+        right_on=["don_resn_N1_N3", "don_resi_N1_N3", "don_chain_N1_N3", "acc_resn_N1_N3", "acc_resi_N1_N3",
+                  "acc_chain_N1_N3"], how='inner')
+ .merge(n4_o6_h_bond,
+        left_on=["don_resn_N2_O2", "don_resi_N2_O2", "don_chain_N2_O2", "acc_resn_N2_O2", "acc_resi_N2_O2",
+                 "acc_chain_N2_O2"],
+        right_on=["acc_resn_N4_O6", "acc_resi_N4_O6", "acc_chain_N4_O6", "don_resn_N4_O6", "don_resi_N4_O6",
+                  "don_chain_N4_O6"], how='inner').assign(base_pair="GC")
+ .to_csv(snakemake.output.base_pair, index=False, mode='a'))
 
 # Prepare a list of acceptor residue names and atom names that have substantially greater negative charge.
 neg_acc_resn = []
