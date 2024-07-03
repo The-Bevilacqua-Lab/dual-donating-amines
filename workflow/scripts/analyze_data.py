@@ -24,6 +24,7 @@ for idx in range(len(snakemake.input.data)):
             combined_df = pd.concat([combined_df, member_df])
     except FileNotFoundError:
         continue
+combined_df = combined_df.reset_index(drop=True)
 
 # Filter out nucleobases containing donors of interest that do not meet the b-factor criteria.
 combined_df = combined_df[(combined_df["DOI"] == 0) | ((combined_df["DOI"] == 1) &
@@ -105,6 +106,7 @@ n2_o2_h_bond = (combined_df[combined_df[["don_name", "don_resn", "acc_name", "ac
                 .eq(["N2", "G", "O2", "C", True]).all(axis='columns')].rename(columns=lambda col: f'{col}_N2_O2'))
 
 # Write a csv of nucleobases containing a donor of interest and involved in a canonical base pair.
+# AU base pair
 (n6_o4_h_bond[n6_o4_h_bond["DOI_N6_O4"] == 1]
  .merge(n3_n1_h_bond,
         left_on=["don_resn_N6_O4", "don_resi_N6_O4", "don_chain_N6_O4", "acc_resn_N6_O4", "acc_resi_N6_O4",
@@ -112,6 +114,7 @@ n2_o2_h_bond = (combined_df[combined_df[["don_name", "don_resn", "acc_name", "ac
         right_on=["acc_resn_N3_N1", "acc_resi_N3_N1", "acc_chain_N3_N1", "don_resn_N3_N1", "don_resi_N3_N1",
                   "don_chain_N3_N1"], how='inner').assign(base_pair="AU")
  .to_csv(snakemake.output.base_pair, index=False))
+# CG base pair
 (n4_o6_h_bond[n4_o6_h_bond["DOI_N4_O6"] == 1]
  .merge(n1_n3_h_bond,
         left_on=["don_resn_N4_O6", "don_resi_N4_O6", "don_chain_N4_O6", "acc_resn_N4_O6", "acc_resi_N4_O6",
@@ -124,6 +127,7 @@ n2_o2_h_bond = (combined_df[combined_df[["don_name", "don_resn", "acc_name", "ac
         right_on=["acc_resn_N2_O2", "acc_resi_N2_O2", "acc_chain_N2_O2", "don_resn_N2_O2", "don_resi_N2_O2",
                   "don_chain_N2_O2"], how='inner').assign(base_pair="CG")
  .to_csv(snakemake.output.base_pair, index=False, mode='a'))
+# GC base pair
 (n2_o2_h_bond[n2_o2_h_bond["DOI_N2_O2"] == 1]
  .merge(n1_n3_h_bond,
         left_on=["don_resn_N2_O2", "don_resi_N2_O2", "don_chain_N2_O2", "acc_resn_N2_O2", "acc_resi_N2_O2",
