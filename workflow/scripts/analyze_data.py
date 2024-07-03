@@ -26,10 +26,6 @@ for idx in range(len(snakemake.input.data)):
         continue
 combined_df = combined_df.reset_index(drop=True)
 
-# Filter out nucleobases containing donors of interest that do not meet the b-factor criteria.
-combined_df = combined_df[(combined_df["DOI"] == 0) | ((combined_df["DOI"] == 1) &
-                                                       (combined_df["b-factor"] < snakemake.config["b_factor_cutoff"]))]
-
 # Write data on donor-acceptor pairs involving donors of interest to csv files.
 don_acc_grp = ["don_index", "acc_index", "eq_class_member"]
 (combined_df[
@@ -53,8 +49,23 @@ don_acc_grp = ["don_index", "acc_index", "eq_class_member"]
 H_DIST_MAX = snakemake.config["h_dist_max"]
 H_ANG_MIN = snakemake.config["h_ang_min"]
 
+
+# Define a function to determine whether a donor/acceptor atom pair meets the H-bonding criteria.
+def h_bonding(row):
+    if pd.isna(row["h_acc_distance"]):
+        return row
+    else:
+        if (row["h_acc_distance"] <= H_DIST_MAX) & (row["h_angle"] >= H_ANG_MIN):
+            row["h_bond"] = 1
+            return row
+        else:
+            row["h_bond"] = 0
+            return row
+
+
 # Add a new column to identify whether each donor-acceptor pair meets the H-bond criteria.
-combined_df["h_bond"] = (combined_df["h_acc_distance"] <= H_DIST_MAX) & (combined_df["h_angle"] >= H_ANG_MIN)
+combined_df = combined_df.assign(h_bond=pd.NA)
+combined_df = combined_df.apply(h_bonding, axis=1)
 
 
 # Define a function to classify donors of interest as no (0), single (1), or dual (2), H-bonding. The donors that meet
@@ -65,9 +76,9 @@ def classify(grp):
     acc_index_list = []
     for row in grp.itertuples():
         if not pd.isna(row.h_bond):
-            if row.h_bond and row.h_name not in h_name_list:
+            if row.h_bond == 1 and row.h_name not in h_name_list:
                 h_name_list.append(row.h_name)
-            if row.h_bond and row.acc_index not in acc_index_list:
+            if row.h_bond == 1 and row.acc_index not in acc_index_list:
                 acc_index_list.append(row.acc_index)
     if len(h_name_list) == 1 or len(acc_index_list) == 1:
         grp['type'] = 1
@@ -95,51 +106,57 @@ combined_df.loc[combined_df['DOI'] == 1, combined_df.columns != "don_index"] = (
 
 # Create dataframes of specific H-bonding interactions.
 n6_o4_h_bond = (combined_df[combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
-                .eq(["N6", "A", "O4", "U", True]).all(axis='columns')].rename(columns=lambda col: f'{col}_N6_O4'))
+                .eq(["N6", "A", "O4", "U", 1]).all(axis='columns')].rename(columns=lambda col: f'{col}_N6_O4'))
 n3_n1_h_bond = (combined_df[combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
-                .eq(["N3", "U", "N1", "A", True]).all(axis='columns')].rename(columns=lambda col: f'{col}_N3_N1'))
+                .eq(["N3", "U", "N1", "A", 1]).all(axis='columns')].rename(columns=lambda col: f'{col}_N3_N1'))
 n4_o6_h_bond = (combined_df[combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
-                .eq(["N4", "C", "O6", "G", True]).all(axis='columns')].rename(columns=lambda col: f'{col}_N4_O6'))
+                .eq(["N4", "C", "O6", "G", 1]).all(axis='columns')].rename(columns=lambda col: f'{col}_N4_O6'))
 n1_n3_h_bond = (combined_df[combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
-                .eq(["N1", "G", "N3", "C", True]).all(axis='columns')].rename(columns=lambda col: f'{col}_N1_N3'))
+                .eq(["N1", "G", "N3", "C", 1]).all(axis='columns')].rename(columns=lambda col: f'{col}_N1_N3'))
 n2_o2_h_bond = (combined_df[combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
-                .eq(["N2", "G", "O2", "C", True]).all(axis='columns')].rename(columns=lambda col: f'{col}_N2_O2'))
+                .eq(["N2", "G", "O2", "C", 1]).all(axis='columns')].rename(columns=lambda col: f'{col}_N2_O2'))
 
-# Write a csv of nucleobases containing a donor of interest and involved in a canonical base pair.
+# Prepare a dataframe of nucleobases containing a donor of interest and involved in a canonical base pair.
 # AU base pair
-(n6_o4_h_bond[n6_o4_h_bond["DOI_N6_O4"] == 1]
- .merge(n3_n1_h_bond,
-        left_on=["don_resn_N6_O4", "don_resi_N6_O4", "don_chain_N6_O4", "acc_resn_N6_O4", "acc_resi_N6_O4",
-                 "acc_chain_N6_O4"],
-        right_on=["acc_resn_N3_N1", "acc_resi_N3_N1", "acc_chain_N3_N1", "don_resn_N3_N1", "don_resi_N3_N1",
-                  "don_chain_N3_N1"], how='inner').assign(base_pair="AU")
- .to_csv(snakemake.output.base_pair, index=False))
+base_pair_df = (n6_o4_h_bond[n6_o4_h_bond["DOI_N6_O4"] == 1]
+                .merge(n3_n1_h_bond,
+                       left_on=["don_resn_N6_O4", "don_resi_N6_O4", "don_chain_N6_O4", "acc_resn_N6_O4",
+                                "acc_resi_N6_O4", "acc_chain_N6_O4"],
+                       right_on=["acc_resn_N3_N1", "acc_resi_N3_N1", "acc_chain_N3_N1", "don_resn_N3_N1",
+                                 "don_resi_N3_N1", "don_chain_N3_N1"], how='inner')
+                .rename(columns={"don_index_N6_O4": "don_index", "eq_class_member_N6_O4": "eq_class_member"})
+                .assign(base_pair="AU").loc[:, ["don_index", "eq_class_member", "base_pair"]])
 # CG base pair
-(n4_o6_h_bond[n4_o6_h_bond["DOI_N4_O6"] == 1]
- .merge(n1_n3_h_bond,
-        left_on=["don_resn_N4_O6", "don_resi_N4_O6", "don_chain_N4_O6", "acc_resn_N4_O6", "acc_resi_N4_O6",
-                 "acc_chain_N4_O6"],
-        right_on=["acc_resn_N1_N3", "acc_resi_N1_N3", "acc_chain_N1_N3", "don_resn_N1_N3", "don_resi_N1_N3",
-                  "don_chain_N1_N3"], how='inner')
- .merge(n2_o2_h_bond,
-        left_on=["don_resn_N4_O6", "don_resi_N4_O6", "don_chain_N4_O6", "acc_resn_N4_O6", "acc_resi_N4_O6",
-                 "acc_chain_N4_O6"],
-        right_on=["acc_resn_N2_O2", "acc_resi_N2_O2", "acc_chain_N2_O2", "don_resn_N2_O2", "don_resi_N2_O2",
-                  "don_chain_N2_O2"], how='inner').assign(base_pair="CG")
- .to_csv(snakemake.output.base_pair, index=False, mode='a'))
+base_pair_df = pd.concat([base_pair_df,
+                          (n4_o6_h_bond[n4_o6_h_bond["DOI_N4_O6"] == 1]
+                           .merge(n1_n3_h_bond,
+                                  left_on=["don_resn_N4_O6", "don_resi_N4_O6", "don_chain_N4_O6", "acc_resn_N4_O6",
+                                           "acc_resi_N4_O6", "acc_chain_N4_O6"],
+                                  right_on=["acc_resn_N1_N3", "acc_resi_N1_N3", "acc_chain_N1_N3", "don_resn_N1_N3",
+                                            "don_resi_N1_N3", "don_chain_N1_N3"], how='inner')
+                           .merge(n2_o2_h_bond,
+                                  left_on=["don_resn_N4_O6", "don_resi_N4_O6", "don_chain_N4_O6", "acc_resn_N4_O6",
+                                           "acc_resi_N4_O6", "acc_chain_N4_O6"],
+                                  right_on=["acc_resn_N2_O2", "acc_resi_N2_O2", "acc_chain_N2_O2", "don_resn_N2_O2",
+                                            "don_resi_N2_O2", "don_chain_N2_O2"], how='inner')
+                           .rename(columns={"don_index_N4_O6": "don_index", "eq_class_member_N4_O6": "eq_class_member"})
+                           .assign(base_pair="CG").loc[:, ["don_index", "eq_class_member", "base_pair"]])])
 # GC base pair
-(n2_o2_h_bond[n2_o2_h_bond["DOI_N2_O2"] == 1]
- .merge(n1_n3_h_bond,
-        left_on=["don_resn_N2_O2", "don_resi_N2_O2", "don_chain_N2_O2", "acc_resn_N2_O2", "acc_resi_N2_O2",
-                 "acc_chain_N2_O2"],
-        right_on=["don_resn_N1_N3", "don_resi_N1_N3", "don_chain_N1_N3", "acc_resn_N1_N3", "acc_resi_N1_N3",
-                  "acc_chain_N1_N3"], how='inner')
- .merge(n4_o6_h_bond,
-        left_on=["don_resn_N2_O2", "don_resi_N2_O2", "don_chain_N2_O2", "acc_resn_N2_O2", "acc_resi_N2_O2",
-                 "acc_chain_N2_O2"],
-        right_on=["acc_resn_N4_O6", "acc_resi_N4_O6", "acc_chain_N4_O6", "don_resn_N4_O6", "don_resi_N4_O6",
-                  "don_chain_N4_O6"], how='inner').assign(base_pair="GC")
- .to_csv(snakemake.output.base_pair, index=False, mode='a'))
+base_pair_df = pd.concat([base_pair_df,
+                          (n2_o2_h_bond[n2_o2_h_bond["DOI_N2_O2"] == 1]
+                           .merge(n1_n3_h_bond,
+                                  left_on=["don_resn_N2_O2", "don_resi_N2_O2", "don_chain_N2_O2", "acc_resn_N2_O2",
+                                           "acc_resi_N2_O2", "acc_chain_N2_O2"],
+                                  right_on=["don_resn_N1_N3", "don_resi_N1_N3", "don_chain_N1_N3", "acc_resn_N1_N3",
+                                            "acc_resi_N1_N3", "acc_chain_N1_N3"], how='inner')
+                           .merge(n4_o6_h_bond,
+                                  left_on=["don_resn_N2_O2", "don_resi_N2_O2", "don_chain_N2_O2", "acc_resn_N2_O2",
+                                           "acc_resi_N2_O2", "acc_chain_N2_O2"],
+                                  right_on=["acc_resn_N4_O6", "acc_resi_N4_O6", "acc_chain_N4_O6", "don_resn_N4_O6",
+                                            "don_resi_N4_O6", "don_chain_N4_O6"], how='inner')
+                           .rename(columns={"don_index_N2_O2": "don_index", "eq_class_member_N2_O2": "eq_class_member"})
+                           .assign(base_pair="GC").loc[:, ["don_index", "eq_class_member", "base_pair"]])])
+combined_df = combined_df.merge(base_pair_df, how='outer')
 
 # Prepare a list of acceptor residue names and atom names that have substantially greater negative charge.
 neg_acc_resn = []
