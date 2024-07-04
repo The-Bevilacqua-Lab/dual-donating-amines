@@ -26,9 +26,37 @@ for idx in range(len(snakemake.input.data)):
         continue
 combined_df = combined_df.reset_index(drop=True)
 
-# Write data on donor-acceptor pairs involving donors of interest to csv files.
+# Prepare a list of acceptor residue and atom names from canonical amino acids and nucleic acids that have substantially
+# greater negative charge.
+can_neg = []
+can_neut = []
+for residue in residue_library.RESIDUE_LIBRARY:
+    for acceptor in residue['acc']:
+        if acceptor[3] < 0:
+            can_neg.append(f"{residue['res']}.{acceptor[0]}")
+        elif residue['res'] == 'ASP' and acceptor[0] == 'OD1':
+            can_neg.append(f"{residue['res']}.{acceptor[0]}")
+        elif residue['res'] == 'GLU' and acceptor[0] == 'OE1':
+            can_neg.append(f"{residue['res']}.{acceptor[0]}")
+        elif residue['res'] in ['A', 'C', 'G', 'U', 'DA', 'DC', 'DG', 'DT'] and acceptor[0] == 'OP1':
+            can_neg.append(f"{residue['res']}.{acceptor[0]}")
+        else:
+            can_neut.append(f"{residue['res']}.{acceptor[0]}")
+
+# Add a new column to identify acceptors from canonical amino acids and nucleic acids that have substantially greater
+# negative charges.
+combined_df["acc_charge"] = pd.NA
+combined_df.loc[~combined_df.isna()['acc_index'], "acc_charge"] = "other"
+combined_df.loc[~combined_df.isna()['acc_index'], "acc_resn_name"] = combined_df["acc_resn"] + "." + combined_df["acc_name"]
+combined_df.loc[combined_df["acc_resn_name"].isin(can_neg), "acc_charge"] = "can_neg"
+combined_df.loc[combined_df["acc_resn_name"].isin(can_neut), "acc_charge"] = "can_neut"
+combined_df = combined_df.drop(columns="acc_resn_name")
+
+# Add a new column to identify donor-acceptor pairs that will be used for evaluating H-bonding geometry. Each atom pair
+# involves a donor of interest.
+combined_df = combined_df.assign(geom=0)
 don_acc_grp = ["don_index", "acc_index", "eq_class_member"]
-(combined_df[
+(combined_df.loc[
     # Only include atom pairs involving donors of interest.
     (combined_df["DOI"] == 1) &
     # For a given donor-acceptor pair, only include the hydrogen with the smaller D-H...A distance.
@@ -42,8 +70,7 @@ don_acc_grp = ["don_index", "acc_index", "eq_class_member"]
     (~combined_df[["don_resn", "don_name", "acc_resn", "acc_name"]].eq(["G", "N2", "C", "O2"])
      .all(axis='columns')) &
     (~combined_df[["don_resn", "don_name", "acc_resn", "acc_name"]].eq(["G", "N2", "C", "N3"])
-     .all(axis='columns'))]
- .to_csv(snakemake.output.atom_pairs, index=False, columns=["don_acc_distance", "h_acc_distance", "h_angle"]))
+     .all(axis='columns')), "geom"]) = 1
 
 # Set the H-bonding criteria.
 H_DIST_MAX = snakemake.config["h_dist_max"]
@@ -93,16 +120,10 @@ def classify(grp):
 
 # Add a new column that classifies the donors of interest as being no (0), single (1), or dual (2), H-bonding.
 combined_df = combined_df.assign(type=pd.NA)
-combined_df.loc[combined_df['DOI'] == 1, combined_df.columns != "don_index"] = (combined_df[combined_df['DOI'] == 1]
-                                                                                .groupby('don_index', group_keys=False)
-                                                                                .apply(classify, include_groups=False))
-
-# Write data on residues that contain donors of interest with nearby heavy atom counts and H-bonding type (no, single,
-# or dual) information.
-(combined_df.loc[combined_df['DOI'] == 1, ["don_index", "don_resn", "count_1", "count_2", "eq_class_member", "type"]]
- .drop_duplicates(subset=["don_index", "eq_class_member"])
- .assign(volume_1=(4/3)*np.pi*snakemake.config["count_dist_1"]**3,
-         volume_2=(4/3)*np.pi*snakemake.config["count_dist_2"]**3).to_csv(snakemake.output.counts, index=False))
+combined_df.loc[combined_df['DOI'] == 1, ~combined_df.columns.isin(["don_index", "eq_class_member"])] = (
+    combined_df[combined_df['DOI'] == 1]
+    .groupby(["don_index", "eq_class_member"], group_keys=False)
+    .apply(classify, include_groups=False))
 
 # Create dataframes of specific H-bonding interactions.
 n6_o4_h_bond = (combined_df[
@@ -198,26 +219,5 @@ base_pair_df = pd.concat([base_pair_df,
                            .assign(base_pair="GC").loc[:, ["don_index", "eq_class_member", "base_pair"]])])
 combined_df = combined_df.merge(base_pair_df, how='outer')
 
-# Prepare a list of acceptor residue names and atom names that have substantially greater negative charge.
-neg_acc_resn = []
-neg_acc_name = []
-for residue in residue_library.RESIDUE_LIBRARY:
-    for acceptor in residue['acc']:
-        if acceptor[3] < 0:
-            neg_acc_resn.append(residue['res'])
-            neg_acc_name.append(acceptor[0])
-        elif residue['res'] == 'ASP' and acceptor[0] == 'OD1':
-            neg_acc_resn.append(residue['res'])
-            neg_acc_name.append(acceptor[0])
-        elif residue['res'] == 'GLU' and acceptor[0] == 'OE1':
-            neg_acc_resn.append(residue['res'])
-            neg_acc_name.append(acceptor[0])
-        elif residue['res'] in ['A', 'C', 'G', 'U', 'DA', 'DC', 'DG', 'DT'] and acceptor[0] == 'OP1':
-            neg_acc_resn.append(residue['res'])
-            neg_acc_name.append(acceptor[0])
-
-# Prepare a dataframe of acceptors that have substantially greater negative charges.
-neg_acceptors = pd.DataFrame({
-    "acc_resn": neg_acc_resn,
-    "acc_name": neg_acc_name
-})
+# Write the processed and combined data to a csv file.
+combined_df.to_csv(snakemake.output.combined, index=False, na_rep='NaN')
