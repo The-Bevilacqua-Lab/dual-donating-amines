@@ -105,16 +105,56 @@ combined_df.loc[combined_df['DOI'] == 1, combined_df.columns != "don_index"] = (
          volume_2=(4/3)*np.pi*snakemake.config["count_dist_2"]**3).to_csv(snakemake.output.counts, index=False))
 
 # Create dataframes of specific H-bonding interactions.
-n6_o4_h_bond = (combined_df[combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
-                .eq(["N6", "A", "O4", "U", 1]).all(axis='columns')].rename(columns=lambda col: f'{col}_N6_O4'))
-n3_n1_h_bond = (combined_df[combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
-                .eq(["N3", "U", "N1", "A", 1]).all(axis='columns')].rename(columns=lambda col: f'{col}_N3_N1'))
-n4_o6_h_bond = (combined_df[combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
-                .eq(["N4", "C", "O6", "G", 1]).all(axis='columns')].rename(columns=lambda col: f'{col}_N4_O6'))
-n1_n3_h_bond = (combined_df[combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
-                .eq(["N1", "G", "N3", "C", 1]).all(axis='columns')].rename(columns=lambda col: f'{col}_N1_N3'))
-n2_o2_h_bond = (combined_df[combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
-                .eq(["N2", "G", "O2", "C", 1]).all(axis='columns')].rename(columns=lambda col: f'{col}_N2_O2'))
+n6_o4_h_bond = (combined_df[
+                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
+                     .eq(["N6", "A", "O4", "U", 1]).all(axis='columns')) |
+                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
+                     .eq(["N6", "DA", "O4", "U", 1]).all(axis='columns')) |
+                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
+                     .eq(["N6", "A", "O4", "DT", 1]).all(axis='columns')) |
+                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
+                     .eq(["N6", "DA", "O4", "DT", 1]).all(axis='columns'))
+                ].rename(columns=lambda col: f'{col}_N6_O4'))
+n3_n1_h_bond = (combined_df[
+                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
+                     .eq(["N3", "U", "N1", "A", 1]).all(axis='columns')) |
+                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
+                     .eq(["N3", "DT", "N1", "A", 1]).all(axis='columns')) |
+                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
+                     .eq(["N3", "U", "N1", "DA", 1]).all(axis='columns')) |
+                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
+                     .eq(["N3", "DT", "N1", "DA", 1]).all(axis='columns'))
+                ].rename(columns=lambda col: f'{col}_N3_N1'))
+n4_o6_h_bond = (combined_df[
+                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
+                     .eq(["N4", "C", "O6", "G", 1]).all(axis='columns')) |
+                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
+                     .eq(["N4", "DC", "O6", "G", 1]).all(axis='columns')) |
+                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
+                     .eq(["N4", "C", "O6", "DG", 1]).all(axis='columns')) |
+                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
+                     .eq(["N4", "DC", "O6", "DG", 1]).all(axis='columns'))
+                ].rename(columns=lambda col: f'{col}_N4_O6'))
+n1_n3_h_bond = (combined_df[
+                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
+                     .eq(["N1", "G", "N3", "C", 1]).all(axis='columns')) |
+                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
+                     .eq(["N1", "DG", "N3", "C", 1]).all(axis='columns')) |
+                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
+                     .eq(["N1", "G", "N3", "DC", 1]).all(axis='columns')) |
+                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
+                     .eq(["N1", "DG", "N3", "DC", 1]).all(axis='columns'))
+                ].rename(columns=lambda col: f'{col}_N1_N3'))
+n2_o2_h_bond = (combined_df[
+                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
+                     .eq(["N2", "G", "O2", "C", 1]).all(axis='columns')) |
+                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
+                     .eq(["N2", "DG", "O2", "C", 1]).all(axis='columns')) |
+                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
+                     .eq(["N2", "G", "O2", "DC", 1]).all(axis='columns')) |
+                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
+                     .eq(["N2", "DG", "O2", "DC", 1]).all(axis='columns'))
+                ].rename(columns=lambda col: f'{col}_N2_O2'))
 
 # Prepare a dataframe of nucleobases containing a donor of interest and involved in a canonical base pair.
 # AU base pair
