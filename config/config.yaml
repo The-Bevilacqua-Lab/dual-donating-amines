@@ -24,6 +24,9 @@ donors_of_interest:
   - 'A.N6'
   - 'C.N4'
   - 'G.N2'
+  - 'DA.N6'
+  - 'DC.N4'
+  - 'DG.N2'
 
 # Should the mmCIF files fetched from the PDB be removed after the run to save space?
 remove_original_mmcif: false
