@@ -8,7 +8,7 @@ eq_class_members = scripts.parse_nrlist.parse_nrlist(config["rep_set_file"], con
 
 rule all:
     input:
-        "data/process/combined.csv"
+        "data/plots/density.png"
 
 rule collect_data:
     output:
@@ -33,3 +33,11 @@ rule process_data:
         "envs/general.yaml"
     script:
         "scripts/process_data.py"
+
+rule create_plots:
+    input:
+        combined = "data/process/combined.csv"
+    output:
+        density = "data/plots/density.png"
+    script:
+        "scripts/create_plots.R"
