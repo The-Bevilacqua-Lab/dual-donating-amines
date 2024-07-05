@@ -40,14 +40,14 @@ density_df[density_df$density_set == "density_2", "density_set"] <-
   "5 \uc5 \u003c Atoms \u2264 10 \uc5"
 
 # Calculate samples sizes.
-density_summary <- density_df %>% summarise(n = n(), .by = c(type))
+density_summary <- density_df %>% summarise(n = n(), .by = c(type, density_set))
 
 # Specify the variables for the plots.
 custom_colors <- RColorBrewer::brewer.pal(4, "Greens")
 x_labels <- c(
   paste("0\nn = ", prettyNum(density_summary$n[1], big.mark = ","), sep = ""), 
-  paste("1\nn = ", prettyNum(density_summary$n[2], big.mark = ","), sep = ""), 
-  paste("2\nn = ", prettyNum(density_summary$n[3], big.mark = ","), sep = ""))
+  paste("1\nn = ", prettyNum(density_summary$n[3], big.mark = ","), sep = ""),
+  paste("2\nn = ", prettyNum(density_summary$n[5], big.mark = ","), sep = ""))
 ratio <- (3/(max(density_df$density) - min(density_df$density)))*1.5 
 ylim <- c(min(density_df$density), max(density_df$density))
 
