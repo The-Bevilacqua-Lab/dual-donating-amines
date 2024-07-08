@@ -209,6 +209,26 @@ for donor in stored.donor_list:
     stored.b_factors = []
     cmd.iterate(f"resn {donor[2]} and resi {donor[3]} and chain {donor[4]} and sidechain and not elem H",
                 "stored.b_factors.append(b)")
+    # If no b-factors were stored, try collecting them by selecting based on the atom names.
+    if len(stored.b_factors) == 0:
+        if donor[2] in ["A", "DA"]:
+            cmd.iterate(f"(resn {donor[2]} and resi {donor[3]} and chain {donor[4]} and not elem H) and "
+                        f"(name N1 name C2 name N3 name C4 name C5 name C6 name N6 name N7 name C8 name N9)",
+                        "stored.b_factors.append(b)")
+        elif donor[2] in ["C", "DC"]:
+            cmd.iterate(f"(resn {donor[2]} and resi {donor[3]} and chain {donor[4]} and not elem H) and "
+                        f"(name N1 name C2 name O2 name N3 name C4 name N4 name C5 name C6)",
+                        "stored.b_factors.append(b)")
+        elif donor[2] in ["G", "DG"]:
+            cmd.iterate(f"(resn {donor[2]} and resi {donor[3]} and chain {donor[4]} and not elem H) and "
+                        f"(name N1 name C2 name N2 name N3 name C4 name C5 name C6 name O6 name N7 name C8 name N9)",
+                        "stored.b_factors.append(b)")
+    # Ensure that the correct number of b-factors were collected.
+    if ((donor[2] in ["A", "DA"] and len(stored.b_factors) != 10) or
+            (donor[2] in ["C", "DC"] and len(stored.b_factors) != 8) or
+            (donor[2] in ["G", "DG"] and len(stored.b_factors) != 11)):
+        error([f"Error: The correct number of b-factors were not obtained from residue {donor[2]}{donor[3]} from chain "
+               f"{donor[4]} in {eq_class_mem_id}."])
     # Calculate the average of the b-factors.
     b_factor_avg = sum(stored.b_factors)/len(stored.b_factors)
     # Add the donor, heavy atom counts, and average b-factor to the count dictionary.
