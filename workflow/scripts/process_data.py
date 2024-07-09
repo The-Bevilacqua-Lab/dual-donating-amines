@@ -2,9 +2,17 @@
 This script will eventually do something.
 """
 
-import numpy as np
+import sys
 import pandas as pd
 import residue_library
+
+# Redirect stdout and stderr to log files.
+stdout = sys.stdout
+stderr = sys.stderr
+stdout_file = open(snakemake.log.stdout, mode='w')
+stderr_file = open(snakemake.log.stderr, mode='w')
+sys.stdout = stdout_file
+sys.stderr = stderr_file
 
 # Initialize the combined dataframe.
 combined_df = pd.DataFrame(columns=["don_index", "don_name", "don_resn", "don_resi", "don_chain", "don_segi", "count_1",
@@ -221,3 +229,9 @@ combined_df = combined_df.merge(base_pair_df, how='outer')
 
 # Write the processed and combined data to a csv file.
 combined_df.to_csv(snakemake.output.combined, index=False, na_rep='NaN')
+
+# Close files and reset stdout and stderr.
+stdout_file.close()
+stderr_file.close()
+sys.stdout = stdout
+sys.stderr = stderr
