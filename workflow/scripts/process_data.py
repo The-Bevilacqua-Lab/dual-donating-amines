@@ -30,7 +30,7 @@ for idx in range(len(snakemake.input.data)):
             combined_df = member_df.copy()
         elif not member_df.empty:
             combined_df = pd.concat([combined_df, member_df])
-    except FileNotFoundError:
+    except (FileNotFoundError, pd.errors.EmptyDataError):
         continue
 combined_df = combined_df.reset_index(drop=True)
 
