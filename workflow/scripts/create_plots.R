@@ -7,11 +7,8 @@ library(svglite)
 # Create a data frame from the data in the combined.csv file.
 df <- read.csv(snakemake@input[["combined"]], header = TRUE, na.strings = "NaN")
 
-# Convert columns to factors.
-df$DOI <- factor(df$DOI, levels = c(0, 1))
-df$geom <- factor(df$geom, levels = c(0, 1))
-df$h_bond <- factor(df$h_bond, levels = c(0, 1))
-df$type <- factor(df$type, levels = c(0, 1, 2))
+# Specify custom colors.
+custom_greens <- RColorBrewer::brewer.pal(4, "Greens")
 
 #### HEAVY ATOM DENSITY PLOTS ####
 
@@ -19,7 +16,15 @@ df$type <- factor(df$type, levels = c(0, 1, 2))
 density_df <- df %>% filter(DOI == 1) %>% 
   distinct(don_index, eq_class_member, .keep_all = TRUE)
 
-# Convert DNA resn names to the corresponding RNA resn names
+# Convert donor type from numeric to string.
+density_df[density_df$type == 0, "type"] <- "No"
+density_df[density_df$type == 1, "type"] <- "Single"
+density_df[density_df$type == 2, "type"] <- "Dual"
+density_df$type <- factor(density_df$type, levels = c("No",
+                                                      "Single",
+                                                      "Dual"))
+
+# Convert DNA resn names to the corresponding RNA resn names.
 density_df[density_df$don_resn == "DA", "don_resn"] <- "A"
 density_df[density_df$don_resn == "DC", "don_resn"] <- "C"
 density_df[density_df$don_resn == "DG", "don_resn"] <- "G"
@@ -35,14 +40,13 @@ density_df$density_2 <- (density_df$count_2-density_df$count_1)/volume_diff
 density_summary <- density_df %>% summarise(n = n(), .by = c(type, don_resn))
 
 # Specify the variables for the plots.
-custom_colors <- RColorBrewer::brewer.pal(4, "Greens")
 ratio_1 <- (3/(max(density_df$density_1) - min(density_df$density_1)))*1.5
 ratio_2 <- (3/(max(density_df$density_2) - min(density_df$density_2)))*1.5
 ylim_1 <- c(-0.004, max(density_df$density_1))
 ylim_2 <- c(-0.004, max(density_df$density_2))
 
 # Create the plots.
-plot_density_1 <- density_df %>% ggplot(aes(x=type, y=density_1, fill=type)) +
+density_1_plot <- density_df %>% ggplot(aes(x=type, y=density_1, fill=type)) +
   geom_violin(show.legend = FALSE) +
   geom_boxplot(width = 0.2, alpha = 0, outlier.size = 1, show.legend = FALSE) +
   geom_text(data = density_summary,
@@ -51,13 +55,13 @@ plot_density_1 <- density_df %>% ggplot(aes(x=type, y=density_1, fill=type)) +
             size = 10, size.unit = "pt", vjust = 1) +
   coord_fixed(ratio = ratio_1, xlim = c(1, 3), ylim = ylim_1) +
   ggtitle("Atoms \u2264 " + snakemake@config[["count_dist_1"]] + " \uc5") +
-  xlab("# of Amine H-Bonds") +
+  xlab("Type of Amine H-Bonding") +
   ylab(expression(paste("Density (Atoms/\uc5\ub3)"))) +
-  scale_fill_manual(values = custom_colors[2:4]) +
+  scale_fill_manual(values = custom_greens[2:4]) +
   theme_bw(base_size = 10) +
   theme(plot.title = element_text(hjust = 0.5)) +
   facet_wrap( ~ don_resn, nrow = 1)
-plot_density_2 <- density_df %>% ggplot(aes(x=type, y=density_2, fill=type)) +
+density_2_plot <- density_df %>% ggplot(aes(x=type, y=density_2, fill=type)) +
   geom_violin(show.legend = FALSE) +
   geom_boxplot(width = 0.2, alpha = 0, outlier.size = 1, show.legend = FALSE) +
   geom_text(data = density_summary,
@@ -67,14 +71,114 @@ plot_density_2 <- density_df %>% ggplot(aes(x=type, y=density_2, fill=type)) +
   coord_fixed(ratio = ratio_2, xlim = c(1, 3), ylim = ylim_2) +
   ggtitle(snakemake@config[["count_dist_1"]] + " \uc5 \u003c Atoms \u2264 " +
             snakemake@config[["count_dist_2"]] + " \uc5") +
-  xlab("# of Amine H-Bonds") +
+  xlab("Type of Amine H-Bonding") +
   ylab(expression(paste("Density (Atoms/\uc5\ub3)"))) +
-  scale_fill_manual(values = custom_colors[2:4]) +
+  scale_fill_manual(values = custom_greens[2:4]) +
   theme_bw(base_size = 10) +
   theme(plot.title = element_text(hjust = 0.5)) +
   facet_wrap( ~ don_resn, nrow = 1)
-plot_density <- grid.arrange(plot_density_1, plot_density_2, nrow = 2)
+density_plot <- grid.arrange(density_1_plot, density_2_plot, nrow = 2)
 
 # Write the plots.
-ggsave(snakemake@output[["density"]], plot = plot_density, width = 6.5,
+ggsave(snakemake@output[["density"]], plot = density_plot, width = 6.5,
+       height = 9, units = "in", scale = 1)
+
+#### NUCLEOBASE IDENTITY PLOT ####
+
+# Extract the rows from the main data frame relevant for these plots.
+nuc_id_df <- df %>% filter(DOI == 1) %>%
+  distinct(don_index, eq_class_member, .keep_all = TRUE)
+
+# Convert DNA resn names to the corresponding RNA resn names.
+nuc_id_df[nuc_id_df$don_resn == "DA", "don_resn"] <- "A"
+nuc_id_df[nuc_id_df$don_resn == "DC", "don_resn"] <- "C"
+nuc_id_df[nuc_id_df$don_resn == "DG", "don_resn"] <- "G"
+
+# Convert donor type from numeric to string.
+nuc_id_df[nuc_id_df$type == 0, "type"] <- "No H-Bonding Amines"
+nuc_id_df[nuc_id_df$type == 1, "type"] <- "Single H-Bonding Amines"
+nuc_id_df[nuc_id_df$type == 2, "type"] <- "Dual H-Bonding Amines"
+nuc_id_df$type <- factor(nuc_id_df$type, levels = c("No H-Bonding Amines",
+                                                    "Single H-Bonding Amines",
+                                                    "Dual H-Bonding Amines"))
+
+# Calculate samples sizes and merge into dataframe.
+nuc_id_df <- merge(nuc_id_df, summarise(nuc_id_df, n_resn = n(), .by = c(don_resn)))
+nuc_id_df <- merge(nuc_id_df, summarise(nuc_id_df, n_resn_type = n(), .by = c(don_resn, type)))
+
+# Only keep one row for each donor residue and donor type combination.
+nuc_id_df <- nuc_id_df %>% distinct(don_resn, type, .keep_all = TRUE)
+
+# Create the plot.
+nuc_id_plot <- nuc_id_df %>% ggplot(aes(x=don_resn, y=n_resn_type/n_resn*100, fill=type)) +
+  geom_col(width = 0.8, color = "black", show.legend = FALSE) +
+  xlab("Nucleobase of Amine") +
+  ylab(expression(paste("Occurance (%)"))) +
+  scale_fill_manual(values = custom_greens[2:4]) +
+  theme_bw(base_size = 10) +
+  theme(aspect.ratio = 1.5) +
+  facet_wrap( ~ type, nrow = 1, scales = "free_y")
+
+# Write the plots.
+ggsave(snakemake@output[["nuc_id"]], plot = nuc_id_plot, width = 6.5,
+       height = 9, units = "in", scale = 1)
+
+#### ACCEPTOR IDENTITY PLOT ####
+
+# Extract the rows from the main data frame relevant for these plots.
+acc_id_df <- df %>% filter(DOI == 1 & h_bond == 1) %>%
+  distinct(don_index, eq_class_member, .keep_all = TRUE)
+
+# Convert column to factor.
+acc_id_df$type <- factor(acc_id_df$type, levels = c(0, 1, 2))
+
+# Create a column with values that specify both the acceptor resn and name.
+acc_id_df <-acc_id_df %>% mutate(acc_resn_name = paste(acc_resn, "(", acc_name,
+                                                       ")", sep = ""))
+
+# Convert DNA resn names to the corresponding RNA resn names.
+acc_id_df[acc_id_df$don_resn == "DA", "don_resn"] <- "A"
+acc_id_df[acc_id_df$don_resn == "DC", "don_resn"] <- "C"
+acc_id_df[acc_id_df$don_resn == "DG", "don_resn"] <- "G"
+
+# Calculate samples sizes and merge into data frame.
+acc_id_df <- merge(acc_id_df, summarise(acc_id_df, n_resn_type = n(),
+                                        .by = c(don_resn, acc_resn_name, type)))
+
+# Only keep one row for each acceptor atom and donor type combination.
+acc_id_df <- acc_id_df %>% distinct(don_resn, acc_resn_name, type, .keep_all = TRUE)
+
+# Create the plot.
+acc_id_1_plot <- acc_id_df %>% filter(type == 1) %>%
+  ggplot(aes(x=reorder_within(acc_resn_name, n_resn_type, don_resn),
+             y=n_resn_type, fill=type)) +
+  geom_col(width = 0.8, color = "black", show.legend = FALSE) +
+  ggtitle("Single H-Bonding Amines") +
+  xlab("Acceptor Atom") +
+  ylab(expression(paste("Count"))) +
+  scale_x_reordered(limits = function(x) rev(x)[1:10]) +
+  scale_fill_manual(values = custom_greens[3]) +
+  theme_bw(base_size = 10) +
+  theme(aspect.ratio = 1.5) +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(angle = 90)) +
+  facet_wrap( ~ don_resn, nrow = 1, scales = "free")
+acc_id_2_plot <- acc_id_df %>% filter(type == 2) %>%
+  ggplot(aes(x=reorder_within(acc_resn_name, n_resn_type, don_resn),
+             y=n_resn_type, fill=type)) +
+  geom_col(width = 0.8, color = "black", show.legend = FALSE) +
+  ggtitle("Dual H-Bonding Amines") +
+  xlab("Acceptor Atom") +
+  ylab(expression(paste("Count"))) +
+  scale_x_reordered(limits = function(x) rev(x)[1:10]) +
+  scale_fill_manual(values = custom_greens[4]) +
+  theme_bw(base_size = 10) +
+  theme(aspect.ratio = 1.5) +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(angle = 90)) +
+  facet_wrap( ~ don_resn, nrow = 1, scales = "free")
+acc_id_plot <- grid.arrange(acc_id_1_plot, acc_id_2_plot, nrow = 2)
+
+# Write the plots.
+ggsave(snakemake@output[["acc_id"]], plot = acc_id_plot, width = 6.5,
        height = 9, units = "in", scale = 1)

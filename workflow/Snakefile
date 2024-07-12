@@ -8,7 +8,9 @@ eq_class_members = scripts.parse_nrlist.parse_nrlist(config["rep_set_file"], con
 
 rule all:
     input:
-        "data/plots/density.png"
+        "data/plots/density.png",
+        "data/plots/nuc_id.png",
+        "data/plots/acc_id.png"
 
 rule collect_data:
     output:
@@ -38,6 +40,8 @@ rule create_plots:
     input:
         combined = "data/process/combined.csv"
     output:
-        density = "data/plots/density.png"
+        density = "data/plots/density.png",
+        nuc_id = "data/plots/nuc_id.png",
+        acc_id = "data/plots/acc_id.png"
     script:
         "scripts/create_plots.R"
