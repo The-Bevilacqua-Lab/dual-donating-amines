@@ -24,8 +24,6 @@ import residue_library
 import eval_H_bonding
 import remove_alt_conf
 
-# TODO add code to count how many atoms each residue contains pre- and post- hydrogen addition, reject those that do not meet expectations
-
 # Redirect stdout and stderr to log files.
 stdout = sys.stdout
 stderr = sys.stderr
@@ -138,22 +136,47 @@ if not os.path.isdir(original_mmcif_dir):
 # Change fetch_path to original_mmcif_dir so that PyMOL drops the mmCIF files into this folder when running fetch.
 cmd.set('fetch_path', cmd.exp_path(original_mmcif_dir))
 
-# Construct two strings that can be used with PyMOL to select donor and rotatable donor atoms.
+# Construct three lists of strings containing residue and atom names that describe either donor, rotatable donor, or
+# acceptor atoms. Additionally, construct two strings that can be used with PyMOL to select donor and rotatable donor
+# atoms.
+donor_atoms = []
+rotatable_donor_atoms = []
+acceptor_atoms = []
 donor_string = ''
 rotatable_donor_string = ''
 for residue in residue_library.RESIDUE_LIBRARY:
-    for donor in residue['don']:
-        donor_string += f'(resn {residue["res"]} and name {donor[0]}) '
-        if donor[2]:
-            rotatable_donor_string += f'(resn {residue["res"]} and name {donor[0]}) '
+    if residue["res"] in snakemake.config["included_residues"]:
+        for donor in residue['don']:
+            donor_atoms.append(f'{residue["res"]}.{donor[0]}')
+            donor_string += f'(resn {residue["res"]} and name {donor[0]}) '
+            if donor[2]:
+                rotatable_donor_atoms.append(f'{residue["res"]}.{donor[0]}')
+                rotatable_donor_string += f'(resn {residue["res"]} and name {donor[0]}) '
+        for acceptor in residue['acc']:
+            acceptor_atoms.append(f'{residue["res"]}.{acceptor[0]}')
 donor_string = donor_string[:-1]
 rotatable_donor_string = rotatable_donor_string[:-1]
 
-# Construct a string that can be used with PyMOL to select all possible donor atoms of particular interest.
+# Construct two lists of strings containing residue and atom names that describe either donor or acceptor atoms of
+# particular interest. Additionally, construct two strings that can be used with PyMOL to select all possible donor or
+# all possible acceptor atoms of particular interest.
+donors_of_interest = []
 donors_of_interest_str = ''
 for atom in snakemake.config["donors_of_interest"]:
+    donors_of_interest.append(atom)
     donors_of_interest_str += f'(resn {atom.split(".")[0]} and name {atom.split(".")[1]}) '
 donors_of_interest_str = donors_of_interest_str[:-1]
+acceptors_of_interest = []
+acceptors_of_interest_str = ''
+for atom in snakemake.config["acceptors_of_interest"]:
+    acceptors_of_interest.append(atom)
+    acceptors_of_interest_str += f'(resn {atom.split(".")[0]} and name {atom.split(".")[1]}) '
+acceptors_of_interest_str = acceptors_of_interest_str[:-1]
+
+# Define the donor and acceptor atoms of the RNA and DNA nucleobases.
+nuc_donors = ["A.N6", "C.N4", "G.N1", "G.N2", "U.N3", "DA.N6", "DC.N4", "DG.N1", "DG.N2", "DT.N3"]
+nuc_acceptors = ["A.N1", "A.N3", "A.N7", "C.O2", "C.N3", "G.N3", "G.O6", "G.N7", "U.O2", "U.O4",
+                 "DA.N1", "DA.N3", "DA.N7", "DC.O2", "DC.N3", "DG.N3", "DG.O6", "DG.N7", "DT.O2", "DT.O4"]
 
 # Prepare a string that can be used with PyMOL to identify the chains of all the equivalence class member RNAs.
 mem_rna_chains = " ".join(["chain " + chain for chain in chain_list])
@@ -196,8 +219,8 @@ cmd.iterate(f'({mem_rna_chains}) and ({donors_of_interest_str})',
 # Store the number of heavy atoms belonging to organic molecules or polymers near the donor of interest within a
 # dictionary. Additionally, store the average b-factor of the heavy atoms that make up the nucleobase containing the
 # donors of interest. Values of one for the DOI key indicate that these are donors of interest.
-info_dict = {"don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "don_segi": [],
-             "count_1": [], "count_2": [], "b-factor": [], "DOI": []}
+don_info_dict = {"don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "don_segi": [],
+                 "count_1": [], "count_2": [], "b-factor": [], "DOI": []}
 for donor in stored.donor_list:
     # Count the number of heavy atoms belonging to organic molecules or polymers near the donor. Exclude the nucleobase
     # of the donor.
@@ -209,20 +232,11 @@ for donor in stored.donor_list:
     stored.b_factors = []
     cmd.iterate(f"resn {donor[2]} and resi {donor[3]} and chain {donor[4]} and sidechain and not elem H",
                 "stored.b_factors.append(b)")
-    # If no b-factors were stored, try collecting them by selecting based on the atom names.
+    # If no b-factors were stored, exit with an error message. This would likely be due to the PyMOL sidechain selection
+    # operator not working with a particular residue.
     if len(stored.b_factors) == 0:
-        if donor[2] in ["A", "DA"]:
-            cmd.iterate(f"(resn {donor[2]} and resi {donor[3]} and chain {donor[4]} and not elem H) and "
-                        f"(name N1 name C2 name N3 name C4 name C5 name C6 name N6 name N7 name C8 name N9)",
-                        "stored.b_factors.append(b)")
-        elif donor[2] in ["C", "DC"]:
-            cmd.iterate(f"(resn {donor[2]} and resi {donor[3]} and chain {donor[4]} and not elem H) and "
-                        f"(name N1 name C2 name O2 name N3 name C4 name N4 name C5 name C6)",
-                        "stored.b_factors.append(b)")
-        elif donor[2] in ["G", "DG"]:
-            cmd.iterate(f"(resn {donor[2]} and resi {donor[3]} and chain {donor[4]} and not elem H) and "
-                        f"(name N1 name C2 name N2 name N3 name C4 name C5 name C6 name O6 name N7 name C8 name N9)",
-                        "stored.b_factors.append(b)")
+        error([f"Error: No b-factors were obtained from residue {donor[2]}{donor[3]} from chain {donor[4]} in "
+               f"{eq_class_mem_id}."])
     # Ensure that the correct number of b-factors were collected.
     if ((donor[2] in ["A", "DA"] and len(stored.b_factors) != 10) or
             (donor[2] in ["C", "DC"] and len(stored.b_factors) != 8) or
@@ -233,37 +247,39 @@ for donor in stored.donor_list:
     b_factor_avg = sum(stored.b_factors)/len(stored.b_factors)
     # Add the donor, heavy atom counts, and average b-factor to the count dictionary.
     info_row = donor + [count_1, count_2, b_factor_avg, 1]
-    for key, value in zip(info_dict, info_row):
-        info_dict[key].append(value)
+    for key, value in zip(don_info_dict, info_row):
+        don_info_dict[key].append(value)
 
-# Create a dataframe based on the master dictionary.
-info_df = pd.DataFrame(info_dict)
+# Create a dataframe based on the info dictionary.
+don_info_df = pd.DataFrame(don_info_dict)
 
-# Store a list of acceptors near the donors of interest within a dictionary of nucleobases.
-atom_pair_dict = {"don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "don_segi": [],
-                  "acc_index": [], "acc_name": [], "acc_resn": [], "acc_resi": [], "acc_chain": [], "acc_segi": []}
+# Store a list of acceptors near the donors of interest within an atom pair dictionary. Also include two keys which have
+# values containing both residue and atom names for donor and acceptor atoms.
+don_atom_pair_dict = {"don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "don_segi": [],
+                      "acc_index": [], "acc_name": [], "acc_resn": [], "acc_resi": [], "acc_chain": [], "acc_segi": [],
+                      "don_resn_name": [], "acc_resn_name": []}
 for donor in stored.donor_list:
     # Find the acceptors near the donor. Exclude the nucleobase of the donor.
     stored.acceptors = []
     cmd.iterate(f'(acceptors within {snakemake.config["search_dist"]} of index {donor[0]}) and (organic or polymer) '
                 f'and not (sidechain and byres index {donor[0]})',
                 'stored.acceptors.append([index, name, resn, resi, chain, segi])')
-    # Add the acceptors to the nucleobase dictionary.
+    # Add the acceptors to the atom pair dictionary.
     for acceptor in stored.acceptors:
-        atom_pair_row = donor + acceptor
-        for key, value in zip(atom_pair_dict, atom_pair_row):
-            atom_pair_dict[key].append(value)
+        atom_pair_row = donor + acceptor + [f'{donor[2]}.{donor[1]}', f'{acceptor[2]}.{acceptor[1]}']
+        for key, value in zip(don_atom_pair_dict, atom_pair_row):
+            don_atom_pair_dict[key].append(value)
 
-# Create a dataframe based on the nucleobase dictionary.
-atom_pair_df = pd.DataFrame(atom_pair_dict)
+# Create a dataframe based on the donor atom pair dictionary.
+don_atom_pair_df = pd.DataFrame(don_atom_pair_dict)
 
 # Acquire the H-bonding geometry measurements for all acceptors near each donor of interest. Values of one for the DOI
 # key indicate that the donor atoms are donors of interest.
 don_h_bonds_dict = {"don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "don_segi": [],
                     "acc_index": [], "acc_name": [], "acc_resn": [], "acc_resi": [], "acc_chain": [], "acc_segi": [],
-                    "don_acc_distance": [], "h_acc_distance": [], "h_angle": [], "h_dihedral": [], "h_name": [],
-                    "DOI": []}
-for atom_pair in atom_pair_df.itertuples():
+                    "don_resn_name": [], "acc_resn_name": [], "don_acc_distance": [], "h_acc_distance": [],
+                    "h_angle": [], "h_dihedral": [], "h_name": [], "DOI": []}
+for atom_pair in don_atom_pair_df.itertuples():
     # Store the donor and acceptor atom values for the dataframe row.
     don_list = [atom_pair.don_index, atom_pair.don_name, atom_pair.don_resn, atom_pair.don_resi, atom_pair.don_chain]
     acc_list = [atom_pair.acc_index, atom_pair.acc_name, atom_pair.acc_resn, atom_pair.acc_resi, atom_pair.acc_chain]
@@ -276,12 +292,39 @@ for atom_pair in atom_pair_df.itertuples():
     # Add the H-bond measurements to the dictionary.
     else:
         for h_bond in h_bond_list[1]:
-            row = don_list + [atom_pair.don_segi] + acc_list + [atom_pair.acc_segi] + h_bond + [1]
+            row = (don_list + [atom_pair.don_segi] + acc_list + [atom_pair.acc_segi] +
+                   [atom_pair.don_resn_name, atom_pair.acc_resn_name] + h_bond + [1])
             for key, value in zip(don_h_bonds_dict, row):
                 don_h_bonds_dict[key].append(value)
 
 # Create a dataframe based on the dictionary.
 don_h_bonds_df = pd.DataFrame(don_h_bonds_dict).astype({"h_dihedral": "object"})
+
+# Store a list of acceptors of interest from the equivalence class member RNA chains.
+stored.acceptor_list = []
+cmd.iterate(f'({mem_rna_chains}) and ({acceptors_of_interest_str})',
+            'stored.acceptor_list.append([index, name, resn, resi, chain, segi])')
+
+# Store a list of donors near the acceptors of interest within an atom pair dictionary. Also include two keys which have
+# values containing both residue and atom names for acceptor and donor atoms. Values of one for the AOI key indicate
+# that these are acceptors of interest.
+acc_atom_pair_dict = {"don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "don_segi": [],
+                      "acc_index": [], "acc_name": [], "acc_resn": [], "acc_resi": [], "acc_chain": [], "acc_segi": [],
+                      "don_resn_name": [], "acc_resn_name": [], "AOI": []}
+for acceptor in stored.acceptor_list:
+    # Find the donors near the acceptor. Exclude the nucleobase of the acceptor.
+    stored.donors = []
+    cmd.iterate(f'(donors within {snakemake.config["search_dist"]} of index {acceptor[0]}) and (organic or polymer) '
+                f'and not (sidechain and byres index {acceptor[0]})',
+                'stored.donors.append([index, name, resn, resi, chain, segi])')
+    # Add the donors to the atom pair dictionary.
+    for donor in stored.donors:
+        atom_pair_row = donor + acceptor + [f'{donor[2]}.{donor[1]}', f'{acceptor[2]}.{acceptor[1]}', 1]
+        for key, value in zip(acc_atom_pair_dict, atom_pair_row):
+            acc_atom_pair_dict[key].append(value)
+
+# Create a dataframe based on the acceptor atom pair dictionary.
+acc_atom_pair_df = pd.DataFrame(acc_atom_pair_dict)
 
 # Store a list of G(N1) donors (or its deoxy counterpart) from within or near the equivalence class member RNA chains.
 stored.g_n1_list = []
@@ -392,8 +435,8 @@ if not stored.check_one == stored.check_two:
     error([f"Error: The indices in equivalence class member {snakemake.wildcards.eq_class_member} changed."])
 
 # Prepare a master dataframe containing heavy atom count, b-factor, H-bonding data, and other relevant information.
-master_df = info_df.merge(don_h_bonds_df, how='outer').merge(g_n1_h_bonds_df, how='outer').merge(u_n3_h_bonds_df,
-                                                                                                 how='outer')
+master_df = don_info_df.merge(don_h_bonds_df, how='outer').merge(g_n1_h_bonds_df, how='outer').merge(u_n3_h_bonds_df,
+                                                                                                     how='outer')
 master_df.loc[:, ['model', 'PDB', 'eq_class_member']] = [model, pdb_id, eq_class_mem_id]
 
 # Write a csv containing the data stored in the master dataframe.
