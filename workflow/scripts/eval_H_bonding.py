@@ -15,6 +15,8 @@ from pymol import cmd
 from pymol import stored
 import pandas as pd
 
+# TODO added expected number of hydrogens per donor atom
+
 
 def terminal_donor(donor_atom):
     # Construct lists containing the names of the canonical protein and nucleic residues.
