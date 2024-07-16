@@ -27,6 +27,34 @@ donors_of_interest:
   - 'DA.N6'
   - 'DC.N4'
   - 'DG.N2'
+acceptors_of_interest:
+  - 'A.N1'
+  - 'A.N3'
+  - 'A.N7'
+  - 'C.O2'
+  - 'C.N3'
+  - 'G.N3'
+  - 'G.O6'
+  - 'G.N7'
+  - 'DA.N1'
+  - 'DA.N3'
+  - 'DA.N7'
+  - 'DC.O2'
+  - 'DC.N3'
+  - 'DG.N3'
+  - 'DG.O6'
+  - 'DG.N7'
+
+# What residues are included when considering possible H-bond donors?
+included_residues:
+  - "A"
+  - "C"
+  - "G"
+  - "U"
+  - "DA"
+  - "DC"
+  - "DG"
+  - "DT"
 
 # Should the mmCIF files fetched from the PDB be removed after the run to save space?
 remove_original_mmcif: false
