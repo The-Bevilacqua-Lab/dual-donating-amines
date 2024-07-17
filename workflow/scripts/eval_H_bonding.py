@@ -15,8 +15,6 @@ from pymol import cmd
 from pymol import stored
 import pandas as pd
 
-# TODO added expected number of hydrogens per donor atom
-
 
 def terminal_donor(donor_atom):
     # Construct lists containing the names of the canonical protein and nucleic residues.
@@ -127,10 +125,7 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, eq_class_mem):
                            f"{donor_atom[1]} of {eq_class_mem} has zero hydrogens."]
         # Get the measurements for donors that have one hydrogen.
         elif len(stored.hydrogen) == 1:
-            if donor_atom[1:3] in [["N6", "A"], ["N4", "C"], ["N2", "G"]]:
-                return [False, f"Error: The exocyclic amine {donor_atom[4]}.{donor_atom[2]}.{donor_atom[3]}."
-                               f"{donor_atom[1]} of {eq_class_mem} has only one hydrogen."]
-            else:
+            if f"{donor_atom[2]}.{donor_atom[1]}" in snakemake.config["single_h_donors"]:
                 h_acc_distance = [cmd.get_distance(f'index {stored.hydrogen[0][0]}', f'index {acceptor_atom[0]}'),
                                   pd.NA]
                 h_angle = [cmd.get_angle(f'index {donor_atom[0]}', f'index {stored.hydrogen[0][0]}',
@@ -139,40 +134,55 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, eq_class_mem):
                 h_name = [stored.hydrogen[0][1], pd.NA]
                 # Return the geometry values.
                 return [True, [[don_acc_distance, h_acc_distance[0], h_angle[0], h_dihedral[0], h_name[0]]]]
+            elif f"{donor_atom[2]}.{donor_atom[1]}" in snakemake.config["dual_h_donors"]:
+                return [False, f"Error: The atom {donor_atom[4]}.{donor_atom[2]}.{donor_atom[3]}.{donor_atom[1]} of "
+                               f"{eq_class_mem} is included within the config file's dual_h_donors but only has one "
+                               f"hydrogen."]
+            else:
+                return [False, f"Error: The atom {donor_atom[4]}.{donor_atom[2]}.{donor_atom[3]}.{donor_atom[1]} of "
+                               f"{eq_class_mem} is not included within the config file's single_h_donors."]
         # Get the measurements for donors that have two hydrogens.
         elif len(stored.hydrogen) == 2:
-            # Collect information about the nearby endocyclic nitrogen.
-            if donor_atom[2] in ["A", "G", "DA", "DG"]:
-                stored.end_n = []
-                cmd.iterate(f'name N1 and neighbor index {stored.don_ant[0][0]}',
-                            'stored.end_n.append((index, name, resn, resi, chain))')
-            elif donor_atom[2] in ["C", "DC"]:
-                stored.end_n = []
-                cmd.iterate(f'name N3 and neighbor index {stored.don_ant[0][0]}',
-                            'stored.end_n.append((index, name, resn, resi, chain))')
+            if f"{donor_atom[2]}.{donor_atom[1]}" in snakemake.config["single_h_donors"]:
+                return [False, f"Error: The atom {donor_atom[4]}.{donor_atom[2]}.{donor_atom[3]}.{donor_atom[1]} of "
+                               f"{eq_class_mem} is included within the config file's single_h_donors but has two "
+                               f"hydrogens."]
+            elif f"{donor_atom[2]}.{donor_atom[1]}" in snakemake.config["dual_h_donors"]:
+                # Collect information about the nearby endocyclic nitrogen.
+                if donor_atom[2] in ["A", "G", "DA", "DG"]:
+                    stored.end_n = []
+                    cmd.iterate(f'name N1 and neighbor index {stored.don_ant[0][0]}',
+                                'stored.end_n.append((index, name, resn, resi, chain))')
+                elif donor_atom[2] in ["C", "DC"]:
+                    stored.end_n = []
+                    cmd.iterate(f'name N3 and neighbor index {stored.don_ant[0][0]}',
+                                'stored.end_n.append((index, name, resn, resi, chain))')
+                else:
+                    stored.end_n = [pd.NA]
+                # Issue an error message if the number of identified endocyclic nitrogen atoms does not equal one.
+                if len(stored.end_n) != 1:
+                    return [False, f"Error: The number of identified endocyclic nitrogen atoms does not equal one for "
+                                   f"residue {donor_atom[4]}.{donor_atom[2]}.{donor_atom[3]} of {eq_class_mem}."]
+                h_acc_distance = [cmd.get_distance(f'index {stored.hydrogen[0][0]}', f'index {acceptor_atom[0]}'),
+                                  cmd.get_distance(f'index {stored.hydrogen[1][0]}', f'index {acceptor_atom[0]}')]
+                h_angle = [cmd.get_angle(f'index {donor_atom[0]}', f'index {stored.hydrogen[0][0]}',
+                                         f'index {acceptor_atom[0]}'),
+                           cmd.get_angle(f'index {donor_atom[0]}', f'index {stored.hydrogen[1][0]}',
+                                         f'index {acceptor_atom[0]}')]
+                if not pd.isna(stored.end_n[0]):
+                    h_dihedral = [cmd.get_dihedral(f'index {stored.end_n[0][0]}', f'index {stored.don_ant[0][0]}',
+                                                   f'index {donor_atom[0]}', f'index {stored.hydrogen[0][0]}'),
+                                  cmd.get_dihedral(f'index {stored.end_n[0][0]}', f'index {stored.don_ant[0][0]}',
+                                                   f'index {donor_atom[0]}', f'index {stored.hydrogen[1][0]}')]
+                else:
+                    h_dihedral = [pd.NA, pd.NA]
+                h_name = [stored.hydrogen[0][1], stored.hydrogen[1][1]]
+                # Return the geometry values.
+                return [True, [[don_acc_distance, h_acc_distance[0], h_angle[0], h_dihedral[0], h_name[0]],
+                               [don_acc_distance, h_acc_distance[1], h_angle[1], h_dihedral[1], h_name[1]]]]
             else:
-                stored.end_n = [pd.NA]
-            # Issue an error message if the number of identified endocyclic nitrogen atoms does not equal one.
-            if len(stored.end_n) != 1:
-                return [False, f"Error: The number of identified endocyclic nitrogen atoms does not equal one for "
-                               f"residue {donor_atom[4]}.{donor_atom[2]}.{donor_atom[3]} of {eq_class_mem}."]
-            h_acc_distance = [cmd.get_distance(f'index {stored.hydrogen[0][0]}', f'index {acceptor_atom[0]}'),
-                              cmd.get_distance(f'index {stored.hydrogen[1][0]}', f'index {acceptor_atom[0]}')]
-            h_angle = [cmd.get_angle(f'index {donor_atom[0]}', f'index {stored.hydrogen[0][0]}',
-                                     f'index {acceptor_atom[0]}'),
-                       cmd.get_angle(f'index {donor_atom[0]}', f'index {stored.hydrogen[1][0]}',
-                                     f'index {acceptor_atom[0]}')]
-            if not pd.isna(stored.end_n[0]):
-                h_dihedral = [cmd.get_dihedral(f'index {stored.end_n[0][0]}', f'index {stored.don_ant[0][0]}',
-                                               f'index {donor_atom[0]}', f'index {stored.hydrogen[0][0]}'),
-                              cmd.get_dihedral(f'index {stored.end_n[0][0]}', f'index {stored.don_ant[0][0]}',
-                                               f'index {donor_atom[0]}', f'index {stored.hydrogen[1][0]}')]
-            else:
-                h_dihedral = [pd.NA, pd.NA]
-            h_name = [stored.hydrogen[0][1], stored.hydrogen[1][1]]
-            # Return the geometry values.
-            return [True, [[don_acc_distance, h_acc_distance[0], h_angle[0], h_dihedral[0], h_name[0]],
-                           [don_acc_distance, h_acc_distance[1], h_angle[1], h_dihedral[1], h_name[1]]]]
+                return [False, f"Error: The atom {donor_atom[4]}.{donor_atom[2]}.{donor_atom[3]}.{donor_atom[1]} of "
+                               f"{eq_class_mem} is not included within the config file's dual_h_donors."]
         # Issue an error message if there are more than two hydrogens.
         elif len(stored.hydrogen) > 2:
             return [False, f"Error: The non-rotatable donor atom {donor_atom[4]}.{donor_atom[2]}.{donor_atom[3]}."

@@ -163,11 +163,6 @@ for atom in snakemake.config["acceptors_of_interest"]:
     acceptors_of_interest_str += f'(resn {atom.split(".")[0]} and name {atom.split(".")[1]}) '
 acceptors_of_interest_str = acceptors_of_interest_str[:-1]
 
-# Define the donor and acceptor atoms of the RNA and DNA nucleobases.
-nuc_donors = ["A.N6", "C.N4", "G.N1", "G.N2", "U.N3", "DA.N6", "DC.N4", "DG.N1", "DG.N2", "DT.N3"]
-nuc_acceptors = ["A.N1", "A.N3", "A.N7", "C.O2", "C.N3", "G.N3", "G.O6", "G.N7", "U.O2", "U.O4",
-                 "DA.N1", "DA.N3", "DA.N7", "DC.O2", "DC.N3", "DG.N3", "DG.O6", "DG.N7", "DT.O2", "DT.O4"]
-
 # Prepare a string that can be used with PyMOL to identify the chains of all the equivalence class member RNAs.
 mem_rna_chains = " ".join(["chain " + chain for chain in chain_list])
 
