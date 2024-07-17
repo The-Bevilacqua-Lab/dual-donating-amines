@@ -226,14 +226,13 @@ for donor in stored.donor_list:
     # If no b-factors were stored, exit with an error message. This would likely be due to the PyMOL sidechain selection
     # operator not working with a particular residue.
     if len(stored.b_factors) == 0:
-        error(f"Error: No b-factors were obtained from residue {donor[2]}{donor[3]} from chain {donor[4]} in "
-              f"{eq_class_mem_id}.")
+        error(f"Error: No b-factors were obtained from residue {donor[4]}.{donor[2]}.{donor[3]} in {eq_class_mem_id}.")
     # Ensure that the correct number of b-factors were collected.
     if ((donor[2] in ["A", "DA"] and len(stored.b_factors) != 10) or
             (donor[2] in ["C", "DC"] and len(stored.b_factors) != 8) or
             (donor[2] in ["G", "DG"] and len(stored.b_factors) != 11)):
-        error(f"Error: The correct number of b-factors were not obtained from residue {donor[2]}{donor[3]} from chain "
-              f"{donor[4]} in {eq_class_mem_id}.")
+        error(f"Error: The correct number of b-factors were not obtained from residue {donor[4]}.{donor[2]}.{donor[3]} "
+              f"in {eq_class_mem_id}.")
     # Calculate the average of the b-factors.
     b_factor_avg = sum(stored.b_factors)/len(stored.b_factors)
     # Add the donor, heavy atom counts, and average b-factor to the count dictionary.

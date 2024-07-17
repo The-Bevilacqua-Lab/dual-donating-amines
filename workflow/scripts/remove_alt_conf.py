@@ -75,9 +75,9 @@ def remove(eq_class_mem):
                             compare_atom[4] == neighbor[4]):
                         neighbor_in_remove_list = True
                 if not neighbor_in_remove_list:
-                    return [False, f"Error: Removing the atom {atom[0]} with alt ID {atom[4]} from residue "
-                                   f"{atom[1]}{atom[2]} within chain {atom[3]} of equivalence class member "
-                                   f"{eq_class_mem} may disrupt the connectivity of the atoms that are kept."]
+                    return [False, f"Error: Removing the atom {atom[3]}.{atom[1]}.{atom[2]}.{atom[0]} with alt ID "
+                                   f"{atom[4]} of equivalence class member {eq_class_mem} may disrupt the connectivity "
+                                   f"of the atoms that are kept."]
         cmd.remove(f'name {atom[0]} and resn {atom[1]} and resi {atom[2]} and chain {atom[3]} and alt {atom[4]}')
     # Return True as the first element of a list if no errors were encountered.
     return [True]
