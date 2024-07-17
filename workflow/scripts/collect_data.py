@@ -216,7 +216,7 @@ for donor in stored.donor_list:
                               f'and not ((sidechain and byres index {donor[0]}) or elem H)')
     # Collect the b-factors for side chain atoms.
     stored.b_factors = []
-    cmd.iterate(f"resn {donor[2]} and resi {donor[3]} and chain {donor[4]} and sidechain and not elem H",
+    cmd.iterate(f"resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]} and sidechain and not elem H",
                 "stored.b_factors.append(b)")
     # If no b-factors were stored, exit with an error message. This would likely be due to the PyMOL sidechain selection
     # operator not working with a particular residue.
@@ -289,7 +289,7 @@ don_h_bonds_df = pd.DataFrame(don_h_bonds_dict).astype({"don_acc_distance": "obj
 # Store a list of acceptors of interest from nucleobases containing the donors of interest.
 stored.acceptor_list = []
 for donor in stored.donor_list:
-    cmd.iterate(f'resn {donor[2]} and resi {donor[3]} and chain {donor[4]} and ({acceptors_of_interest_str})',
+    cmd.iterate(f'resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]} and ({acceptors_of_interest_str})',
                 'stored.acceptor_list.append([index, name, resn, resi, chain, segi])')
 
 # Store a list of donors near the acceptors of interest within an atom pair dictionary. Also include two keys which have

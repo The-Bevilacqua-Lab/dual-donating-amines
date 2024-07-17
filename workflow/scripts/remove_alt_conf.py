@@ -57,14 +57,14 @@ def remove(eq_class_mem):
     # remove the atom conformations that are not going to be kept
     for atom in atoms_to_remove:
         # ensure that the info for each atom describes exactly one atom
-        if cmd.count_atoms(f'name {atom[0]} and resn {atom[1]} and resi {atom[2]} and chain {atom[3]} and '
+        if cmd.count_atoms(f'name {atom[0]} and resn {atom[1]} and resi \\{atom[2]} and chain {atom[3]} and '
                            f'alt {atom[4]}') != 1:
             return [False, f"Error: The info provided for an atom to remove does not account for exactly one atom in "
                            f"equivalence class member {eq_class_mem}."]
         # check for whether there is any indication that removing the atom will disrupt the connectivity of the atoms
         # that are kept
         stored.neighboring_atoms = []
-        cmd.iterate(f'neighbor (name {atom[0]} and resn {atom[1]} and resi {atom[2]} and chain {atom[3]} and '
+        cmd.iterate(f'neighbor (name {atom[0]} and resn {atom[1]} and resi \\{atom[2]} and chain {atom[3]} and '
                     f'alt {atom[4]})', 'stored.neighboring_atoms.append((name,resn,resi,chain,alt,q))')
         for neighbor in stored.neighboring_atoms:
             if neighbor[4] != "":
@@ -78,6 +78,6 @@ def remove(eq_class_mem):
                     return [False, f"Error: Removing the atom {atom[3]}.{atom[1]}.{atom[2]}.{atom[0]} with alt ID "
                                    f"{atom[4]} of equivalence class member {eq_class_mem} may disrupt the connectivity "
                                    f"of the atoms that are kept."]
-        cmd.remove(f'name {atom[0]} and resn {atom[1]} and resi {atom[2]} and chain {atom[3]} and alt {atom[4]}')
+        cmd.remove(f'name {atom[0]} and resn {atom[1]} and resi \\{atom[2]} and chain {atom[3]} and alt {atom[4]}')
     # Return True as the first element of a list if no errors were encountered.
     return [True]
