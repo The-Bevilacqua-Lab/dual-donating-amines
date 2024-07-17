@@ -22,17 +22,17 @@ b_factor_cutoff: 79.0
 # What are the residue and atom names of the non-rotatable donors that are to be considered, categorized by how many
 # hydrogens they have.
 single_h_donors:
+  - "G.N1"
+  - "U.N3"
+  - "DG.N1"
+  - "DT.N3"
+dual_h_donors:
   - 'A.N6'
   - 'C.N4'
   - 'G.N2'
   - 'DA.N6'
   - 'DC.N4'
   - 'DG.N2'
-dual_h_donors:
-  - "G.N1"
-  - "U.N3"
-  - "DG.N1"
-  - "DT.N3"
 
 # What are the residue and atom names of the donors and acceptors of interest?
 donors_of_interest:
