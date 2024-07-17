@@ -268,7 +268,8 @@ for atom_pair in don_atom_pair_df.itertuples():
     don_list = [atom_pair.don_index, atom_pair.don_name, atom_pair.don_resn, atom_pair.don_resi, atom_pair.don_chain]
     acc_list = [atom_pair.acc_index, atom_pair.acc_name, atom_pair.acc_resn, atom_pair.acc_resi, atom_pair.acc_chain]
     # Retrieve the H-bond measurements for the atom pair.
-    h_bond_list = eval_H_bonding.evaluate(don_list, acc_list, eq_class_mem_id, residue_library.RESIDUE_LIBRARY)
+    h_bond_list = eval_H_bonding.evaluate(don_list, acc_list, eq_class_mem_id, residue_library.RESIDUE_LIBRARY,
+                                          snakemake.config["single_h_donors"], snakemake.config["dual_h_donors"])
     # If the H-bond evaluation is not successful, print the error message(s) and exit.
     successful_completion = h_bond_list[0]
     if not successful_completion:
@@ -327,7 +328,8 @@ for atom_pair in acc_atom_pair_df.itertuples():
         acc_list = [atom_pair.acc_index, atom_pair.acc_name, atom_pair.acc_resn, atom_pair.acc_resi,
                     atom_pair.acc_chain]
         # Retrieve the H-bond measurements for the atom pair.
-        h_bond_list = eval_H_bonding.evaluate(don_list, acc_list, eq_class_mem_id, residue_library.RESIDUE_LIBRARY)
+        h_bond_list = eval_H_bonding.evaluate(don_list, acc_list, eq_class_mem_id, residue_library.RESIDUE_LIBRARY,
+                                              snakemake.config["single_h_donors"], snakemake.config["dual_h_donors"])
         # If the H-bond evaluation is not successful, print the error message(s) and exit.
         successful_completion = h_bond_list[0]
         if not successful_completion:
