@@ -12,10 +12,6 @@ from pymol import stored
 
 
 def remove(eq_class_mem):
-    # initially assume that the evaluation will complete successfully
-    successful_completion = True
-    # initialize an empty list that can be used to document why an evaluation was not completed successfully
-    notes = []
     # store atoms that have alternate conformations
     stored.alt_atoms = []
     cmd.iterate('not alt ""', 'stored.alt_atoms.append((name,resn,resi,chain,alt,q))')
@@ -44,18 +40,14 @@ def remove(eq_class_mem):
                 keep = atom
             elif atom[5] == keep[5]:
                 if len(atom[4]) != 1 or len(keep[4]) != 1:
-                    successful_completion = False
-                    notes.append(f"Error: There is at least one atom in equivalence class member {eq_class_mem} with "
-                                 f"an alt ID that does not consist of exactly one character.")
-                    return [successful_completion, notes]
+                    return [False, f"Error: There is at least one atom in equivalence class member {eq_class_mem} with "
+                                   f"an alt ID that does not consist of exactly one character."]
                 elif atom[4] < keep[4]:
                     remove.append(keep)
                     keep = atom
                 elif atom[4] == keep[4]:
-                    successful_completion = False
-                    notes.append(f"Error: There are multiple atoms with the same alt ID that should have different alt "
-                                 f"IDs in equivalence class member {eq_class_mem}.")
-                    return [successful_completion, notes]
+                    return [False, f"Error: There are multiple atoms with the same alt ID that should have different "
+                                   f"alt IDs in equivalence class member {eq_class_mem}."]
                 elif atom[4] > keep[4]:
                     remove.append(atom)
             elif atom[5] < keep[5]:
@@ -67,10 +59,8 @@ def remove(eq_class_mem):
         # ensure that the info for each atom describes exactly one atom
         if cmd.count_atoms(f'name {atom[0]} and resn {atom[1]} and resi {atom[2]} and chain {atom[3]} and '
                            f'alt {atom[4]}') != 1:
-            successful_completion = False
-            notes.append(f"Error: The info provided for an atom to remove does not account for exactly one atom in "
-                         f"equivalence class member {eq_class_mem}.")
-            return [successful_completion, notes]
+            return [False, f"Error: The info provided for an atom to remove does not account for exactly one atom in "
+                           f"equivalence class member {eq_class_mem}."]
         # check for whether there is any indication that removing the atom will disrupt the connectivity of the atoms
         # that are kept
         stored.neighboring_atoms = []
@@ -85,10 +75,9 @@ def remove(eq_class_mem):
                             compare_atom[4] == neighbor[4]):
                         neighbor_in_remove_list = True
                 if not neighbor_in_remove_list:
-                    successful_completion = False
-                    notes.append(f"Error: Removing the atom {atom[0]} with alt ID {atom[4]} from residue "
-                                 f"{atom[1]}{atom[2]} within chain {atom[3]} of equivalence class member "
-                                 f"{eq_class_mem} may disrupt the connectivity of the atoms that are kept.")
-                    return [successful_completion, notes]
+                    return [False, f"Error: Removing the atom {atom[0]} with alt ID {atom[4]} from residue "
+                                   f"{atom[1]}{atom[2]} within chain {atom[3]} of equivalence class member "
+                                   f"{eq_class_mem} may disrupt the connectivity of the atoms that are kept."]
         cmd.remove(f'name {atom[0]} and resn {atom[1]} and resi {atom[2]} and chain {atom[3]} and alt {atom[4]}')
-    return [successful_completion, notes]
+    # Return True as the first element of a list if no errors were encountered.
+    return [True]

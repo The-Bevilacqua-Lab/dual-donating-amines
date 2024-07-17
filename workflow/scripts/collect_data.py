@@ -34,7 +34,7 @@ sys.stderr = stderr_file
 
 
 # This function is to be run if an error is encountered.
-def error(msg_list):
+def error(msg):
 
     # Create the output files expected by Snakemake.
     subprocess.run(["touch", snakemake.output.data])
@@ -47,9 +47,8 @@ def error(msg_list):
     if cmd.count_atoms('all') > 0 and snakemake.config["remove_original_mmcif"]:
         subprocess.run(["rm", original_mmcif_dir + f"{pdb_id}.cif".lower()])
 
-    # Print the error message(s).
-    for msg in msg_list:
-        print(msg)
+    # Print the error message.
+    print(msg)
 
     # Close files, reset stdout and stderr, and exit.
     stdout_file.close()
@@ -87,7 +86,7 @@ if snakemake.config["commit_hash"]:
         commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"],
                                               cwd=os.path.dirname(os.path.realpath(__file__))).decode('ascii').strip()
     else:
-        error([f"Error: Uncommitted changes have been made to the repo."])
+        error(f"Error: Uncommitted changes have been made to the repo.")
 
 # Collect the equivalence class name, PDB ID, model info, and chain info from the string describing the equivalence
 # class member.
@@ -227,14 +226,14 @@ for donor in stored.donor_list:
     # If no b-factors were stored, exit with an error message. This would likely be due to the PyMOL sidechain selection
     # operator not working with a particular residue.
     if len(stored.b_factors) == 0:
-        error([f"Error: No b-factors were obtained from residue {donor[2]}{donor[3]} from chain {donor[4]} in "
-               f"{eq_class_mem_id}."])
+        error(f"Error: No b-factors were obtained from residue {donor[2]}{donor[3]} from chain {donor[4]} in "
+              f"{eq_class_mem_id}.")
     # Ensure that the correct number of b-factors were collected.
     if ((donor[2] in ["A", "DA"] and len(stored.b_factors) != 10) or
             (donor[2] in ["C", "DC"] and len(stored.b_factors) != 8) or
             (donor[2] in ["G", "DG"] and len(stored.b_factors) != 11)):
-        error([f"Error: The correct number of b-factors were not obtained from residue {donor[2]}{donor[3]} from chain "
-               f"{donor[4]} in {eq_class_mem_id}."])
+        error(f"Error: The correct number of b-factors were not obtained from residue {donor[2]}{donor[3]} from chain "
+              f"{donor[4]} in {eq_class_mem_id}.")
     # Calculate the average of the b-factors.
     b_factor_avg = sum(stored.b_factors)/len(stored.b_factors)
     # Add the donor, heavy atom counts, and average b-factor to the count dictionary.
@@ -362,7 +361,7 @@ stored.check_two = []
 for index in indices:
     cmd.iterate(f'index {index}', 'stored.check_two.append([index, name, resn, resi, chain])')
 if not stored.check_one == stored.check_two:
-    error([f"Error: The indices in equivalence class member {snakemake.wildcards.eq_class_member} changed."])
+    error(f"Error: The indices in equivalence class member {snakemake.wildcards.eq_class_member} changed.")
 
 # Prepare a master dataframe containing heavy atom count, b-factor, H-bonding data, and other relevant information.
 master_df = don_info_df.merge(don_h_bonds_df, how='outer').merge(acc_h_bonds_df, how='outer')

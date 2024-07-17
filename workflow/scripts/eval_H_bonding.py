@@ -51,10 +51,6 @@ def terminal_donor(donor_atom):
 
 
 def evaluate(donor_atom, acceptor_atom, eq_class_mem, library):
-    # Initially assume that the evaluation will complete successfully.
-    successful_completion = True
-    # Initialize an empty list that can be used to document why an evaluation was not completed successfully.
-    notes = []
     # Construct lists containing the names of the canonical protein and nucleic residues.
     protein_residues = ['ALA', 'ASP', 'ASN', 'ARG', 'CYS', 'GLU', 'GLN', 'GLY', 'HIS', 'ILE', 'LEU', 'LYS', 'MET',
                         'PHE', 'PRO', 'SER', 'THR', 'TRP', 'TYR', 'VAL']
@@ -79,18 +75,14 @@ def evaluate(donor_atom, acceptor_atom, eq_class_mem, library):
                 donor_info = terminal_donating_atom
             # break the loop since the residue was found
             break
-    if not donor_res:
-        successful_completion = False
-        notes.append(f"Error: The donor residue {donor_atom[2]}.{donor_atom[3]}.{donor_atom[4]} of {eq_class_mem} was "
-                     f"not found in the residue library when evaluating a potential H-bond.")
-    if not donor_info:
-        successful_completion = False
-        notes.append(f"Error: The donor atom {donor_atom[1]}.{donor_atom[2]}.{donor_atom[3]}.{donor_atom[4]} of "
-                     f"{eq_class_mem} was not found in the residue library when evaluating a potential H-bond.")
     # If any of the residues of the donor atoms or the atoms themselves were not found in the residue library, return a
-    # non-successful completion with the relevant notes.
-    if not successful_completion:
-        return [successful_completion, notes]
+    # non-successful completion with the relevant note.
+    if not donor_res:
+        return [False, f"Error: The donor residue {donor_atom[2]}.{donor_atom[3]}.{donor_atom[4]} of {eq_class_mem} "
+                       f"was not found in the residue library when evaluating a potential H-bond."]
+    if not donor_info:
+        return [False, f"Error: The donor atom {donor_atom[1]}.{donor_atom[2]}.{donor_atom[3]}.{donor_atom[4]} of "
+                       f"{eq_class_mem} was not found in the residue library when evaluating a potential H-bond."]
     # Get the distance and angle values for the donor/acceptor pair.
     geometry = calc_geom(donor_atom, acceptor_atom, donor_info, eq_class_mem)
     # If the geometry calculation was not successful, return an explanation of what went wrong.
@@ -110,10 +102,6 @@ def evaluate(donor_atom, acceptor_atom, eq_class_mem, library):
 
 
 def calc_geom(donor_atom, acceptor_atom, donor_info, eq_class_mem):
-    # Initially assume that the evaluation will complete successfully.
-    successful_completion = True
-    # Initialize an empty list that can be used to document why an evaluation was not completed successfully.
-    notes = []
     # Get the D-A distance.
     don_acc_distance = cmd.get_distance(f'index {donor_atom[0]}', f'index {acceptor_atom[0]}')
     # Collect information about the donor antecedent atom.
@@ -122,10 +110,8 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, eq_class_mem):
                 'stored.don_ant.append((index, name, resn, resi, chain))')
     # Issue an error message if the number of identified donor antecedent atoms does not equal one.
     if len(stored.don_ant) != 1:
-        successful_completion = False
-        notes.append(f"Error: The number of identified donor antecedent atoms does not equal one for {donor_atom[1]}."
-                     f"{donor_atom[2]}.{donor_atom[3]}.{donor_atom[4]} of {eq_class_mem}.")
-        return [successful_completion, notes]
+        return [False, f"Error: The number of identified donor antecedent atoms does not equal one for {donor_atom[1]}."
+                       f"{donor_atom[2]}.{donor_atom[3]}.{donor_atom[4]} of {eq_class_mem}."]
     # If the donor is non-rotatable, use the donor hydrogen(s) locations to calculate the H-A distance(s) and angle(s).
     # Additionally, if the hydrogens belong to an RNA exocyclic amine, calculate the dihedral between the hydrogen
     # closest to the WCF nucleobase edge and the nearby endocyclic nitrogen that is part of the 6-membered ring. For
@@ -137,17 +123,13 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, eq_class_mem):
                                                                   'name, resn, resi, chain))')
         # Issue an error message if there are no hydrogens.
         if len(stored.hydrogen) == 0:
-            successful_completion = False
-            notes.append(f"Error: The non-rotatable donor atom {donor_atom[1]}.{donor_atom[2]}.{donor_atom[3]}."
-                         f"{donor_atom[4]} of {eq_class_mem} has zero hydrogens.")
-            return [successful_completion, notes]
+            return [False, f"Error: The non-rotatable donor atom {donor_atom[1]}.{donor_atom[2]}.{donor_atom[3]}."
+                           f"{donor_atom[4]} of {eq_class_mem} has zero hydrogens."]
         # Get the measurements for donors that have one hydrogen.
         elif len(stored.hydrogen) == 1:
             if donor_atom[1:3] in [["N6", "A"], ["N4", "C"], ["N2", "G"]]:
-                successful_completion = False
-                notes.append(f"Error: The exocyclic amine {donor_atom[1]}.{donor_atom[2]}.{donor_atom[3]}."
-                             f"{donor_atom[4]} of {eq_class_mem} has only one hydrogen.")
-                return [successful_completion, notes]
+                return [False, f"Error: The exocyclic amine {donor_atom[1]}.{donor_atom[2]}.{donor_atom[3]}."
+                               f"{donor_atom[4]} of {eq_class_mem} has only one hydrogen."]
             else:
                 h_acc_distance = [cmd.get_distance(f'index {stored.hydrogen[0][0]}', f'index {acceptor_atom[0]}'),
                                   pd.NA]
@@ -156,9 +138,7 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, eq_class_mem):
                 h_dihedral = [pd.NA, pd.NA]
                 h_name = [stored.hydrogen[0][1], pd.NA]
                 # Return the geometry values.
-                return [successful_completion,
-                        [[don_acc_distance, h_acc_distance[0], h_angle[0], h_dihedral[0],
-                          h_name[0]]]]
+                return [True, [[don_acc_distance, h_acc_distance[0], h_angle[0], h_dihedral[0], h_name[0]]]]
         # Get the measurements for donors that have two hydrogens.
         elif len(stored.hydrogen) == 2:
             # Collect information about the nearby endocyclic nitrogen.
@@ -174,10 +154,8 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, eq_class_mem):
                 stored.end_n = [pd.NA]
             # Issue an error message if the number of identified endocyclic nitrogen atoms does not equal one.
             if len(stored.end_n) != 1:
-                successful_completion = False
-                notes.append(f"Error: The number of identified endocyclic nitrogen atoms does not equal one for "
-                             f"residue {donor_atom[2]}.{donor_atom[3]}.{donor_atom[4]} of {eq_class_mem}.")
-                return [successful_completion, notes]
+                return [False, f"Error: The number of identified endocyclic nitrogen atoms does not equal one for "
+                               f"residue {donor_atom[2]}.{donor_atom[3]}.{donor_atom[4]} of {eq_class_mem}."]
             h_acc_distance = [cmd.get_distance(f'index {stored.hydrogen[0][0]}', f'index {acceptor_atom[0]}'),
                               cmd.get_distance(f'index {stored.hydrogen[1][0]}', f'index {acceptor_atom[0]}')]
             h_angle = [cmd.get_angle(f'index {donor_atom[0]}', f'index {stored.hydrogen[0][0]}',
@@ -193,20 +171,16 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, eq_class_mem):
                 h_dihedral = [pd.NA, pd.NA]
             h_name = [stored.hydrogen[0][1], stored.hydrogen[1][1]]
             # Return the geometry values.
-            return [successful_completion,
-                    [[don_acc_distance, h_acc_distance[0], h_angle[0], h_dihedral[0], h_name[0]],
-                     [don_acc_distance, h_acc_distance[1], h_angle[1], h_dihedral[1], h_name[1]]]]
+            return [True, [[don_acc_distance, h_acc_distance[0], h_angle[0], h_dihedral[0], h_name[0]],
+                           [don_acc_distance, h_acc_distance[1], h_angle[1], h_dihedral[1], h_name[1]]]]
         # Issue an error message if there are more than two hydrogens.
         elif len(stored.hydrogen) > 2:
-            successful_completion = False
-            notes.append(f"Error: The non-rotatable donor atom {donor_atom[1]}.{donor_atom[2]}.{donor_atom[3]}."
-                         f"{donor_atom[4]} of {eq_class_mem} has more than two hydrogens.")
-            return [successful_completion, notes]
+            return [False, f"Error: The non-rotatable donor atom {donor_atom[1]}.{donor_atom[2]}.{donor_atom[3]}."
+                           f"{donor_atom[4]} of {eq_class_mem} has more than two hydrogens."]
     else:
         h_acc_distance = [pd.NA, pd.NA]
         h_angle = [pd.NA, pd.NA]
         h_dihedral = [pd.NA, pd.NA]
         h_name = [pd.NA, pd.NA]
         # Return the geometry values.
-        return [successful_completion,
-                [[don_acc_distance, h_acc_distance[0], h_angle[0], h_dihedral[0], h_name[0]]]]
+        return [True, [[don_acc_distance, h_acc_distance[0], h_angle[0], h_dihedral[0], h_name[0]]]]
