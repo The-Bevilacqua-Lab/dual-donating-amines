@@ -48,7 +48,7 @@ def terminal_donor(donor_atom):
     return terminal_donating_atom
 
 
-def evaluate(donor_atom, acceptor_atom, eq_class_mem, library):
+def evaluate(donor_atom, acceptor_atom, eq_class_mem, library, single_h_donors, dual_h_donors):
     # Construct lists containing the names of the canonical protein and nucleic residues.
     protein_residues = ['ALA', 'ASP', 'ASN', 'ARG', 'CYS', 'GLU', 'GLN', 'GLY', 'HIS', 'ILE', 'LEU', 'LYS', 'MET',
                         'PHE', 'PRO', 'SER', 'THR', 'TRP', 'TYR', 'VAL']
@@ -82,7 +82,7 @@ def evaluate(donor_atom, acceptor_atom, eq_class_mem, library):
         return [False, f"Error: The donor atom {donor_atom[4]}.{donor_atom[2]}.{donor_atom[3]}.{donor_atom[1]} of "
                        f"{eq_class_mem} was not found in the residue library when evaluating a potential H-bond."]
     # Get the distance and angle values for the donor/acceptor pair.
-    geometry = calc_geom(donor_atom, acceptor_atom, donor_info, eq_class_mem)
+    geometry = calc_geom(donor_atom, acceptor_atom, donor_info, eq_class_mem, single_h_donors, dual_h_donors)
     # If the geometry calculation was not successful, return an explanation of what went wrong.
     geometry_successful = geometry[0]
     if not geometry_successful:
