@@ -262,7 +262,7 @@ don_atom_pair_df = pd.DataFrame(don_atom_pair_dict)
 don_h_bonds_dict = {"don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "don_segi": [],
                     "acc_index": [], "acc_name": [], "acc_resn": [], "acc_resi": [], "acc_chain": [], "acc_segi": [],
                     "don_resn_name": [], "acc_resn_name": [], "don_acc_distance": [], "h_acc_distance": [],
-                    "h_angle": [], "h_dihedral": [], "h_name": []}
+                    "don_angle": [], "h_angle": [], "h_dihedral": [], "h_name": []}
 for atom_pair in don_atom_pair_df.itertuples():
     # Store the donor and acceptor atom values for the dataframe row.
     don_list = [atom_pair.don_index, atom_pair.don_name, atom_pair.don_resn, atom_pair.don_resi, atom_pair.don_chain]
@@ -284,7 +284,8 @@ for atom_pair in don_atom_pair_df.itertuples():
 
 # Create a dataframe based on the dictionary.
 don_h_bonds_df = pd.DataFrame(don_h_bonds_dict).astype({"don_acc_distance": "object", "h_acc_distance": "object",
-                                                        "h_angle": "object", "h_dihedral": "object"})
+                                                        "don_angle": "object", "h_angle": "object",
+                                                        "h_dihedral": "object"})
 
 # Store a list of acceptors of interest from nucleobases containing the donors of interest.
 stored.acceptor_list = []
@@ -318,7 +319,7 @@ acc_atom_pair_df = pd.DataFrame(acc_atom_pair_dict)
 acc_h_bonds_dict = {"don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "don_segi": [],
                     "acc_index": [], "acc_name": [], "acc_resn": [], "acc_resi": [], "acc_chain": [], "acc_segi": [],
                     "don_resn_name": [], "acc_resn_name": [], "don_acc_distance": [], "h_acc_distance": [],
-                    "h_angle": [], "h_dihedral": [], "h_name": [], "AOI": [], "don_can_NA": []}
+                    "don_angle": [], "h_angle": [], "h_dihedral": [], "h_name": [], "AOI": [], "don_can_NA": []}
 for atom_pair in acc_atom_pair_df.itertuples():
     # Only calculate H-bonding measurements if the donor belongs to a canonical DNA or RNA residue.
     if atom_pair.don_resn in ["A", "C", "G", "U", "DA", "DC", "DG", "DT"]:
@@ -344,7 +345,7 @@ for atom_pair in acc_atom_pair_df.itertuples():
     # Set H-bonding information to NaN and don_can_NA to 0 if the donor does not belong to a canonical RNA or DNA
     # residue.
     else:
-        row = list(atom_pair)[1:] + [pd.NA] * 5 + [1, 0]
+        row = list(atom_pair)[1:] + [pd.NA] * 6 + [1, 0]
         for key, value in zip(acc_h_bonds_dict, row):
             acc_h_bonds_dict[key].append(value)
 
