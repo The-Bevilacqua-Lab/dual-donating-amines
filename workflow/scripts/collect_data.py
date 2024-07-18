@@ -236,7 +236,7 @@ for donor in stored.donor_list:
         don_info_dict[key].append(value)
 
 # Create a dataframe based on the info dictionary.
-don_info_df = pd.DataFrame(don_info_dict)
+don_info_df = pd.DataFrame(don_info_dict).astype("object")
 
 # Store a list of acceptors near the donors of interest within an atom pair dictionary. Also include two keys which have
 # values containing both residue and atom names for donor and acceptor atoms.
@@ -283,9 +283,7 @@ for atom_pair in don_atom_pair_df.itertuples():
                 don_h_bonds_dict[key].append(value)
 
 # Create a dataframe based on the dictionary.
-don_h_bonds_df = pd.DataFrame(don_h_bonds_dict).astype({"don_acc_distance": "object", "h_acc_distance": "object",
-                                                        "don_angle": "object", "h_angle": "object",
-                                                        "h_dihedral": "object"})
+don_h_bonds_df = pd.DataFrame(don_h_bonds_dict).astype("object")
 
 # Store a list of acceptors of interest from nucleobases containing the donors of interest.
 stored.acceptor_list = []
@@ -350,9 +348,7 @@ for atom_pair in acc_atom_pair_df.itertuples():
             acc_h_bonds_dict[key].append(value)
 
 # Create a dataframe based on the dictionary.
-acc_h_bonds_df = pd.DataFrame(acc_h_bonds_dict).astype({"don_acc_distance": "object", "h_acc_distance": "object",
-                                                        "don_angle": "object", "h_angle": "object",
-                                                        "h_dihedral": "object"})
+acc_h_bonds_df = pd.DataFrame(acc_h_bonds_dict).astype("object")
 
 # Record info on the atoms associated with the previously determined 100 atom indices and check whether there are any
 # changes.
