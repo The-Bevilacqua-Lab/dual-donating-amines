@@ -15,10 +15,11 @@ sys.stdout = stdout_file
 sys.stderr = stderr_file
 
 # Initialize the combined dataframe.
-combined_df = pd.DataFrame(columns=["don_index", "don_name", "don_resn", "don_resi", "don_chain", "don_segi", "count_1",
-                                    "count_2", "b-factor", "DOI", "acc_index", "acc_name", "acc_resn", "acc_resi",
-                                    "acc_chain", "acc_segi", "don_acc_distance", "h_acc_distance", "h_angle",
-                                    "h_dihedral", "h_name", "model", "PDB", "eq_class_member"])
+combined_df = pd.DataFrame(columns=['don_index', 'don_name', 'don_resn', 'don_resi', 'don_chain', 'don_segi', 'count_1',
+                                    'count_2', 'b-factor', 'DOI', 'don_can_NA', 'acc_index', 'acc_name', 'acc_resn',
+                                    'acc_resi', 'acc_chain', 'acc_segi', 'don_resn_name', 'acc_resn_name',
+                                    'don_acc_distance', 'h_acc_distance', 'don_angle', 'h_angle', 'h_dihedral',
+                                    'h_name', 'AOI', 'model', 'PDB', 'eq_class_member'])
 
 # Combine the dataframes from the different equivalence class members. Do not incorporate empty dataframes.
 for idx in range(len(snakemake.input.data)):
@@ -55,10 +56,9 @@ for residue in residue_library.RESIDUE_LIBRARY:
 # negative charges.
 combined_df["acc_charge"] = pd.NA
 combined_df.loc[~combined_df.isna()['acc_index'], "acc_charge"] = "other"
-combined_df.loc[~combined_df.isna()['acc_index'], "acc_resn_name"] = combined_df["acc_resn"] + "." + combined_df["acc_name"]
 combined_df.loc[combined_df["acc_resn_name"].isin(can_neg), "acc_charge"] = "can_neg"
 combined_df.loc[combined_df["acc_resn_name"].isin(can_neut), "acc_charge"] = "can_neut"
-combined_df = combined_df.drop(columns="acc_resn_name")
+combined_df = combined_df.drop(columns=["don_resn_name", "acc_resn_name"])
 
 # Add a new column to identify donor-acceptor pairs that will be used for evaluating H-bonding geometry. Each atom pair
 # involves a donor of interest.
@@ -83,12 +83,26 @@ don_acc_grp = ["don_index", "acc_index", "eq_class_member"]
 # Set the H-bonding criteria.
 H_DIST_MAX = snakemake.config["h_dist_max"]
 H_ANG_MIN = snakemake.config["h_ang_min"]
+DON_DIST_MAX = snakemake.config["don_dist_max"]
+DON_ANG_MIN = snakemake.config["don_ang_min"]
+DON_ANG_MAX = snakemake.config["don_ang_max"]
 
 
 # Define a function to determine whether a donor/acceptor atom pair meets the H-bonding criteria.
 def h_bonding(row):
-    if pd.isna(row["h_acc_distance"]):
+    # If there are no H-bonding measurements, return NaN.
+    if pd.isna(row["don_acc_distance"]) and pd.isna(row["h_acc_distance"]):
         return row
+    # If the only distance measurement is between donor and acceptor, the donor is rotatable.
+    elif pd.isna(row["h_acc_distance"]):
+        if ((row["don_acc_distance"] <= DON_DIST_MAX) & (row["don_angle"] >= DON_ANG_MIN) &
+                (row["don_angle"] <= DON_ANG_MAX)):
+            row["h_bond"] = 1
+            return row
+        else:
+            row["h_bond"] = 0
+            return row
+    # If both distance measurements exist, the donor is not rotatable.
     else:
         if (row["h_acc_distance"] <= H_DIST_MAX) & (row["h_angle"] >= H_ANG_MIN):
             row["h_bond"] = 1
