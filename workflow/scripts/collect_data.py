@@ -350,7 +350,9 @@ for atom_pair in acc_atom_pair_df.itertuples():
             acc_h_bonds_dict[key].append(value)
 
 # Create a dataframe based on the dictionary.
-acc_h_bonds_df = pd.DataFrame(acc_h_bonds_dict).astype({"h_dihedral": "object"})
+acc_h_bonds_df = pd.DataFrame(acc_h_bonds_dict).astype({"don_acc_distance": "object", "h_acc_distance": "object",
+                                                        "don_angle": "object", "h_angle": "object",
+                                                        "h_dihedral": "object"})
 
 # Record info on the atoms associated with the previously determined 100 atom indices and check whether there are any
 # changes.
