@@ -252,6 +252,9 @@ combined_df.to_csv(snakemake.output.combined, index=False, na_rep='NaN')
 def check_overlap_charge(grp):
     overlap = 0
     neg_count = 0
+    if any(grp["type"] == 0):
+        grp.loc[:, ['overlap', "neg_charge"]] = [0, pd.NA]
+        return grp
     for row in grp.itertuples():
         # Is the residue accepting the H-bond from the amine the same residue that is donating an H-bond to the acceptor
         # of interest?
@@ -291,11 +294,12 @@ aoi_df = (combined_df[(combined_df["AOI"] == 1) & (combined_df["h_bond"] == 1)]
           .loc[:, ['don_index', 'don_name', 'don_resn', 'don_resi', 'don_chain', 'acc_index', 'acc_name', 'acc_resn',
                    'acc_resi', 'acc_chain', 'eq_class_member', 'don_acc_distance']])
 
-# Create a data frame that includes H-bonding atom pairs that include a donor of interest which only donates to residues
-# included in the included_residues list specified in the config file.
-doi_df = combined_df[(combined_df["DOI"] == 1) & (combined_df["h_bond"] == 1)]
+# Create a data frame that includes H-bonding atom pairs that include a donor of interest which does not donate to any
+# residues, or only those included in the included_residues list specified in the config file.
+doi_df = combined_df[(combined_df["DOI"] == 1) & (combined_df["type"] > 0)]
 doi_df.loc[:, ~doi_df.columns.isin(["don_index", "eq_class_member"])] = (
     doi_df.groupby(['don_index', 'eq_class_member'], group_keys=False).apply(check_included_res, include_groups=False))
+doi_df = pd.concat([doi_df, combined_df[(combined_df["DOI"] == 1) & (combined_df["type"] == 0)]])
 
 # Create a merged data frame where residues bearing donors of interest are matched with residues bearing acceptors of
 # interest.
@@ -313,8 +317,8 @@ merged_df.loc[:, ~merged_df.columns.isin(['don_index_AOI', "acc_index_AOI", "eq_
 drop_columns = ["don_index", "don_resi", "don_chain", "don_segi", "count_1", "count_2", "b-factor", "DOI", "don_can_NA",
                 "acc_index", "acc_name", "acc_resn", "acc_resi", "acc_chain", "acc_segi", "don_acc_distance",
                 "h_acc_distance", "don_angle", "h_angle", "h_dihedral", "h_name", "AOI", "h_dihedral", "model", "PDB",
-                "eq_class_member", "acc_charge", "geom", "h_bond", "don_index_AOI", "don_name_AOI", "don_resn_AOI",
-                "don_resi_AOI", "don_chain_AOI", "acc_index_AOI", "acc_resn_AOI", "acc_resi_AOI", "acc_chain_AOI"]
+                "eq_class_member", "acc_charge", "geom", "h_bond", "don_index_AOI", "don_resi_AOI", "don_chain_AOI",
+                "acc_index_AOI", "acc_resn_AOI", "acc_resi_AOI", "acc_chain_AOI"]
 merged_df = (merged_df.drop_duplicates(subset=['don_index_AOI', 'acc_index_AOI', 'eq_class_member'])
              .drop(columns=drop_columns))
 
