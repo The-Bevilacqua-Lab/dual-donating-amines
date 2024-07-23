@@ -244,6 +244,83 @@ combined_df = combined_df.merge(base_pair_df, how='outer')
 # Write the processed and combined data to a csv file.
 combined_df.to_csv(snakemake.output.combined, index=False, na_rep='NaN')
 
+
+# Define a function to determine whether the residue donating to the acceptor of interest is the same as the residue
+# accepting from the donor of interest. If it is the same residue, the interactions are considered to be overlapping.
+# The acceptor of interest and donor of interest are a part of the same nucleobase. Additionally, identify whether any
+# of the atoms accepting an H-bond from the donor of interest bear substantial negative charge.
+def check_overlap_charge(grp):
+    overlap = 0
+    neg_count = 0
+    for row in grp.itertuples():
+        # Is the residue accepting the H-bond from the amine the same residue that is donating an H-bond to the acceptor
+        # of interest?
+        if row.acc_resn == row.don_resn_AOI and row.acc_resi == row.don_resi_AOI and row.acc_chain == row.don_chain_AOI:
+            # Are the acceptor and donor atoms both part of the nucleobase (e.i., not backbone atoms)?
+            if row.acc_name not in ["O2'", "O3'", "O4'", "O5'", "OP1", "OP2"] and row.don_name_AOI not in ["O2'"]:
+                overlap = 1
+        if row.acc_charge == "can_neg":
+            neg_count += 1
+    grp['overlap'] = overlap
+    # The DOI does not donate to any anionic acceptors.
+    if neg_count == 0:
+        grp["neg_charge"] = "None"
+    # The DOI donates to neutral and anionic acceptors.
+    elif neg_count < len(grp):
+        grp["neg_charge"] = "Partial"
+    # The DOI only donates to anionic acceptors.
+    elif neg_count == len(grp):
+        grp["neg_charge"] = "All"
+    return grp
+
+
+# Define a function to determine whether and donor of interest donates to any residues not included in the
+# included_residues list specified within the config file. If it does, exclude the donor of interest from further
+# consideration by returning an empty data frame.
+def check_included_res(grp):
+    for row in grp.itertuples():
+        if row.acc_resn not in snakemake.config["included_residues"]:
+            grp = grp.truncate(after=-1)
+            return grp
+    return grp
+
+
+# Create a data frame that includes H-bonding atom pairs that include an acceptor of interest.
+aoi_df = (combined_df[(combined_df["AOI"] == 1) & (combined_df["h_bond"] == 1)]
+          .drop_duplicates(subset=["acc_index", "don_index", "eq_class_member"])
+          .loc[:, ['don_index', 'don_name', 'don_resn', 'don_resi', 'don_chain', 'acc_index', 'acc_name', 'acc_resn',
+                   'acc_resi', 'acc_chain', 'eq_class_member', 'don_acc_distance']])
+
+# Create a data frame that includes H-bonding atom pairs that include a donor of interest which only donates to residues
+# included in the included_residues list specified in the config file.
+doi_df = combined_df[(combined_df["DOI"] == 1) & (combined_df["h_bond"] == 1)]
+doi_df.loc[:, ~doi_df.columns.isin(["don_index", "eq_class_member"])] = (
+    doi_df.groupby(['don_index', 'eq_class_member'], group_keys=False).apply(check_included_res, include_groups=False))
+
+# Create a merged data frame where residues bearing donors of interest are matched with residues bearing acceptors of
+# interest.
+merged_df = (doi_df.merge(aoi_df, left_on=['don_resn', 'don_resi', 'don_chain', 'eq_class_member'],
+                          right_on=['acc_resn', 'acc_resi', 'acc_chain', 'eq_class_member'], suffixes=[None, "_AOI"]))
+
+# Add overlap and neg_charge columns to the merged data frame. Refer to the check_overlap_charge function definition
+# above for what these columns indicate.
+merged_df.loc[:, ["overlap", "neg_charge"]] = pd.NA
+merged_df.loc[:, ~merged_df.columns.isin(['don_index_AOI', "acc_index_AOI", "eq_class_member"])] = (
+    merged_df.groupby(['don_index_AOI', 'acc_index_AOI', 'eq_class_member'], group_keys=False)
+    .apply(check_overlap_charge, include_groups=False))
+
+# Remove unnecessary columns and redundant rows from the merged data frame.
+drop_columns = ["don_index", "don_resi", "don_chain", "don_segi", "count_1", "count_2", "b-factor", "DOI", "don_can_NA",
+                "acc_index", "acc_name", "acc_resn", "acc_resi", "acc_chain", "acc_segi", "don_acc_distance",
+                "h_acc_distance", "don_angle", "h_angle", "h_dihedral", "h_name", "AOI", "h_dihedral", "model", "PDB",
+                "eq_class_member", "acc_charge", "geom", "h_bond", "don_index_AOI", "don_name_AOI", "don_resn_AOI",
+                "don_resi_AOI", "don_chain_AOI", "acc_index_AOI", "acc_resn_AOI", "acc_resi_AOI", "acc_chain_AOI"]
+merged_df = (merged_df.drop_duplicates(subset=['don_index_AOI', 'acc_index_AOI', 'eq_class_member'])
+             .drop(columns=drop_columns))
+
+# Write the merged data frame to a csv file.
+merged_df.to_csv(snakemake.output.distances, index=False, na_rep='NaN')
+
 # Close files and reset stdout and stderr.
 stdout_file.close()
 stderr_file.close()

@@ -71,7 +71,7 @@ acceptors_of_interest:
   - 'DG.O6'
   - 'DG.N7'
 
-# What residues are included when considering possible H-bond donors?
+# What residues are included when considering H-bonds pertaining to acceptors of interest?
 included_residues:
   - "A"
   - "C"
