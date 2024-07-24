@@ -5,16 +5,16 @@ library(tidyr)
 library(tidytext)
 library(svglite)
 
-# Create a data frame from the data in the combined.csv file.
-df <- read.csv(snakemake@input[["combined"]], header = TRUE, na.strings = "NaN")
+#### HEAVY ATOM DENSITY PLOTS ####
+
+# Creates data frames from the combined data.
+combined_df <- read.csv("../../data/process/combined.csv", header = TRUE, na.strings = "NaN")
 
 # Specify custom colors.
 custom_greens <- RColorBrewer::brewer.pal(4, "Greens")
 
-#### HEAVY ATOM DENSITY PLOTS ####
-
-# Extract the rows from the main data frame relevant for these plots.
-density_df <- df %>% filter(DOI == 1) %>%
+# Extract the rows from the combined data frame relevant for these plots.
+density_df <- combined_df %>% filter(DOI == 1) %>%
   distinct(don_index, eq_class_member, .keep_all = TRUE)
 
 # Convert donor type from numeric to string.
@@ -88,8 +88,8 @@ ggsave(snakemake@output[["density"]], plot = density_plot, width = 6.5,
 
 #### NUCLEOBASE IDENTITY PLOT ####
 
-# Extract the rows from the main data frame relevant for these plots.
-nuc_id_df <- df %>% filter(DOI == 1) %>%
+# Extract the rows from the combined data frame relevant for these plots.
+nuc_id_df <- combined_df %>% filter(DOI == 1) %>%
   distinct(don_index, eq_class_member, .keep_all = TRUE)
 
 # Convert DNA donor resn names to the corresponding RNA resn names.
@@ -117,7 +117,9 @@ nuc_id_df <- nuc_id_df %>% distinct(don_resn, type, .keep_all = TRUE)
 # Create the plot.
 nuc_id_plot <- nuc_id_df %>% ggplot(aes(x=type, y=n_resn_type, fill=type)) +
   geom_col(width = 0.8, color = "black", show.legend = FALSE) +
-  geom_text(aes(x=type, y=n_resn_type+max(n_resn_type)*0.05, label=paste(round(n_resn_type/n_resn*100, digits = 1), "%", sep = "")), inherit.aes = FALSE) +
+  geom_text(aes(x=type, y=n_resn_type+max(n_resn_type)*0.05,
+                label=paste(round(n_resn_type/n_resn*100, digits = 1),
+                            "%", sep = "")), inherit.aes = FALSE) +
   xlab("Type of Amine H-Bonding") +
   ylab(expression(paste("Count"))) +
   scale_fill_manual(values = custom_greens[2:4]) +
@@ -131,8 +133,8 @@ ggsave(snakemake@output[["nuc_id"]], plot = nuc_id_plot, width = 6.5,
 
 #### ACCEPTOR IDENTITY PLOT ####
 
-# Extract the rows from the main data frame relevant for these plots.
-acc_id_df <- df %>% filter(DOI == 1 & h_bond == 1) %>%
+# Extract the rows from the combined data frame relevant for these plots.
+acc_id_df <- combined_df %>% filter(DOI == 1 & h_bond == 1) %>%
   distinct(don_index, eq_class_member, .keep_all = TRUE)
 
 # Convert column to factor.
@@ -209,3 +211,49 @@ acc_id_plot <- grid.arrange(acc_id_1_plot, acc_id_2_plot, nrow = 2)
 # Write the plots.
 ggsave(snakemake@output[["acc_id"]], plot = acc_id_plot, width = 6.5,
        height = 9, units = "in", scale = 1)
+
+### DISTANCE PLOT ###
+
+# Creates data frames from the distance data.
+distance_df <- read.csv("../../data/process/distances.csv", header = TRUE, na.strings = "NaN")
+
+# Specify custom colors.
+custom_blues <- RColorBrewer::brewer.pal(4, "Blues")
+custom_oranges <- RColorBrewer::brewer.pal(4, "Oranges")
+
+# Only keep distances that are greater than twice the standard H-O bond length
+# (Gilli G.; Gilli P. The Nature of the Hydrogen Bond. 2009) to remove
+# artifacts.
+distance_df <- distance_df[which(distance_df$don_acc_distance_AOI > 2*0.983),]
+
+# Convert donor type from numeric to string.
+distance_df[distance_df$type == 0, "type"] <- "No"
+distance_df[distance_df$type == 1, "type"] <- "Single"
+distance_df[distance_df$type == 2, "type"] <- "Dual"
+distance_df$type <- factor(distance_df$type, levels = c("No",
+                                                      "Single",
+                                                      "Dual"))
+
+# Convert DNA resn names to the corresponding RNA resn names.
+distance_df[distance_df$don_resn == "DA", "don_resn"] <- "A"
+distance_df[distance_df$don_resn == "DC", "don_resn"] <- "C"
+distance_df[distance_df$don_resn == "DG", "don_resn"] <- "G"
+
+# Calculate samples sizes.
+sample_sizes <- distance_df %>%
+  summarise(n = n(), .by = c(acc_name_AOI, don_resn, type))
+
+# Create the plot.
+dist_plot <- distance_df %>% ggplot(aes(x=acc_name_AOI, y=don_acc_distance_AOI, fill=type)) +
+  geom_boxplot(alpha = 1, outlier.shape = NA, show.legend = FALSE) +
+  geom_point(position = position_jitterdodge(), size = 0.1, show.legend = FALSE) +
+  xlab("Acceptor") +
+  ylab(expression(paste("Distance (\uc5)"))) +
+  scale_fill_manual(values = custom_blues[2:4]) +
+  theme_bw(base_size = 10) +
+  theme(aspect.ratio = 1.5) +
+  facet_wrap( ~ don_resn, nrow = 1, scales = "free_x")
+
+# Write the plots.
+ggsave(snakemake@output[["dist"]], plot = dist_plot, width = 6.5,
+       height = 4.5, units = "in", scale = 1)
