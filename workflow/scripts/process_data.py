@@ -314,7 +314,7 @@ merged_df.loc[:, ~merged_df.columns.isin(['don_index_AOI', "acc_index_AOI", "eq_
     .apply(check_overlap_charge, include_groups=False))
 
 # Remove unnecessary columns and redundant rows from the merged data frame.
-drop_columns = ["don_index", "don_resi", "don_chain", "don_segi", "count_1", "count_2", "b-factor", "DOI", "don_can_NA",
+drop_columns = ["don_index", "don_resi", "don_chain", "don_segi", "count_1", "count_2", "DOI", "don_can_NA",
                 "acc_index", "acc_name", "acc_resn", "acc_resi", "acc_chain", "acc_segi", "don_acc_distance",
                 "h_acc_distance", "don_angle", "h_angle", "h_dihedral", "h_name", "AOI", "h_dihedral", "model", "PDB",
                 "eq_class_member", "acc_charge", "geom", "h_bond", "don_index_AOI", "don_resi_AOI", "don_chain_AOI",
