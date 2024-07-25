@@ -8,7 +8,7 @@ library(svglite)
 #### HEAVY ATOM DENSITY PLOTS ####
 
 # Creates data frames from the combined data.
-combined_df <- read.csv("../../data/process/combined.csv", header = TRUE, na.strings = "NaN")
+combined_df <- read.csv(snakemake@input[["combined"]], header = TRUE, na.strings = "NaN")
 
 # Specify custom colors.
 custom_greens <- RColorBrewer::brewer.pal(4, "Greens")
@@ -106,9 +106,9 @@ nuc_id_df$type <- factor(nuc_id_df$type, levels = c("No",
                                                     "Dual"))
 
 # Calculate samples sizes and merge into dataframe.
-nuc_id_df <- merge(nuc_id_df, summarise(nuc_id_df, n_resn = n(), 
+nuc_id_df <- merge(nuc_id_df, summarise(nuc_id_df, n_resn = n(),
                                         .by = c(don_resn)))
-nuc_id_df <- merge(nuc_id_df, summarise(nuc_id_df, n_resn_type = n(), 
+nuc_id_df <- merge(nuc_id_df, summarise(nuc_id_df, n_resn_type = n(),
                                         .by = c(don_resn, type)))
 
 # Only keep one row for each donor residue and donor type combination.
@@ -215,7 +215,7 @@ ggsave(snakemake@output[["acc_id"]], plot = acc_id_plot, width = 6.5,
 ### DISTANCE PLOT ###
 
 # Creates data frames from the distance data.
-distance_df <- read.csv("../../data/process/distances.csv", header = TRUE, na.strings = "NaN")
+distance_df <- read.csv(snakemake@input[["distances"]], header = TRUE, na.strings = "NaN")
 
 # Specify custom colors.
 custom_blues <- RColorBrewer::brewer.pal(4, "Blues")
@@ -245,8 +245,8 @@ sample_sizes <- distance_df %>%
 
 # Create the plot.
 dist_plot <- distance_df %>% ggplot(aes(x=acc_name_AOI, y=don_acc_distance_AOI, fill=type)) +
-  geom_boxplot(alpha = 1, outlier.shape = NA, show.legend = FALSE) +
-  geom_point(position = position_jitterdodge(), size = 0.1, show.legend = FALSE) +
+  geom_point(color = "darkgrey", position = position_jitterdodge(), size = 0, stroke = 0.2, show.legend = FALSE) +
+  geom_boxplot(alpha = 0.5, outlier.shape = NA, show.legend = FALSE) +
   xlab("Acceptor") +
   ylab(expression(paste("Distance (\uc5)"))) +
   scale_fill_manual(values = custom_blues[2:4]) +
