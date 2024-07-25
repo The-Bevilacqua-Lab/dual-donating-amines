@@ -217,9 +217,16 @@ ggsave(snakemake@output[["acc_id"]], plot = acc_id_plot, width = 6.5,
 # Creates data frames from the distance data.
 distance_df <- read.csv(snakemake@input[["distances"]], header = TRUE, na.strings = "NaN")
 
+# Order the acceptors of interest.
+distance_df$acc_name_AOI <- factor(distance_df$acc_name_AOI, levels = c("N1", "O2", "N3", "O6", "N7"))
+
 # Specify custom colors.
 custom_blues <- RColorBrewer::brewer.pal(4, "Blues")
 custom_oranges <- RColorBrewer::brewer.pal(4, "Oranges")
+
+# Only keep data where the nucleobase of the acceptor of interest has an average b-factor below the
+# distance_b_factor_cutoff specified in the config file.
+distance_df <- distance_df[which(distance_df$b.factor < snakemake@config[["distance_b_factor_cutoff"]]),]
 
 # Only keep distances that are greater than twice the standard H-O bond length
 # (Gilli G.; Gilli P. The Nature of the Hydrogen Bond. 2009) to remove
@@ -239,12 +246,13 @@ distance_df[distance_df$don_resn == "DA", "don_resn"] <- "A"
 distance_df[distance_df$don_resn == "DC", "don_resn"] <- "C"
 distance_df[distance_df$don_resn == "DG", "don_resn"] <- "G"
 
-# Calculate samples sizes.
-sample_sizes <- distance_df %>%
+# Calculate samples sizes of non-overlapping interactions.
+sample_sizes <- distance_df[which(distance_df$overlap == 0),] %>%
   summarise(n = n(), .by = c(acc_name_AOI, don_resn, type))
 
-# Create the plot.
-dist_plot <- distance_df %>% ggplot(aes(x=acc_name_AOI, y=don_acc_distance_AOI, fill=type)) +
+# Create the plot of non-overlapping interactions.
+dist_plot <- distance_df[which(distance_df$overlap == 0),] %>%
+  ggplot(aes(x=acc_name_AOI, y=don_acc_distance_AOI, fill=type)) +
   geom_point(color = "darkgrey", position = position_jitterdodge(), size = 0, stroke = 0.2, show.legend = FALSE) +
   geom_boxplot(alpha = 0.5, outlier.shape = NA, show.legend = FALSE) +
   xlab("Acceptor") +

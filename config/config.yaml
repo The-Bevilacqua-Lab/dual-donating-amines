@@ -20,7 +20,8 @@ h_ang_min: 140.0
 don_dist_max: 3.5
 don_ang_min: 100
 don_ang_max: 145
-b_factor_cutoff: 79.0
+general_b_factor_cutoff: 79.0
+distance_b_factor_cutoff: 10.0
 
 # What are the residue and atom names of the donors that are to be considered, categorized by how many hydrogens they
 # have?
