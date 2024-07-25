@@ -13,30 +13,34 @@ rule all:
         "data/plots/acc_id.png",
         "data/plots/dist.png"
 
-# rule collect_data:
-#     output:
-#         data = "data/collect_data/{eq_class_member}.csv"
-#     log:
-#         stdout = "misc/logs/collect_data/{eq_class_member}.stdout",
-#         stderr = "misc/logs/collect_data/{eq_class_member}.stderr"
-#     conda:
-#         "envs/general.yaml"
-#     script:
-#         "scripts/collect_data.py"
+rule collect_data:
+    output:
+        data = "data/collect_data/{eq_class_member}.csv"
+    log:
+        stdout = "misc/logs/collect_data/{eq_class_member}.stdout",
+        stderr = "misc/logs/collect_data/{eq_class_member}.stderr"
+    benchmark:
+        "misc/benchmark/collect_data_{eq_class_member}.tsv"
+    conda:
+        "envs/general.yaml"
+    script:
+        "scripts/collect_data.py"
 
-# rule process_data:
-#     input:
-#         data = expand("data/collect_data/{eq_class_member}.csv", eq_class_member=eq_class_members)
-#     output:
-#         combined = "data/process/combined.csv",
-#         distances = "data/process/distances.csv"
-#     log:
-#         stdout = "misc/logs/process_data/output.stdout",
-#         stderr = "misc/logs/process_data/error.stderr"
-#     conda:
-#         "envs/general.yaml"
-#     script:
-#         "scripts/process_data.py"
+rule process_data:
+    input:
+        data = expand("data/collect_data/{eq_class_member}.csv", eq_class_member=eq_class_members)
+    output:
+        combined = "data/process/combined.csv",
+        distances = "data/process/distances.csv"
+    log:
+        stdout = "misc/logs/process_data/output.stdout",
+        stderr = "misc/logs/process_data/error.stderr"
+    benchmark:
+        "misc/benchmark/process_data.tsv"
+    conda:
+        "envs/general.yaml"
+    script:
+        "scripts/process_data.py"
 
 rule create_plots:
     input:
