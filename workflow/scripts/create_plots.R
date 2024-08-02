@@ -262,6 +262,9 @@ dist_plot <- distance_df[which(distance_df$overlap == 0),] %>%
   theme(aspect.ratio = 1.5) +
   facet_wrap( ~ don_resn, nrow = 1, scales = "free_x")
 
+# Remove the default Rplots.pdf generated.
+file.remove('Rplots.pdf')
+
 # Write the plots.
 ggsave(snakemake@output[["dist"]], plot = dist_plot, width = 6.5,
        height = 4.5, units = "in", scale = 1)
