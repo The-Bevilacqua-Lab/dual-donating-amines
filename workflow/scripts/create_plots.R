@@ -1,14 +1,54 @@
 library(ggplot2)
+library(viridis)
 library(gridExtra)
 library(dplyr)
 library(tidyr)
 library(tidytext)
 library(svglite)
 
-#### HEAVY ATOM DENSITY PLOTS ####
+#### H-BONDING MEASUREMENT PLOTS ####
 
 # Creates data frames from the combined data.
-combined_df <- read.csv(snakemake@input[["combined"]], header = TRUE, na.strings = "NaN")
+combined_df <- read.csv(snakemake@input[["combined"]], header = TRUE,
+                        na.strings = "NaN")
+
+# Extract the rows from the combined data frame relevant for these plots.
+heatmap_df <- combined_df %>% filter(geom == 1) %>%
+  distinct(don_index, acc_index, eq_class_member, .keep_all = TRUE)
+
+# Find the maximum fill value corresponding to the general region below the
+# h_dist_max cutoff specified in the config file.
+h_bond_region <- heatmap_df[(heatmap_df$h_acc_distance <=
+                               snakemake@config[["h_dist_max"]]),] %>%
+  ggplot(aes(x = h_angle, y = h_acc_distance)) +
+  geom_bin_2d(binwidth = c(120/100, 2.0/100))
+max_value <- max(ggplot_build(h_bond_region)$data[[1]]$value)
+
+# Create the plot.
+heatmap <- heatmap_df %>% ggplot(aes(x = h_angle, y = h_acc_distance)) +
+  geom_bin_2d(binwidth = c(120/100, 2.0/100)) +
+  geom_segment(x=140, y=1.0, xend=140, yend=2.5, linewidth=0.4, linetype=2,
+               colour="Red") +
+  geom_segment(x=140, y=2.5, xend=180, yend=2.5, linewidth=0.4, linetype=2,
+               colour="Red") +
+  geom_segment(x=180, y=1.0, xend=180, yend=2.5, linewidth=0.4, linetype=2,
+               colour="Red") +
+  geom_segment(x=140, y=1.0, xend=180, yend=1.0, linewidth=0.4, linetype=2,
+               colour="Red") +
+  scale_fill_viridis(limits = c(1, max_value), name = "Count") +
+  xlab(expression(paste("Angle (\ub0)"))) +
+  ylab(expression(paste("Distance (\uc5)"))) +
+  coord_fixed(ratio = 120/2.0, xlim = c(60, 180), ylim = c(1.0, 3.0)) +
+  scale_x_continuous(breaks = seq(60, 180, 30)) +
+  scale_y_continuous(breaks = seq(1.0, 3.0, 0.4)) +
+  theme_classic(base_size = 10) +
+  theme(legend.key.width = unit(0.125, "in"))
+
+# Write the plot.
+ggsave(snakemake@output[["heatmap"]], plot = heatmap, width = 3.25,
+       height = 3.25, units = "in", scale = 1)
+
+#### HEAVY ATOM DENSITY PLOTS ####
 
 # Specify custom colors.
 custom_greens <- RColorBrewer::brewer.pal(4, "Greens")
