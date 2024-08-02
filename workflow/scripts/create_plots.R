@@ -154,14 +154,17 @@ nuc_id_df <- merge(nuc_id_df, summarise(nuc_id_df, n_resn_type = n(),
 # Only keep one row for each donor residue and donor type combination.
 nuc_id_df <- nuc_id_df %>% distinct(don_resn, type, .keep_all = TRUE)
 
+# Add a column that specifies the percent occurrence for each category.
+nuc_id_df <-nuc_id_df %>% mutate(occurance = n_resn_type/sum(n_resn_type)*100)
+
 # Create the plot.
-nuc_id_plot <- nuc_id_df %>% ggplot(aes(x=type, y=n_resn_type, fill=type)) +
+nuc_id_plot <- nuc_id_df %>% ggplot(aes(x=type, y=occurance, fill=type)) +
   geom_col(width = 0.8, color = "black", show.legend = FALSE) +
-  geom_text(aes(x=type, y=n_resn_type+max(n_resn_type)*0.05,
-                label=paste(round(n_resn_type/n_resn*100, digits = 1),
+  geom_text(aes(x=type, y=occurance+max(occurance)*0.05,
+                label=paste(round(occurance, digits = 1),
                             "%", sep = "")), inherit.aes = FALSE) +
   xlab("Type of Amine H-Bonding") +
-  ylab(expression(paste("Count"))) +
+  ylab(expression(paste("Occurrence (%)"))) +
   scale_fill_manual(values = custom_greens[2:4]) +
   theme_bw(base_size = 10) +
   theme(aspect.ratio = 1.5) +
@@ -230,7 +233,7 @@ acc_id_1_plot <- acc_id_df %>% filter(type == 1) %>%
   theme_bw(base_size = 10) +
   theme(aspect.ratio = 1.5) +
   theme(plot.title = element_text(hjust = 0.5),
-        axis.text.x = element_text(angle = 90, vjust = 0.5)) +
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
   facet_wrap( ~ don_resn, nrow = 1, scales = "free")
 acc_id_2_plot <- acc_id_df %>% filter(type == 2) %>%
   ggplot(aes(x=reorder_within(acc_resn_name, n_resn_type, don_resn),
@@ -244,7 +247,7 @@ acc_id_2_plot <- acc_id_df %>% filter(type == 2) %>%
   theme_bw(base_size = 10) +
   theme(aspect.ratio = 1.5) +
   theme(plot.title = element_text(hjust = 0.5),
-        axis.text.x = element_text(angle = 90, vjust = 0.5)) +
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
   facet_wrap( ~ don_resn, nrow = 1, scales = "free")
 acc_id_plot <- grid.arrange(acc_id_1_plot, acc_id_2_plot, nrow = 2)
 
