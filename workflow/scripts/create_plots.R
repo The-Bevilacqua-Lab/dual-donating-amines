@@ -296,8 +296,12 @@ sample_sizes <- distance_df[which(distance_df$overlap == 0),] %>%
 # Create the plot of non-overlapping interactions.
 dist_plot <- distance_df[which(distance_df$overlap == 0),] %>%
   ggplot(aes(x=acc_name_AOI, y=don_acc_distance_AOI, fill=type)) +
-  geom_point(color = "darkgrey", position = position_jitterdodge(), size = 0, stroke = 0.2, show.legend = FALSE) +
+  geom_point(color = "darkgrey", position = position_jitterdodge(), size = 0, stroke = 0.3, show.legend = FALSE) +
   geom_boxplot(alpha = 0.5, outlier.shape = NA, show.legend = FALSE) +
+  geom_text(data = sample_sizes,
+            aes(x=acc_name_AOI, y=snakemake@config[["don_dist_max"]]+0.1, group=type,
+                label = prettyNum(n, big.mark = ",")),
+            size = 8, size.unit = "pt", vjust = 1, angle = 30, position = position_dodge(width = 0.9)) +
   xlab("Acceptor") +
   ylab(expression(paste("Distance (\uc5)"))) +
   scale_fill_manual(values = custom_blues[2:4]) +
