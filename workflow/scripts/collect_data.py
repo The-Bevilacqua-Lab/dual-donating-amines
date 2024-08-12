@@ -14,7 +14,6 @@ import os
 import csv
 import subprocess
 import time
-import copy
 from pymol import cmd
 from pymol import stored
 import numpy as np
