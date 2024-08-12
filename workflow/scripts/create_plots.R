@@ -13,19 +13,19 @@ combined_df <- read.csv(snakemake@input[["combined"]], header = TRUE,
                         na.strings = "NaN")
 
 # Extract the rows from the combined data frame relevant for these plots.
-heatmap_df <- combined_df %>% filter(geom == 1) %>%
+pairs_df <- combined_df %>%
+  filter(geom == 1 & DOI == 1 & don_resn %in% c("A", "C", "G")) %>%
   distinct(don_index, acc_index, eq_class_member, .keep_all = TRUE)
 
 # Find the maximum fill value corresponding to the general region below the
 # h_dist_max cutoff specified in the config file.
-h_bond_region <- heatmap_df[(heatmap_df$h_acc_distance <=
-                               snakemake@config[["h_dist_max"]]),] %>%
+h_bond_region <- pairs_df[(pairs_df$h_acc_distance <= snakemake@config[["h_dist_max"]]),] %>%
   ggplot(aes(x = h_angle, y = h_acc_distance)) +
   geom_bin_2d(binwidth = c(120/100, 2.0/100))
 max_value <- max(ggplot_build(h_bond_region)$data[[1]]$value)
 
 # Create the plot.
-heatmap <- heatmap_df %>% ggplot(aes(x = h_angle, y = h_acc_distance)) +
+pairs <- pairs_df %>% ggplot(aes(x = h_angle, y = h_acc_distance)) +
   geom_bin_2d(binwidth = c(120/100, 2.0/100)) +
   geom_segment(x=140, y=1.0, xend=140, yend=2.5, linewidth=0.4, linetype=2,
                colour="Red") +
@@ -45,7 +45,7 @@ heatmap <- heatmap_df %>% ggplot(aes(x = h_angle, y = h_acc_distance)) +
   theme(legend.key.width = unit(0.125, "in"))
 
 # Write the plot.
-ggsave(snakemake@output[["heatmap"]], plot = heatmap, width = 3.25,
+ggsave(snakemake@output[["pairs"]], plot = pairs, width = 3.25,
        height = 3.25, units = "in", scale = 1)
 
 #### HEAVY ATOM DENSITY PLOTS ####
@@ -54,7 +54,8 @@ ggsave(snakemake@output[["heatmap"]], plot = heatmap, width = 3.25,
 custom_greens <- RColorBrewer::brewer.pal(4, "Greens")
 
 # Extract the rows from the combined data frame relevant for these plots.
-density_df <- combined_df %>% filter(DOI == 1) %>%
+density_df <- combined_df %>%
+  filter(DOI == 1 & don_resn %in% c("A", "C", "G")) %>%
   distinct(don_index, eq_class_member, .keep_all = TRUE)
 
 # Convert donor type from numeric to string.
@@ -64,11 +65,6 @@ density_df[density_df$type == 2, "type"] <- "Dual"
 density_df$type <- factor(density_df$type, levels = c("No",
                                                       "Single",
                                                       "Dual"))
-
-# Convert DNA resn names to the corresponding RNA resn names.
-density_df[density_df$don_resn == "DA", "don_resn"] <- "A"
-density_df[density_df$don_resn == "DC", "don_resn"] <- "C"
-density_df[density_df$don_resn == "DG", "don_resn"] <- "G"
 
 # Add density columns.
 volume_1 <- (4/3)*pi*snakemake@config[["count_dist_1"]]**3
@@ -129,13 +125,9 @@ ggsave(snakemake@output[["density"]], plot = density_plot, width = 6.5,
 #### NUCLEOBASE IDENTITY PLOT ####
 
 # Extract the rows from the combined data frame relevant for these plots.
-nuc_id_df <- combined_df %>% filter(DOI == 1) %>%
+nuc_id_df <- combined_df %>%
+  filter(DOI == 1 & don_resn %in% c("A", "C", "G")) %>%
   distinct(don_index, eq_class_member, .keep_all = TRUE)
-
-# Convert DNA donor resn names to the corresponding RNA resn names.
-nuc_id_df[nuc_id_df$don_resn == "DA", "don_resn"] <- "A"
-nuc_id_df[nuc_id_df$don_resn == "DC", "don_resn"] <- "C"
-nuc_id_df[nuc_id_df$don_resn == "DG", "don_resn"] <- "G"
 
 # Convert donor type from numeric to string.
 nuc_id_df[nuc_id_df$type == 0, "type"] <- "No"
@@ -177,22 +169,12 @@ ggsave(snakemake@output[["nuc_id"]], plot = nuc_id_plot, width = 6.5,
 #### ACCEPTOR IDENTITY PLOT ####
 
 # Extract the rows from the combined data frame relevant for these plots.
-acc_id_df <- combined_df %>% filter(DOI == 1 & h_bond == 1) %>%
+acc_id_df <- combined_df %>%
+  filter(DOI == 1 & h_bond == 1 & don_resn %in% c("A", "C", "G")) %>%
   distinct(don_index, eq_class_member, .keep_all = TRUE)
 
 # Convert column to factor.
 acc_id_df$type <- factor(acc_id_df$type, levels = c(0, 1, 2))
-
-# Convert DNA donor resn names to the corresponding RNA resn names.
-acc_id_df[acc_id_df$don_resn == "DA", "don_resn"] <- "A"
-acc_id_df[acc_id_df$don_resn == "DC", "don_resn"] <- "C"
-acc_id_df[acc_id_df$don_resn == "DG", "don_resn"] <- "G"
-
-# Convert DNA acceptor resn names to the corresponding RNA resn names.
-acc_id_df[acc_id_df$acc_resn == "DA", "acc_resn"] <- "A"
-acc_id_df[acc_id_df$acc_resn == "DC", "acc_resn"] <- "C"
-acc_id_df[acc_id_df$acc_resn == "DG", "acc_resn"] <- "G"
-acc_id_df[acc_id_df$acc_resn == "DT", "acc_resn"] <- "U"
 
 # Create a column with values that specify both the acceptor resn and name.
 acc_id_df <-acc_id_df %>% mutate(acc_resn_name = paste(acc_resn, "(", acc_name,
@@ -283,11 +265,6 @@ distance_df[distance_df$type == 2, "type"] <- "Dual"
 distance_df$type <- factor(distance_df$type, levels = c("No",
                                                       "Single",
                                                       "Dual"))
-
-# Convert DNA resn names to the corresponding RNA resn names.
-distance_df[distance_df$don_resn == "DA", "don_resn"] <- "A"
-distance_df[distance_df$don_resn == "DC", "don_resn"] <- "C"
-distance_df[distance_df$don_resn == "DG", "don_resn"] <- "G"
 
 # Calculate samples sizes of non-overlapping interactions.
 sample_sizes <- distance_df[which(distance_df$overlap == 0),] %>%
