@@ -84,8 +84,14 @@ if snakemake.config["commit_hash"]:
     if len(repo_changes) == 0:
         commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"],
                                               cwd=os.path.dirname(os.path.realpath(__file__))).decode('ascii').strip()
+    # Print the error message, close files, reset stdout and stderr, and exit.
     else:
-        error(f"Error: Uncommitted changes have been made to the repo.")
+        print("Error: Uncommitted changes have been made to the repo.")
+        stdout_file.close()
+        stderr_file.close()
+        sys.stdout = stdout
+        sys.stderr = stderr
+        sys.exit(1)
 
 # Collect the equivalence class name, PDB ID, model info, and chain info from the string describing the equivalence
 # class member.
