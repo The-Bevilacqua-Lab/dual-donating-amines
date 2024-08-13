@@ -174,12 +174,15 @@ mem_rna_chains = " ".join(["chain " + chain for chain in chain_list])
 # Retrieve the structure that contains the equivalence class member RNA chains.
 cmd.fetch(pdb_id)
 
-# If the structure contains more than one model (or "state" in PyMOL), create a new PyMOL object of just that model.
+# If the structure contains more than one model (or "state" in PyMOL), create a new PyMOL object of just that model. If
+# only a single model exists, change the name of the object to identify the model number.
 if cmd.count_states(pdb_id) > 1:
     cmd.create(f'{pdb_id}_state_{model}', selection=pdb_id,
                source_state=model,
                target_state=1)
     cmd.delete(pdb_id)
+else:
+    cmd.set_name(pdb_id, f'{pdb_id}_state_{model}')
 
 # Remove atoms representing alternative conformations.
 remove_status = remove_alt_conf.remove(eq_class_mem_id)
