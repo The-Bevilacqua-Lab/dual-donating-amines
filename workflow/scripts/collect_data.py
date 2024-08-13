@@ -214,7 +214,7 @@ cmd.iterate(f'({mem_rna_chains}) and ({donors_of_interest_str})',
 # donors of interest. Values of one for the DOI and don_can_NA keys indicate that the donor atom is a donor of interest
 # and belongs to a canonical DNA or RNA residue, respectively.
 don_info_dict = {"don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "don_segi": [],
-                 "count_1": [], "count_2": [], "b-factor": [], "DOI": [], "don_can_NA": []}
+                 "count_1": [], "count_2": [], "b_factor": [], "DOI": [], "don_can_NA": []}
 for donor in stored.donor_list:
     # Count the number of heavy atoms belonging to organic molecules or polymers near the donor. Exclude the nucleobase
     # of the donor.

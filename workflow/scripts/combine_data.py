@@ -16,7 +16,7 @@ sys.stderr = stderr_file
 
 # Initialize the combined dataframe.
 combined_df = pd.DataFrame(columns=['don_index', 'don_name', 'don_resn', 'don_resi', 'don_chain', 'don_segi', 'count_1',
-                                    'count_2', 'b-factor', 'DOI', 'don_can_NA', 'acc_index', 'acc_name', 'acc_resn',
+                                    'count_2', 'b_factor', 'DOI', 'don_can_NA', 'acc_index', 'acc_name', 'acc_resn',
                                     'acc_resi', 'acc_chain', 'acc_segi', 'don_acc_distance', 'h_acc_distance',
                                     'don_angle', 'h_angle', 'h_dihedral', 'h_name', 'AOI', 'model', 'PDB',
                                     'eq_class_member', 'h_bond', 'type', 'acc_charge', 'geom'])
