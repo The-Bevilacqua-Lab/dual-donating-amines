@@ -251,7 +251,7 @@ custom_oranges <- RColorBrewer::brewer.pal(4, "Oranges")
 
 # Only keep data where the nucleobase of the acceptor of interest has an average b-factor below the
 # distance_b_factor_cutoff specified in the config file.
-distance_df <- distance_df[which(distance_df$b.factor < snakemake@config[["distance_b_factor_cutoff"]]),]
+distance_df <- distance_df[which(distance_df$b_factor < snakemake@config[["distance_b_factor_cutoff"]]),]
 
 # Only keep distances that are greater than twice the standard H-O bond length
 # (Gilli G.; Gilli P. The Nature of the Hydrogen Bond. 2009) to remove
