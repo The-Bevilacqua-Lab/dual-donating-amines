@@ -75,6 +75,10 @@ acceptors_of_interest:
 # What residues are included when considering H-bonds pertaining to acceptors of interest?
 included_residues: ['A', 'C', 'G', 'U', 'DA', 'DC', 'DG', 'DT']
 
+# What donor and acceptor should be considered for the review_amines rule?
+review_donor: 'A.N6'
+review_acceptor: "N.O2'"
+
 # What criteria are to be used for the identify_candidates rule?
 res_max: 45
 amine_type: 2
