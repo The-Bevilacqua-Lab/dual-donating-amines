@@ -37,7 +37,6 @@ with open(snakemake.output.script, "w") as file:
         else:
             file.write('\n]\n\n')
     file.write("# Establish initial settings.\n")
-    file.write("cmd.set('scene_animation_duration', '0.5')\n")
     file.write("cmd.set('label_size', '-0.7')\n")
     file.write("cmd.set('label_font_id', '7')\n")
     file.write("cmd.set('label_color', 'white')\n")
