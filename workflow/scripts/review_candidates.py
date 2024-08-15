@@ -72,11 +72,12 @@ with open(snakemake.output.script, "w") as file:
     file.write("# Advance to the candidate matching the provided number designating its position in the candidate "
                "list.\n")
     file.write("def goto(num):\n")
-    file.write("    global current_pdb, current_model\n")
+    file.write("    global current_pdb, current_model, can_num\n")
     file.write("    num = int(num)\n")
     file.write("    if num < 1:\n")
     file.write("        print('The candidate number must be 1 or greater.')\n")
     file.write("        return None\n")
+    file.write("    can_num = num\n")
     file.write("    target_pdb = candidates[num-1][0]\n")
     file.write("    target_model = candidates[num-1][1]\n")
     file.write("    check_pdb_model(current_pdb, current_model, target_pdb, target_model)\n")
