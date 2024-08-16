@@ -180,19 +180,25 @@ acc_id_df$type <- factor(acc_id_df$type, levels = c(0, 1, 2))
 acc_id_df <-acc_id_df %>% mutate(acc_resn_name = paste(acc_resn, "(", acc_name,
                                                        ")", sep = ""))
 
-# Combine values in the acc_resn_name column that involve common backbone atoms.
-acc_id_df[acc_id_df$acc_resn_name == "A(OP1)", "acc_resn_name"] <- "N(OP1)"
-acc_id_df[acc_id_df$acc_resn_name == "A(OP2)", "acc_resn_name"] <- "N(OP2)"
-acc_id_df[acc_id_df$acc_resn_name == "C(OP1)", "acc_resn_name"] <- "N(OP1)"
-acc_id_df[acc_id_df$acc_resn_name == "C(OP2)", "acc_resn_name"] <- "N(OP2)"
-acc_id_df[acc_id_df$acc_resn_name == "G(OP1)", "acc_resn_name"] <- "N(OP1)"
-acc_id_df[acc_id_df$acc_resn_name == "G(OP2)", "acc_resn_name"] <- "N(OP2)"
-acc_id_df[acc_id_df$acc_resn_name == "U(OP1)", "acc_resn_name"] <- "N(OP1)"
-acc_id_df[acc_id_df$acc_resn_name == "U(OP2)", "acc_resn_name"] <- "N(OP2)"
-acc_id_df[acc_id_df$acc_resn_name == "A(O2')", "acc_resn_name"] <- "N(O2')"
-acc_id_df[acc_id_df$acc_resn_name == "C(O2')", "acc_resn_name"] <- "N(O2')"
-acc_id_df[acc_id_df$acc_resn_name == "G(O2')", "acc_resn_name"] <- "N(O2')"
-acc_id_df[acc_id_df$acc_resn_name == "U(O2')", "acc_resn_name"] <- "N(O2')"
+# Combine values in the acc_resn_name column that involve common backbone acceptor atoms for RNA.
+rna <- c("A", "C", "G", "U")
+acc_id_df[acc_id_df$acc_resn %in% rna & acc_id_df$acc_name %in% c("OP1", "OP2"), "acc_resn_name"] <- "N(NPO)"
+acc_id_df[acc_id_df$acc_resn %in% rna & acc_id_df$acc_name == "O2'", "acc_resn_name"] <- "N(O2')"
+acc_id_df[acc_id_df$acc_resn %in% rna & acc_id_df$acc_name == "O3'", "acc_resn_name"] <- "N(O3')"
+acc_id_df[acc_id_df$acc_resn %in% rna & acc_id_df$acc_name == "O4'", "acc_resn_name"] <- "N(O4')"
+acc_id_df[acc_id_df$acc_resn %in% rna & acc_id_df$acc_name == "O5'", "acc_resn_name"] <- "N(O5')"
+
+# Combine values in the acc_resn_name column that involve common backbone acceptor atoms for DNA.
+dna <- c("DA", "DC", "DG", "DT")
+acc_id_df[acc_id_df$acc_resn %in% dna & acc_id_df$acc_name %in% c("OP1", "OP2"), "acc_resn_name"] <- "DN(NPO)"
+acc_id_df[acc_id_df$acc_resn %in% dna & acc_id_df$acc_name == "O3'", "acc_resn_name"] <- "DN(O3')"
+acc_id_df[acc_id_df$acc_resn %in% dna & acc_id_df$acc_name == "O4'", "acc_resn_name"] <- "DN(O4')"
+acc_id_df[acc_id_df$acc_resn %in% dna & acc_id_df$acc_name == "O5'", "acc_resn_name"] <- "DN(O5')"
+
+# Combine values in the acc_resn_name column that involve common backbone acceptor atoms for amino acids.
+amino_acids <- c("ALA", "ASP", "ASN", "ARG", "CYS", "GLU", "GLN", "GLY", "HIS", "ILE", "LEU", "LYS", "MET", "PHE",
+                 "PRO", "SER", "THR", "TRP", "TYR", "VAL")
+acc_id_df[acc_id_df$acc_resn %in% amino_acids & acc_id_df$acc_name == "O", "acc_resn_name"] <- "AA(O)"
 
 # Calculate samples sizes and merge into data frame.
 acc_id_df <- merge(acc_id_df, summarise(acc_id_df, n_resn_type = n(),
