@@ -171,7 +171,7 @@ ggsave(snakemake@output[["nuc_id"]], plot = nuc_id_plot, width = 6.5,
 # Extract the rows from the combined data frame relevant for these plots.
 acc_id_df <- combined_df %>%
   filter(DOI == 1 & h_bond == 1 & don_resn %in% c("A", "C", "G")) %>%
-  distinct(don_index, eq_class_member, .keep_all = TRUE)
+  distinct(don_index, acc_index, eq_class_member, .keep_all = TRUE)
 
 # Convert column to factor.
 acc_id_df$type <- factor(acc_id_df$type, levels = c(0, 1, 2))
