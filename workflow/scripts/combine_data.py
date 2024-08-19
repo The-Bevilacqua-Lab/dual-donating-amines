@@ -19,7 +19,7 @@ combined_df = pd.DataFrame(columns=['don_index', 'don_name', 'don_resn', 'don_re
                                     'count_2', 'b_factor', 'DOI', 'don_can_NA', 'acc_index', 'acc_name', 'acc_resn',
                                     'acc_resi', 'acc_chain', 'acc_segi', 'don_acc_distance', 'h_acc_distance',
                                     'don_angle', 'h_angle', 'h_dihedral', 'h_name', 'AOI', 'model', 'PDB',
-                                    'eq_class_member', 'h_bond', 'type', 'acc_charge', 'geom'])
+                                    'eq_class_member', 'h_bond', 'type', 'acc_charge', 'geom', 'base_pair'])
 
 # Combine the dataframes from the different equivalence class members. Do not incorporate empty dataframes.
 for idx in range(len(snakemake.input.data)):
@@ -34,100 +34,6 @@ for idx in range(len(snakemake.input.data)):
     except (FileNotFoundError, pd.errors.EmptyDataError):
         continue
 combined_df = combined_df.reset_index(drop=True)
-
-# Create dataframes of specific H-bonding interactions.
-n6_o4_h_bond = (combined_df[
-                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
-                     .eq(["N6", "A", "O4", "U", 1]).all(axis='columns')) |
-                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
-                     .eq(["N6", "DA", "O4", "U", 1]).all(axis='columns')) |
-                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
-                     .eq(["N6", "A", "O4", "DT", 1]).all(axis='columns')) |
-                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
-                     .eq(["N6", "DA", "O4", "DT", 1]).all(axis='columns'))
-                ].rename(columns=lambda col: f'{col}_N6_O4'))
-n3_n1_h_bond = (combined_df[
-                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
-                     .eq(["N3", "U", "N1", "A", 1]).all(axis='columns')) |
-                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
-                     .eq(["N3", "DT", "N1", "A", 1]).all(axis='columns')) |
-                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
-                     .eq(["N3", "U", "N1", "DA", 1]).all(axis='columns')) |
-                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
-                     .eq(["N3", "DT", "N1", "DA", 1]).all(axis='columns'))
-                ].rename(columns=lambda col: f'{col}_N3_N1'))
-n4_o6_h_bond = (combined_df[
-                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
-                     .eq(["N4", "C", "O6", "G", 1]).all(axis='columns')) |
-                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
-                     .eq(["N4", "DC", "O6", "G", 1]).all(axis='columns')) |
-                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
-                     .eq(["N4", "C", "O6", "DG", 1]).all(axis='columns')) |
-                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
-                     .eq(["N4", "DC", "O6", "DG", 1]).all(axis='columns'))
-                ].rename(columns=lambda col: f'{col}_N4_O6'))
-n1_n3_h_bond = (combined_df[
-                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
-                     .eq(["N1", "G", "N3", "C", 1]).all(axis='columns')) |
-                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
-                     .eq(["N1", "DG", "N3", "C", 1]).all(axis='columns')) |
-                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
-                     .eq(["N1", "G", "N3", "DC", 1]).all(axis='columns')) |
-                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
-                     .eq(["N1", "DG", "N3", "DC", 1]).all(axis='columns'))
-                ].rename(columns=lambda col: f'{col}_N1_N3'))
-n2_o2_h_bond = (combined_df[
-                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
-                     .eq(["N2", "G", "O2", "C", 1]).all(axis='columns')) |
-                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
-                     .eq(["N2", "DG", "O2", "C", 1]).all(axis='columns')) |
-                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
-                     .eq(["N2", "G", "O2", "DC", 1]).all(axis='columns')) |
-                    (combined_df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
-                     .eq(["N2", "DG", "O2", "DC", 1]).all(axis='columns'))
-                ].rename(columns=lambda col: f'{col}_N2_O2'))
-
-# Prepare a dataframe of nucleobases containing a donor of interest and involved in a canonical base pair.
-# AU base pair
-base_pair_df = (n6_o4_h_bond[n6_o4_h_bond["DOI_N6_O4"] == 1]
-                .merge(n3_n1_h_bond,
-                       left_on=["don_resn_N6_O4", "don_resi_N6_O4", "don_chain_N6_O4", "acc_resn_N6_O4",
-                                "acc_resi_N6_O4", "acc_chain_N6_O4"],
-                       right_on=["acc_resn_N3_N1", "acc_resi_N3_N1", "acc_chain_N3_N1", "don_resn_N3_N1",
-                                 "don_resi_N3_N1", "don_chain_N3_N1"], how='inner')
-                .rename(columns={"don_index_N6_O4": "don_index", "eq_class_member_N6_O4": "eq_class_member"})
-                .assign(base_pair="AU").loc[:, ["don_index", "eq_class_member", "base_pair"]])
-# CG base pair
-base_pair_df = pd.concat([base_pair_df,
-                          (n4_o6_h_bond[n4_o6_h_bond["DOI_N4_O6"] == 1]
-                           .merge(n1_n3_h_bond,
-                                  left_on=["don_resn_N4_O6", "don_resi_N4_O6", "don_chain_N4_O6", "acc_resn_N4_O6",
-                                           "acc_resi_N4_O6", "acc_chain_N4_O6"],
-                                  right_on=["acc_resn_N1_N3", "acc_resi_N1_N3", "acc_chain_N1_N3", "don_resn_N1_N3",
-                                            "don_resi_N1_N3", "don_chain_N1_N3"], how='inner')
-                           .merge(n2_o2_h_bond,
-                                  left_on=["don_resn_N4_O6", "don_resi_N4_O6", "don_chain_N4_O6", "acc_resn_N4_O6",
-                                           "acc_resi_N4_O6", "acc_chain_N4_O6"],
-                                  right_on=["acc_resn_N2_O2", "acc_resi_N2_O2", "acc_chain_N2_O2", "don_resn_N2_O2",
-                                            "don_resi_N2_O2", "don_chain_N2_O2"], how='inner')
-                           .rename(columns={"don_index_N4_O6": "don_index", "eq_class_member_N4_O6": "eq_class_member"})
-                           .assign(base_pair="CG").loc[:, ["don_index", "eq_class_member", "base_pair"]])])
-# GC base pair
-base_pair_df = pd.concat([base_pair_df,
-                          (n2_o2_h_bond[n2_o2_h_bond["DOI_N2_O2"] == 1]
-                           .merge(n1_n3_h_bond,
-                                  left_on=["don_resn_N2_O2", "don_resi_N2_O2", "don_chain_N2_O2", "acc_resn_N2_O2",
-                                           "acc_resi_N2_O2", "acc_chain_N2_O2"],
-                                  right_on=["don_resn_N1_N3", "don_resi_N1_N3", "don_chain_N1_N3", "acc_resn_N1_N3",
-                                            "acc_resi_N1_N3", "acc_chain_N1_N3"], how='inner')
-                           .merge(n4_o6_h_bond,
-                                  left_on=["don_resn_N2_O2", "don_resi_N2_O2", "don_chain_N2_O2", "acc_resn_N2_O2",
-                                           "acc_resi_N2_O2", "acc_chain_N2_O2"],
-                                  right_on=["acc_resn_N4_O6", "acc_resi_N4_O6", "acc_chain_N4_O6", "don_resn_N4_O6",
-                                            "don_resi_N4_O6", "don_chain_N4_O6"], how='inner')
-                           .rename(columns={"don_index_N2_O2": "don_index", "eq_class_member_N2_O2": "eq_class_member"})
-                           .assign(base_pair="GC").loc[:, ["don_index", "eq_class_member", "base_pair"]])])
-combined_df = combined_df.merge(base_pair_df, how='outer')
 
 # Write the processed and combined data to a csv file.
 combined_df.to_csv(snakemake.output.combined, index=False, na_rep='NaN')
