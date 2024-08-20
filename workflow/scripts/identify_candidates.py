@@ -3,8 +3,11 @@ This script identifies candidates that may be suitable for wet-lab experiments.
 """
 
 import sys
+import os
+import csv
+import subprocess
+from datetime import datetime
 import pandas as pd
-import residue_library
 
 # Redirect stdout and stderr to log files.
 stdout = sys.stdout
@@ -13,6 +16,31 @@ stdout_file = open(snakemake.log.stdout, mode='w')
 stderr_file = open(snakemake.log.stderr, mode='w')
 sys.stdout = stdout_file
 sys.stderr = stderr_file
+
+# If commit_hash is set to true in the Snakemake configuration file, check if any changes have been made to the repo and
+# get the hash of the current git commit. If uncommitted changes have been made to anything other than files listed in
+# the acceptable_changes variable defined below, print an error message and exit.
+repo_changes = []
+commit_hash = ""
+if snakemake.config["commit_hash"]:
+    repo_changes = list(subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"],
+                                                cwd=os.path.dirname(os.path.realpath(__file__)))
+                        .decode('ascii').strip().split("\n"))
+    acceptable_changes = ['config/config.yaml', snakemake.config["rep_set_file"], snakemake.config["add_res_file"]]
+    for file in repo_changes:
+        if file.split(' ')[-1] in acceptable_changes:
+            repo_changes.remove(file)
+    if len(repo_changes) == 0:
+        commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"],
+                                              cwd=os.path.dirname(os.path.realpath(__file__))).decode('ascii').strip()
+    # Print the error message, close files, reset stdout and stderr, and exit.
+    else:
+        print("Error: Uncommitted changes have been made to the repo.")
+        stdout_file.close()
+        stderr_file.close()
+        sys.stdout = stdout
+        sys.stderr = stderr
+        sys.exit(1)
 
 
 # Define a function to determine whether a donor of interest donates to any residues not included in the allowed_acc
@@ -75,8 +103,14 @@ for idx in range(len(snakemake.input.data)):
     except (FileNotFoundError, pd.errors.EmptyDataError):
         continue
 
-# Write the merged data frame to a csv file.
-candidate_df.to_csv(snakemake.output.candidates, index=False, na_rep='NaN')
+# Write the candidate data frame to a csv file.
+with open(snakemake.output.data, "w") as csv_file:
+    writer = csv.writer(csv_file)
+    if commit_hash:
+        writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
+    writer.writerow([f"# representative set file: {snakemake.config['rep_set_file']}"])
+    writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
+candidate_df.to_csv(snakemake.output.candidates, index=False, mode='a', na_rep='NaN')
 
 # Close files and reset stdout and stderr.
 stdout_file.close()

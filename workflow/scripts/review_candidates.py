@@ -2,8 +2,10 @@
 Create a script that is to be used with PyMOL to review identified candidates.
 """
 
-import subprocess
 import sys
+import os
+import subprocess
+from datetime import datetime
 import pandas as pd
 
 # Redirect stdout and stderr to log files.
@@ -13,6 +15,31 @@ stdout_file = open(snakemake.log.stdout, mode='w')
 stderr_file = open(snakemake.log.stderr, mode='w')
 sys.stdout = stdout_file
 sys.stderr = stderr_file
+
+# If commit_hash is set to true in the Snakemake configuration file, check if any changes have been made to the repo and
+# get the hash of the current git commit. If uncommitted changes have been made to anything other than files listed in
+# the acceptable_changes variable defined below, print an error message and exit.
+repo_changes = []
+commit_hash = ""
+if snakemake.config["commit_hash"]:
+    repo_changes = list(subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"],
+                                                cwd=os.path.dirname(os.path.realpath(__file__)))
+                        .decode('ascii').strip().split("\n"))
+    acceptable_changes = ['config/config.yaml', snakemake.config["rep_set_file"], snakemake.config["add_res_file"]]
+    for file in repo_changes:
+        if file.split(' ')[-1] in acceptable_changes:
+            repo_changes.remove(file)
+    if len(repo_changes) == 0:
+        commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"],
+                                              cwd=os.path.dirname(os.path.realpath(__file__))).decode('ascii').strip()
+    # Print the error message, close files, reset stdout and stderr, and exit.
+    else:
+        print("Error: Uncommitted changes have been made to the repo.")
+        stdout_file.close()
+        stderr_file.close()
+        sys.stdout = stdout
+        sys.stderr = stderr
+        sys.exit(1)
 
 # Read the data on the candidates.
 df = pd.read_csv(snakemake.input.candidates, comment="#", keep_default_na=False, na_values="NaN",
@@ -25,8 +52,12 @@ for row in df.itertuples():
 
 # Write the Python script that is to be used with PyMOL.
 with open(snakemake.output.script, "w") as file:
+    if commit_hash:
+        file.write(f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}")
+    file.write(f"# representative set file: {snakemake.config['rep_set_file']}")
+    file.write(f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}")
     file.write("# this script is to be used with PyMOL\n")
-    file.write(f"# info on interactions came from {snakemake.input.candidates}\n")
+    file.write(f"# info on interactions came from {snakemake.input.candidates}\n\n")
     file.write("from pymol import cmd\n")
     file.write("from pymol import stored\n\n")
     file.write("candidates = [\n")
