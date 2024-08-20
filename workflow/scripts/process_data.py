@@ -216,45 +216,50 @@ n2_o2_h_bond = (df[
                 ].rename(columns=lambda col: f'{col}_N2_O2'))
 
 # Prepare a dataframe of nucleobases containing a donor of interest and involved in a canonical base pair.
+base_pair_df = pd.DataFrame(columns=["don_index", "base_pair"])
 # AU base pair
-base_pair_df = (n6_o4_h_bond[n6_o4_h_bond["DOI_N6_O4"] == 1]
-                .merge(n3_n1_h_bond,
-                       left_on=["don_resn_N6_O4", "don_resi_N6_O4", "don_chain_N6_O4", "acc_resn_N6_O4",
-                                "acc_resi_N6_O4", "acc_chain_N6_O4"],
-                       right_on=["acc_resn_N3_N1", "acc_resi_N3_N1", "acc_chain_N3_N1", "don_resn_N3_N1",
-                                 "don_resi_N3_N1", "don_chain_N3_N1"], how='inner')
-                .rename(columns={"don_index_N6_O4": "don_index"})
-                .assign(base_pair="AU").loc[:, ["don_index", "base_pair"]])
+if not (n6_o4_h_bond.empty or n3_n1_h_bond.empty):
+    base_pair_df = pd.concat([base_pair_df,
+                              (n6_o4_h_bond[n6_o4_h_bond["DOI_N6_O4"] == 1]
+                               .merge(n3_n1_h_bond,
+                                      left_on=["don_resn_N6_O4", "don_resi_N6_O4", "don_chain_N6_O4", "acc_resn_N6_O4",
+                                               "acc_resi_N6_O4", "acc_chain_N6_O4"],
+                                      right_on=["acc_resn_N3_N1", "acc_resi_N3_N1", "acc_chain_N3_N1", "don_resn_N3_N1",
+                                                "don_resi_N3_N1", "don_chain_N3_N1"], how='inner')
+                               .rename(columns={"don_index_N6_O4": "don_index"})
+                               .assign(base_pair="AU").loc[:, ["don_index", "base_pair"]])])
 # CG base pair
-base_pair_df = pd.concat([base_pair_df,
-                          (n4_o6_h_bond[n4_o6_h_bond["DOI_N4_O6"] == 1]
-                           .merge(n1_n3_h_bond,
-                                  left_on=["don_resn_N4_O6", "don_resi_N4_O6", "don_chain_N4_O6", "acc_resn_N4_O6",
-                                           "acc_resi_N4_O6", "acc_chain_N4_O6"],
-                                  right_on=["acc_resn_N1_N3", "acc_resi_N1_N3", "acc_chain_N1_N3", "don_resn_N1_N3",
-                                            "don_resi_N1_N3", "don_chain_N1_N3"], how='inner')
-                           .merge(n2_o2_h_bond,
-                                  left_on=["don_resn_N4_O6", "don_resi_N4_O6", "don_chain_N4_O6", "acc_resn_N4_O6",
-                                           "acc_resi_N4_O6", "acc_chain_N4_O6"],
-                                  right_on=["acc_resn_N2_O2", "acc_resi_N2_O2", "acc_chain_N2_O2", "don_resn_N2_O2",
-                                            "don_resi_N2_O2", "don_chain_N2_O2"], how='inner')
-                           .rename(columns={"don_index_N4_O6": "don_index"})
-                           .assign(base_pair="CG").loc[:, ["don_index", "base_pair"]])])
+if not (n4_o6_h_bond.empty or n1_n3_h_bond.empty or n2_o2_h_bond.empty):
+    base_pair_df = pd.concat([base_pair_df,
+                              (n4_o6_h_bond[n4_o6_h_bond["DOI_N4_O6"] == 1]
+                               .merge(n1_n3_h_bond,
+                                      left_on=["don_resn_N4_O6", "don_resi_N4_O6", "don_chain_N4_O6", "acc_resn_N4_O6",
+                                               "acc_resi_N4_O6", "acc_chain_N4_O6"],
+                                      right_on=["acc_resn_N1_N3", "acc_resi_N1_N3", "acc_chain_N1_N3", "don_resn_N1_N3",
+                                                "don_resi_N1_N3", "don_chain_N1_N3"], how='inner')
+                               .merge(n2_o2_h_bond,
+                                      left_on=["don_resn_N4_O6", "don_resi_N4_O6", "don_chain_N4_O6", "acc_resn_N4_O6",
+                                               "acc_resi_N4_O6", "acc_chain_N4_O6"],
+                                      right_on=["acc_resn_N2_O2", "acc_resi_N2_O2", "acc_chain_N2_O2", "don_resn_N2_O2",
+                                                "don_resi_N2_O2", "don_chain_N2_O2"], how='inner')
+                               .rename(columns={"don_index_N4_O6": "don_index"})
+                               .assign(base_pair="CG").loc[:, ["don_index", "base_pair"]])])
 # GC base pair
-base_pair_df = pd.concat([base_pair_df,
-                          (n2_o2_h_bond[n2_o2_h_bond["DOI_N2_O2"] == 1]
-                           .merge(n1_n3_h_bond,
-                                  left_on=["don_resn_N2_O2", "don_resi_N2_O2", "don_chain_N2_O2", "acc_resn_N2_O2",
-                                           "acc_resi_N2_O2", "acc_chain_N2_O2"],
-                                  right_on=["don_resn_N1_N3", "don_resi_N1_N3", "don_chain_N1_N3", "acc_resn_N1_N3",
-                                            "acc_resi_N1_N3", "acc_chain_N1_N3"], how='inner')
-                           .merge(n4_o6_h_bond,
-                                  left_on=["don_resn_N2_O2", "don_resi_N2_O2", "don_chain_N2_O2", "acc_resn_N2_O2",
-                                           "acc_resi_N2_O2", "acc_chain_N2_O2"],
-                                  right_on=["acc_resn_N4_O6", "acc_resi_N4_O6", "acc_chain_N4_O6", "don_resn_N4_O6",
-                                            "don_resi_N4_O6", "don_chain_N4_O6"], how='inner')
-                           .rename(columns={"don_index_N2_O2": "don_index"})
-                           .assign(base_pair="GC").loc[:, ["don_index", "base_pair"]])])
+if not (n4_o6_h_bond.empty or n1_n3_h_bond.empty or n2_o2_h_bond.empty):
+    base_pair_df = pd.concat([base_pair_df,
+                              (n2_o2_h_bond[n2_o2_h_bond["DOI_N2_O2"] == 1]
+                               .merge(n1_n3_h_bond,
+                                      left_on=["don_resn_N2_O2", "don_resi_N2_O2", "don_chain_N2_O2", "acc_resn_N2_O2",
+                                               "acc_resi_N2_O2", "acc_chain_N2_O2"],
+                                      right_on=["don_resn_N1_N3", "don_resi_N1_N3", "don_chain_N1_N3", "acc_resn_N1_N3",
+                                                "acc_resi_N1_N3", "acc_chain_N1_N3"], how='inner')
+                               .merge(n4_o6_h_bond,
+                                      left_on=["don_resn_N2_O2", "don_resi_N2_O2", "don_chain_N2_O2", "acc_resn_N2_O2",
+                                               "acc_resi_N2_O2", "acc_chain_N2_O2"],
+                                      right_on=["acc_resn_N4_O6", "acc_resi_N4_O6", "acc_chain_N4_O6", "don_resn_N4_O6",
+                                                "don_resi_N4_O6", "don_chain_N4_O6"], how='inner')
+                               .rename(columns={"don_index_N2_O2": "don_index"})
+                               .assign(base_pair="GC").loc[:, ["don_index", "base_pair"]])])
 df = df.merge(base_pair_df, how='outer')
 
 # Write a csv containing the data with the new columns. Also report the H-bond criteria used.
