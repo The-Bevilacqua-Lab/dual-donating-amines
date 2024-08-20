@@ -173,6 +173,7 @@ with open(snakemake.output.script, "w") as file:
                "and chain {amines[i1][i2][5]}')\n")
     file.write("    cmd.hide('labels')\n")
     file.write("    cmd.show('dashes', f'dist_{num}*')\n")
+    file.write("    cmd.hide('sticks', 'elem H')\n")
     file.write("    cmd.orient('visible')\n")
     file.write("    print(f'Showing amine number {num}')\n\n\n")
     file.write("# Show the next amine in the list.\n")

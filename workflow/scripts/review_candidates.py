@@ -122,6 +122,7 @@ with open(snakemake.output.script, "w") as file:
                " of (visible and sidechain)')\n")
     file.write("    label_b_factor(f'resi {candidates[num-1][2]} and chain {candidates[num-1][3]}', "
                "candidates[num-1][4])\n")
+    file.write("    cmd.hide('sticks', 'elem H')\n")
     file.write("    cmd.orient('visible')\n")
     file.write("    print(f'Showing candidate number {num}')\n\n\n")
     file.write("# Show the next candidate in the list.\n")
