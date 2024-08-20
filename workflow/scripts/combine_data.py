@@ -86,11 +86,12 @@ def check_included_res(grp):
 aoi_df = (combined_df[(combined_df["AOI"] == 1) & (combined_df["h_bond"] == 1)]
           .drop_duplicates(subset=["acc_index", "don_index", "eq_class_member"])
           .loc[:, ['don_index', 'don_name', 'don_resn', 'don_resi', 'don_chain', 'acc_index', 'acc_name', 'acc_resn',
-                   'acc_resi', 'acc_chain', 'eq_class_member', 'don_acc_distance']])
+                   'acc_resi', 'acc_chain', 'eq_class_member', 'don_acc_distance']]
+          .copy())
 
 # Create a data frame that includes H-bonding atom pairs that include a donor of interest which does not donate to any
 # residues, or only those included in the included_residues list specified in the config file.
-doi_df = combined_df[(combined_df["DOI"] == 1) & (combined_df["type"] > 0)]
+doi_df = combined_df[(combined_df["DOI"] == 1) & (combined_df["type"] > 0)].copy()
 doi_df.loc[:, ~doi_df.columns.isin(["don_index", "eq_class_member"])] = (
     doi_df.groupby(['don_index', 'eq_class_member'], group_keys=False).apply(check_included_res, include_groups=False))
 doi_df = pd.concat([doi_df, combined_df[(combined_df["DOI"] == 1) & (combined_df["type"] == 0)]])
