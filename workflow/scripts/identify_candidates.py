@@ -104,7 +104,7 @@ for idx in range(len(snakemake.input.data)):
         continue
 
 # Write the candidate data frame to a csv file.
-with open(snakemake.output.data, "w") as csv_file:
+with open(snakemake.output.candidates, "w") as csv_file:
     writer = csv.writer(csv_file)
     if commit_hash:
         writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])

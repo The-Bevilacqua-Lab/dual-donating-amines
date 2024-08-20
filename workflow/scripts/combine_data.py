@@ -65,7 +65,7 @@ for idx in range(len(snakemake.input.data)):
 combined_df = combined_df.reset_index(drop=True)
 
 # Write the combined data to a csv file.
-with open(snakemake.output.data, "w") as csv_file:
+with open(snakemake.output.combined, "w") as csv_file:
     writer = csv.writer(csv_file)
     if commit_hash:
         writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
@@ -153,7 +153,7 @@ merged_df = (merged_df.drop_duplicates(subset=['don_index_AOI', 'acc_index_AOI',
              .drop(columns=drop_columns))
 
 # Write the merged data frame to a csv file.
-with open(snakemake.output.data, "w") as csv_file:
+with open(snakemake.output.distances, "w") as csv_file:
     writer = csv.writer(csv_file)
     if commit_hash:
         writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
