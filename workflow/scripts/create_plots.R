@@ -10,7 +10,7 @@ library(svglite)
 
 # Creates data frames from the combined data.
 combined_df <- read.csv(snakemake@input[["combined"]], header = TRUE,
-                        na.strings = "NaN")
+                        na.strings = "NaN", comment.char = "#")
 
 # Extract the rows from the combined data frame relevant for these plots.
 pairs_df <- combined_df %>%
@@ -246,7 +246,7 @@ ggsave(snakemake@output[["acc_id"]], plot = acc_id_plot, width = 6.5,
 ### DISTANCE PLOT ###
 
 # Creates data frames from the distance data.
-distance_df <- read.csv(snakemake@input[["distances"]], header = TRUE, na.strings = "NaN")
+distance_df <- read.csv(snakemake@input[["distances"]], header = TRUE, na.strings = "NaN", comment.char = "#")
 
 # Order the acceptors of interest.
 distance_df$acc_name_AOI <- factor(distance_df$acc_name_AOI, levels = c("N1", "O2", "N3", "O6", "N7"))
