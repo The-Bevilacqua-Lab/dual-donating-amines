@@ -209,7 +209,7 @@ cmd.iterate(f'({mem_rna_chains}) and ({donors_of_interest_str})',
 # donors of interest. Values of one for the DOI and don_can_NA keys indicate that the donor atom is a donor of interest
 # and belongs to a canonical DNA or RNA residue, respectively.
 don_info_dict = {"don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "don_segi": [],
-                 "count_1": [], "count_2": [], "b_factor": [], "DOI": [], "don_can_NA": []}
+                 "count_1": [], "count_2": [], "b_factor": [], "DOI": [], "don_can_NA": [], "chi": []}
 for donor in stored.donor_list:
     # Count the number of heavy atoms belonging to organic molecules or polymers near the donor. Exclude the nucleobase
     # of the donor.
@@ -233,8 +233,23 @@ for donor in stored.donor_list:
               f"in {eq_class_mem_id}.")
     # Calculate the average of the b-factors.
     b_factor_avg = sum(stored.b_factors)/len(stored.b_factors)
-    # Add the donor, heavy atom counts, and average b-factor to the count dictionary.
-    row = donor + [count_1, count_2, b_factor_avg, 1, 1]
+    # Obtain the chi dihedral for later anti/syn analysis.
+    if donor[2] in ["A", "DA", "G", "DG"]:
+        O4_prime = f"name O4' and resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]}"
+        C1_prime = f"name C1' and resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]}"
+        N9 = f"name N9 and resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]}"
+        C4 = f"name C4 and resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]}"
+        chi = cmd.get_dihedral(O4_prime, C1_prime, N9, C4)
+    elif donor[2] in ["C", "DC"]:
+        O4_prime = f"name O4' and resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]}"
+        C1_prime = f"name C1' and resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]}"
+        N1 = f"name N1 and resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]}"
+        C2 = f"name C2 and resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]}"
+        chi = cmd.get_dihedral(O4_prime, C1_prime, N1, C2)
+    else:
+        chi = pd.NA
+    # Add the data to the donor information dictionary.
+    row = donor + [count_1, count_2, b_factor_avg, 1, 1, chi]
     for key, value in zip(don_info_dict, row):
         don_info_dict[key].append(value)
 

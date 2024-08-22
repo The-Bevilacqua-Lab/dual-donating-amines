@@ -243,6 +243,51 @@ acc_id_plot <- grid.arrange(acc_id_1_plot, acc_id_2_plot, nrow = 2)
 ggsave(snakemake@output[["acc_id"]], plot = acc_id_plot, width = 6.5,
        height = 9, units = "in", scale = 1)
 
+### CHI PLOT ###
+
+# Extract the rows from the combined data frame relevant for these plots.
+chi_df <- combined_df %>%
+  filter(DOI == 1 & don_resn %in% c("A", "C", "G")) %>%
+  distinct(don_index, eq_class_member, .keep_all = TRUE)
+
+# Convert donor type from numeric to string.
+chi_df[chi_df$type == 0, "type"] <- "No"
+chi_df[chi_df$type == 1, "type"] <- "Single"
+chi_df[chi_df$type == 2, "type"] <- "Dual"
+chi_df$type <- factor(chi_df$type, levels = c("No",
+                                              "Single",
+                                              "Dual"))
+
+# Adjust the chi dihedrals to range from 0 to 360 degrees.
+chi_df[which(chi_df$chi >= 0), "chi_adjusted"] <-
+  chi_df[which(chi_df$chi >= 0), "chi"]
+chi_df[which(chi_df$chi < 0), "chi_adjusted"] <-
+  chi_df[which(chi_df$chi < 0), "chi"] + 360
+
+# Write out the full names of the nucleobases.
+chi_df[which(chi_df$don_resn == "A"), "don_resn"] <- "Adenine"
+chi_df[which(chi_df$don_resn == "C"), "don_resn"] <- "Cytosine"
+chi_df[which(chi_df$don_resn == "G"), "don_resn"] <- "Guanine"
+
+# Create the plots.
+chi_plot <- chi_df %>% ggplot(aes(x=chi_adjusted, fill=type)) +
+  geom_histogram(aes(y=after_stat(density)), binwidth = 15, center = 7.5, position = position_dodge2()) +
+  coord_radial(inner.radius = 0.3, expand = FALSE) +
+  scale_x_continuous(limits = c(0, 360), breaks = seq(0, 315, 45)) +
+  ylab("Density") +
+  xlab(expression(paste("\u03c7 (\ub0)"))) +
+  scale_fill_manual(values = custom_greens[2:4], name = "Type") +
+  theme_bw(base_size = 10) +
+  theme(panel.border = element_blank(), strip.background = element_blank(),
+        legend.key.size = unit(0.1, "in"),
+        legend.key.spacing.y = unit(0.05, "in"),
+        strip.text = element_text(size = 10)) +
+  facet_wrap( ~ don_resn, nrow = 1, scales = "free_y")
+
+# Write the plots.
+ggsave(snakemake@output[["chi"]], plot = chi_plot, width = 6.5,
+       height = 2.5, units = "in", scale = 1)
+
 ### DISTANCE PLOT ###
 
 # Creates data frames from the distance data.
