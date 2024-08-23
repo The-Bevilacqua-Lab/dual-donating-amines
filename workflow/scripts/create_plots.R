@@ -5,6 +5,7 @@ library(dplyr)
 library(tidyr)
 library(tidytext)
 library(svglite)
+library(ggh4x)
 
 #### H-BONDING MEASUREMENT PLOTS ####
 
@@ -271,22 +272,25 @@ chi_df[which(chi_df$don_resn == "G"), "don_resn"] <- "Guanine"
 
 # Create the plots.
 chi_plot <- chi_df %>% ggplot(aes(x=chi_adjusted, fill=type)) +
-  geom_histogram(aes(y=after_stat(density)), binwidth = 15, center = 7.5, position = position_dodge2()) +
+  geom_histogram(aes(y=after_stat(count)), binwidth = 10, center = 5,
+                 position = position_dodge2(), show.legend = FALSE) +
   coord_radial(inner.radius = 0.3, expand = FALSE) +
   scale_x_continuous(limits = c(0, 360), breaks = seq(0, 315, 45)) +
-  ylab("Density") +
+  ylab("Count") +
   xlab(expression(paste("\u03c7 (\ub0)"))) +
   scale_fill_manual(values = custom_greens[2:4], name = "Type") +
   theme_bw(base_size = 10) +
-  theme(panel.border = element_blank(), strip.background = element_blank(),
+  theme(aspect.ratio = 1, panel.border = element_blank(),
+        strip.background = element_blank(),
         legend.key.size = unit(0.1, "in"),
         legend.key.spacing.y = unit(0.05, "in"),
         strip.text = element_text(size = 10)) +
-  facet_wrap( ~ don_resn, nrow = 1, scales = "free_y")
+  facet_nested_wrap(vars(don_resn, type), nrow = 3, scales = "free_y",
+                    nest_line = element_line(color = "grey", linewidth = 0.1))
 
 # Write the plots.
 ggsave(snakemake@output[["chi"]], plot = chi_plot, width = 6.5,
-       height = 2.5, units = "in", scale = 1)
+       height = 9, units = "in", scale = 1)
 
 ### DISTANCE PLOT ###
 
