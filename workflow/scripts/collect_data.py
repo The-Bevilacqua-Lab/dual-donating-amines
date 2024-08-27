@@ -239,12 +239,18 @@ for donor in stored.donor_list:
         C1_prime = f"name C1' and resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]}"
         N9 = f"name N9 and resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]}"
         C4 = f"name C4 and resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]}"
+        if cmd.count_atoms(f"({O4_prime}) ({C1_prime}) ({N9}) ({C4})") != 4:
+            error(f"Error: Residue {donor[4]}.{donor[2]}.{donor[3]} does not contain exactly 4 atoms for the chi "
+                  f"measurement.")
         chi = cmd.get_dihedral(O4_prime, C1_prime, N9, C4)
     elif donor[2] in ["C", "DC"]:
         O4_prime = f"name O4' and resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]}"
         C1_prime = f"name C1' and resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]}"
         N1 = f"name N1 and resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]}"
         C2 = f"name C2 and resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]}"
+        if cmd.count_atoms(f"({O4_prime}) ({C1_prime}) ({N1}) ({C2})") != 4:
+            error(f"Error: Residue {donor[4]}.{donor[2]}.{donor[3]} does not contain exactly 4 atoms for the chi "
+                  f"measurement.")
         chi = cmd.get_dihedral(O4_prime, C1_prime, N1, C2)
     else:
         chi = pd.NA
