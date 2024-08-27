@@ -86,10 +86,10 @@ candidate_b_factor_cutoff: 79.0
 allowed_acc: ['A', 'C', 'G', 'U', 'DA', 'DC', 'DG', 'DT']
 
 # Should the mmCIF files fetched from the PDB be removed after the run to save space?
-remove_original_mmcif: false
+remove_original_mmcif: true
 
 # Should the mmCIF of the modified structures be saved?
-save_modified_mmcif: true
+save_modified_mmcif: false
 
 # Should the commit hash be written to output data files?
 commit_hash: false
