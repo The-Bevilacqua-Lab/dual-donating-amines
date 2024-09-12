@@ -255,14 +255,16 @@ chi_df <- combined_df %>%
 chi_df[chi_df$type == 0, "type"] <- "No"
 chi_df[chi_df$type == 1, "type"] <- "Single"
 chi_df[chi_df$type == 2, "type"] <- "Dual"
-chi_df$type <- factor(chi_df$type, levels = c("No",
-                                              "Single",
-                                              "Dual"))
+chi_df$type <- factor(chi_df$type, levels = c("No", "Single", "Dual"))
 
-# Adjust the chi dihedrals to range from 0 to 360 degrees.
-chi_df[which(chi_df$chi >= 0), "chi_adjusted"] <-
+# Adjust the chi dihedrals such that values of -180 are instead 180.
+chi_df <- chi_df %>% mutate(chi_adjusted = chi)
+chi_df[which(chi_df$chi_adjusted == -180), "chi_adjusted"] <- 180
+
+# Translate the chi dihedrals to range from 0 to 360 degrees.
+chi_df[which(chi_df$chi >= 0), "chi_translated"] <-
   chi_df[which(chi_df$chi >= 0), "chi"]
-chi_df[which(chi_df$chi < 0), "chi_adjusted"] <-
+chi_df[which(chi_df$chi < 0), "chi_translated"] <-
   chi_df[which(chi_df$chi < 0), "chi"] + 360
 
 # Write out the full names of the nucleobases.
@@ -270,26 +272,88 @@ chi_df[which(chi_df$don_resn == "A"), "don_resn"] <- "Adenine"
 chi_df[which(chi_df$don_resn == "C"), "don_resn"] <- "Cytosine"
 chi_df[which(chi_df$don_resn == "G"), "don_resn"] <- "Guanine"
 
-# Create the plots.
-chi_plot <- chi_df %>% ggplot(aes(x=chi_adjusted, fill=type)) +
-  geom_histogram(aes(y=after_stat(count)), binwidth = 10, center = 5,
-                 position = position_dodge2(), show.legend = FALSE) +
-  coord_radial(inner.radius = 0.3, expand = FALSE) +
-  scale_x_continuous(limits = c(0, 360), breaks = seq(0, 315, 45)) +
-  ylab("Count") +
+# Split the chi_df into groups based on don_resn and type.
+chi_split <- split(chi_df, ~ don_resn + type)
+
+# Create a data frame with chi data binned and grouped by don_resn and type.
+chi_bins <- data.frame(don_resn = character(), type = character(),
+                       counts = integer(), density = double(), mids = integer())
+for (split_idx in seq_along(chi_split)) {
+  group_bin <- hist(chi_split[[split_idx]]$chi_adjusted,
+                    breaks = seq(-180, 180, 10), plot = FALSE)
+  for (hist_idx in seq_along(group_bin$mids)) {
+    chi_bins <- rbind(chi_bins, data.frame(
+      don_resn = unlist(strsplit(names(chi_split)[split_idx], "[.]"))[1],
+      type = unlist(strsplit(names(chi_split)[split_idx], "[.]"))[2],
+      counts = group_bin$counts[hist_idx],
+      density = group_bin$density[hist_idx],
+      mids = group_bin$mids[hist_idx]))
+  }
+}
+
+# Factor the type column in chi_bins.
+chi_bins$type <- factor(chi_bins$type, levels = c("No", "Single", "Dual"))
+
+# Create the plots of a segment of the 360 range.
+chi_plot_partial <- chi_bins %>% ggplot(aes(x=mids, y=density, fill=type)) +
+  geom_col(show.legend = FALSE) +
+  coord_radial(inner.radius = 0.3, expand = FALSE,
+               start = -pi/8, end = pi*3/4) +
+  scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) +
+  scale_y_continuous(limits = c(0, 0.0018)) +
   xlab(expression(paste("\u03c7 (\ub0)"))) +
+  ylab(element_blank()) +
   scale_fill_manual(values = custom_greens[2:4], name = "Type") +
   theme_bw(base_size = 10) +
-  theme(aspect.ratio = 1, panel.border = element_blank(),
+  theme(plot.margin = margin(t = 0, r = 0.1, b = 0, l = 0.3, "in"),
+        panel.border = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
         strip.background = element_blank(),
-        legend.key.size = unit(0.1, "in"),
-        legend.key.spacing.y = unit(0.05, "in"),
         strip.text = element_text(size = 10)) +
-  facet_nested_wrap(vars(don_resn, type), nrow = 3, scales = "free_y",
-                    nest_line = element_line(color = "grey", linewidth = 0.1))
+  facet_nested_wrap(vars(don_resn, type), nrow = 3, scales = "fixed")
+
+# Create the plots of a segment of the 360 range.
+chi_plot_partial_y <- chi_bins %>% ggplot(aes(x=mids, y=density, fill=type)) +
+  geom_col(show.legend = FALSE) +
+  coord_radial(inner.radius = 0.3, expand = FALSE,
+               start = -pi/8, end = pi*3/4) +
+  scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) +
+  scale_y_continuous(limits = c(0, 0.0018)) +
+  xlab(expression(paste("\u03c7 (\ub0)"))) +
+  ylab(element_blank()) +
+  scale_fill_manual(values = custom_greens[2:4], name = "Type") +
+  theme_bw(base_size = 10) +
+  theme(plot.margin = margin(t = 0, r = 0.1, b = 0, l = 0.3, "in"),
+        panel.border = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_text(size = 10)) +
+  facet_nested_wrap(vars(don_resn, type), nrow = 3, scales = "fixed")
+
+# Create a plot showing all data combined.
+chi_plot_combined <- chi_df %>% ggplot(aes(x=chi_adjusted)) +
+  geom_histogram(aes(y=after_stat(count)), binwidth = 10, center = 5,
+                 show.legend = FALSE) +
+  annotate("segment", color = "red", linetype = "dashed", x = -20, y = 1,
+           xend = -20, yend = 10^5) +
+  annotate("segment", color = "red", linetype = "dashed", x = 130, y = 1,
+           xend = 130, yend = 10^5) +
+  annotate("segment", color = "red", linetype = "dashed", x = -20, y = 1,
+           xend = 130, yend = 1) +
+  annotate("segment", color = "red", linetype = "dashed", x = -20, y = 10^5,
+           xend = 130, yend = 10^5) +
+  scale_x_continuous(limits = c(-180, 180), breaks = seq(-180, 180, 45)) +
+  scale_y_continuous(transform = "log10", name = "Count") +
+  xlab(expression(paste("\u03c7 (\ub0)"))) +
+  theme_bw(base_size = 10) +
+  theme(aspect.ratio = 0.25)
 
 # Write the plots.
-ggsave(snakemake@output[["chi"]], plot = chi_plot, width = 6.5,
+ggsave(snakemake@output[["chi_partial"]], plot = chi_plot_partial, width = 3,
+       height = 9, units = "in", scale = 1)
+ggsave(snakemake@output[["chi_partial_y"]], plot = chi_plot_partial_y, width = 3,
+       height = 9, units = "in", scale = 1)
+ggsave(snakemake@output[["chi_combined"]], plot = chi_plot_combined, width = 6.5,
        height = 9, units = "in", scale = 1)
 
 ### DISTANCE PLOT ###

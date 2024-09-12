@@ -14,7 +14,9 @@ rule all:
         "data/plots/density.png",
         "data/plots/nuc_id.png",
         "data/plots/acc_id.png",
-        "data/plots/chi.png",
+        "data/plots/chi_partial.png",
+        "data/plots/chi_partial_y.png",
+        "data/plots/chi_combined.png",
         "data/plots/dist.png"
 
 rule collect_data:
@@ -103,7 +105,9 @@ rule create_plots:
         density = "data/plots/density.png",
         nuc_id = "data/plots/nuc_id.png",
         acc_id = "data/plots/acc_id.png",
-        chi = "data/plots/chi.png",
+        chi_partial = "data/plots/chi_partial.png",
+        chi_partial_y = "data/plots/chi_partial_y.png",
+        chi_combined = "data/plots/chi_combined.png",
         dist = "data/plots/dist.png"
     script:
         "scripts/create_plots.R"
