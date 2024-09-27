@@ -261,12 +261,6 @@ chi_df$type <- factor(chi_df$type, levels = c("No", "Single", "Dual"))
 chi_df <- chi_df %>% mutate(chi_adjusted = chi)
 chi_df[which(chi_df$chi_adjusted == -180), "chi_adjusted"] <- 180
 
-# Translate the chi dihedrals to range from 0 to 360 degrees.
-chi_df[which(chi_df$chi >= 0), "chi_translated"] <-
-  chi_df[which(chi_df$chi >= 0), "chi"]
-chi_df[which(chi_df$chi < 0), "chi_translated"] <-
-  chi_df[which(chi_df$chi < 0), "chi"] + 360
-
 # Write out the full names of the nucleobases.
 chi_df[which(chi_df$don_resn == "A"), "don_resn"] <- "Adenine"
 chi_df[which(chi_df$don_resn == "C"), "don_resn"] <- "Cytosine"
@@ -313,7 +307,7 @@ chi_plot_partial <- chi_bins %>% ggplot(aes(x=mids, y=density, fill=type)) +
         strip.text = element_text(size = 10)) +
   facet_nested_wrap(vars(don_resn, type), nrow = 3, scales = "fixed")
 
-# Create the plots of a segment of the 360 range.
+# Create the plots of a segment of the 360 range with the y-axis displayed.
 chi_plot_partial_y <- chi_bins %>% ggplot(aes(x=mids, y=density, fill=type)) +
   geom_col(show.legend = FALSE) +
   coord_radial(inner.radius = 0.3, expand = FALSE,
