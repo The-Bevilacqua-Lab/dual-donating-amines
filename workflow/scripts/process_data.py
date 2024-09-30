@@ -165,6 +165,21 @@ don_acc_grp = ["don_index", "acc_index"]
     (~df[["don_resn", "don_name", "acc_resn", "acc_name"]].eq(["G", "N2", "C", "N3"])
      .all(axis='columns')), "geom"]) = 1
 
+# Create a data frame of H-bonding atom pairs that include an acceptor of interest.
+aoi_h_bond_df = df[(df["AOI"] == 1) & (df["h_bond"] == 1)].copy()
+
+# Create a data frame of H-bonding atom pairs involving a dual H-bonding amine and where the nucleobase of the amine
+# does not form H-bonds via any of its acceptors of interest. These are candidates for QM calculations.
+qm_df = (df[(df["DOI"] == 1) & (df["h_bond"] == 1) & (df["type"] == 2)]
+         .merge(aoi_h_bond_df,
+                left_on=['don_resn', 'don_resi', 'don_chain'],
+                right_on=['acc_resn', 'acc_resi', 'acc_chain'], indicator=True))
+qm_df = qm_df[qm_df["_merge"] == "left_only"].assign(qm=1)
+if not qm_df.empty:
+    df = df.merge(qm_df, how='outer')
+else:
+    df = df.assign(qm=pd.NA)
+
 # Create data frames of specific H-bonding interactions.
 n6_o4_h_bond_df = (df[
                        (df[["don_name", "don_resn", "acc_name", "acc_resn", "h_bond"]]
