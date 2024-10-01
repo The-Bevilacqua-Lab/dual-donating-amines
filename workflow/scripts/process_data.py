@@ -143,7 +143,6 @@ df = df.assign(acc_charge=pd.NA)
 df.loc[~df.isna()['acc_index'], "acc_charge"] = "other"
 df.loc[df["acc_resn_name"].isin(can_neg), "acc_charge"] = "can_neg"
 df.loc[df["acc_resn_name"].isin(can_neut), "acc_charge"] = "can_neut"
-df = df.drop(columns=["don_resn_name", "acc_resn_name"])
 
 # Add a new column to identify donor-acceptor pairs that will be used for evaluating H-bonding geometry. Each atom pair
 # involves a donor of interest.
@@ -166,15 +165,17 @@ don_acc_grp = ["don_index", "acc_index"]
      .all(axis='columns')), "geom"]) = 1
 
 # Create a data frame of H-bonding atom pairs that include an acceptor of interest.
-aoi_h_bond_df = df[(df["AOI"] == 1) & (df["h_bond"] == 1)].copy()
+aoi_h_bond_df = df[(df["acc_resn_name"].isin(snakemake.config["acceptors_of_interest"])) & (df["h_bond"] == 1)].copy()
 
 # Create a data frame of H-bonding atom pairs involving a dual H-bonding amine and where the nucleobase of the amine
 # does not form H-bonds via any of its acceptors of interest. These are candidates for QM calculations.
-qm_df = (df[(df["DOI"] == 1) & (df["h_bond"] == 1) & (df["type"] == 2)]
-         .merge(aoi_h_bond_df,
+qm_df = (df[(df["don_resn_name"].isin(snakemake.config["donors_of_interest"])) &
+            (df["h_bond"] == 1) & (df["type"] == 2)]
+         .merge(aoi_h_bond_df, indicator=True, how='left',
                 left_on=['don_resn', 'don_resi', 'don_chain'],
-                right_on=['acc_resn', 'acc_resi', 'acc_chain'], indicator=True))
-qm_df = qm_df[qm_df["_merge"] == "left_only"].assign(qm=1)
+                right_on=['acc_resn', 'acc_resi', 'acc_chain']))
+qm_df = (qm_df[qm_df["_merge"] == "left_only"].assign(qm=1).rename(columns={"don_index_x": "don_index"})
+         .loc[:, ["don_index", "qm"]]).drop_duplicates()
 if not qm_df.empty:
     df = df.merge(qm_df, how='outer')
 else:
@@ -278,6 +279,9 @@ if not (n4_o6_h_bond_df.empty or n1_n3_h_bond_df.empty or n2_o2_h_bond_df.empty)
                                .rename(columns={"don_index_N2_O2": "don_index"})
                                .assign(base_pair="GC").loc[:, ["don_index", "base_pair"]])])
 df = df.merge(base_pair_df, how='outer')
+
+# Remove columns that do not need to be written to the csv.
+df = df.drop(columns=["don_resn_name", "acc_resn_name"])
 
 # Write a csv containing the data with the new columns. Also report the H-bond criteria used.
 with open(snakemake.output.data, "w") as csv_file:
