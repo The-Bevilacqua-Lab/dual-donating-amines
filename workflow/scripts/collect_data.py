@@ -23,6 +23,8 @@ import residue_library
 import eval_H_bonding
 import remove_alt_conf
 
+# TODO instead of using DOI and AOI, add columns to indicate whether the donor and acceptor in each row belongs to the representative chain
+
 # Redirect stdout and stderr to log files.
 stdout = sys.stdout
 stderr = sys.stderr
