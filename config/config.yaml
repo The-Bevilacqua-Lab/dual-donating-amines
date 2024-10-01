@@ -55,10 +55,8 @@ acceptors_of_interest:
   - 'A.N1'
   - 'A.N3'
   - 'A.N7'
-  - 'C.O2'
   - 'C.N3'
   - 'G.N3'
-  - 'G.O6'
   - 'G.N7'
 
 # What residues are included when considering H-bonds pertaining to acceptors of interest?
