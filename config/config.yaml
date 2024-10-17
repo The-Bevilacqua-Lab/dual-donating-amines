@@ -1,13 +1,9 @@
 # Provide the representative set file name.
-rep_set_file: "config/nrlist_<id>.csv"
-
-# Provide the name of the file containing additional residues. If no such file exists, leave the variable as
-# "config/<file_name>.csv".
-add_res_file: "config/<file_name>.csv"
+rep_set_file: "resources/nrlist_<id>.csv"
 
 # Where should PyMOL save mmCIF files fetched from the PDB and the modified structures?
-original_mmcif_dir: "misc/original_mmCIF_files/"
-modified_mmcif_dir: "misc/modified_mmcif_files/"
+original_mmcif_dir: "resources/original_mmCIF_files/"
+modified_mmcif_dir: "results/modified_mmcif_files/"
 
 # What are the search radii?
 search_dist: 4.1
