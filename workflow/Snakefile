@@ -8,23 +8,23 @@ eq_class_members = scripts.parse_nrlist.parse_nrlist(config["rep_set_file"], con
 
 rule all:
     input:
-        "data/review_candidates/candidates.py",
-        "data/review_amines/amines.py",
-        "data/plots/pairs.png",
-        "data/plots/density.png",
-        "data/plots/nuc_id.png",
-        "data/plots/acc_id.png",
-        "data/plots/chi_partial.png",
-        "data/plots/chi_partial_y.png",
-        "data/plots/chi_combined.png",
-        "data/plots/dist.png"
+        "results/review_candidates/candidates.py",
+        "results/review_amines/amines.py",
+        "results/plots/pairs.png",
+        "results/plots/density.png",
+        "results/plots/nuc_id.png",
+        "results/plots/acc_id.png",
+        "results/plots/chi_partial.png",
+        "results/plots/chi_partial_y.png",
+        "results/plots/chi_combined.png",
+        "results/plots/dist.png"
 
 rule collect_data:
     output:
-        data = "data/collect_data/{eq_class_member}.csv"
+        data = "results/collect_data/{eq_class_member}.csv"
     log:
-        stdout = "misc/logs/collect_data/{eq_class_member}.stdout",
-        stderr = "misc/logs/collect_data/{eq_class_member}.stderr"
+        stdout = "results/logs/collect_data/{eq_class_member}.stdout",
+        stderr = "results/logs/collect_data/{eq_class_member}.stderr"
     conda:
         "envs/general.yaml"
     script:
@@ -32,12 +32,12 @@ rule collect_data:
 
 rule process_data:
     input:
-        data = "data/collect_data/{eq_class_member}.csv"
+        data = "results/collect_data/{eq_class_member}.csv"
     output:
-        data = "data/process_data/{eq_class_member}.csv"
+        data = "results/process_data/{eq_class_member}.csv"
     log:
-        stdout = "misc/logs/process_data/{eq_class_member}.stdout",
-        stderr = "misc/logs/process_data/{eq_class_member}.stderr"
+        stdout = "results/logs/process_data/{eq_class_member}.stdout",
+        stderr = "results/logs/process_data/{eq_class_member}.stderr"
     conda:
         "envs/general.yaml"
     script:
@@ -45,12 +45,12 @@ rule process_data:
 
 rule review_amines:
     input:
-        data = expand("data/process_data/{eq_class_member}.csv", eq_class_member=eq_class_members)
+        data = expand("results/process_data/{eq_class_member}.csv", eq_class_member=eq_class_members)
     output:
-        script = "data/review_amines/amines.py"
+        script = "results/review_amines/amines.py"
     log:
-        stdout = "misc/logs/review_amines/output.stdout",
-        stderr = "misc/logs/review_amines/error.stderr"
+        stdout = "results/logs/review_amines/output.stdout",
+        stderr = "results/logs/review_amines/error.stderr"
     conda:
         "envs/general.yaml"
     script:
@@ -58,12 +58,12 @@ rule review_amines:
 
 rule identify_candidates:
     input:
-        data = expand("data/process_data/{eq_class_member}.csv", eq_class_member=eq_class_members)
+        data = expand("results/process_data/{eq_class_member}.csv", eq_class_member=eq_class_members)
     output:
-        candidates = "data/identify_candidates/candidates.csv"
+        candidates = "results/identify_candidates/candidates.csv"
     log:
-        stdout = "misc/logs/identify_candidates/output.stdout",
-        stderr = "misc/logs/identify_candidates/error.stderr"
+        stdout = "results/logs/identify_candidates/output.stdout",
+        stderr = "results/logs/identify_candidates/error.stderr"
     conda:
         "envs/general.yaml"
     script:
@@ -71,12 +71,12 @@ rule identify_candidates:
 
 rule review_candidates:
     input:
-        candidates = "data/identify_candidates/candidates.csv"
+        candidates = "results/identify_candidates/candidates.csv"
     output:
-        script = "data/review_candidates/candidates.py"
+        script = "results/review_candidates/candidates.py"
     log:
-        stdout = "misc/logs/review_candidates/output.stdout",
-        stderr = "misc/logs/review_candidates/error.stderr"
+        stdout = "results/logs/review_candidates/output.stdout",
+        stderr = "results/logs/review_candidates/error.stderr"
     conda:
         "envs/general.yaml"
     script:
@@ -84,13 +84,13 @@ rule review_candidates:
 
 rule combine_data:
     input:
-        data = expand("data/process_data/{eq_class_member}.csv", eq_class_member=eq_class_members)
+        data = expand("results/process_data/{eq_class_member}.csv", eq_class_member=eq_class_members)
     output:
-        combined = "data/combine_data/combined.csv",
-        distances = "data/combine_data/distances.csv"
+        combined = "results/combine_data/combined.csv",
+        distances = "results/combine_data/distances.csv"
     log:
-        stdout = "misc/logs/combine_data/output.stdout",
-        stderr = "misc/logs/combine_data/error.stderr"
+        stdout = "results/logs/combine_data/output.stdout",
+        stderr = "results/logs/combine_data/error.stderr"
     conda:
         "envs/general.yaml"
     script:
@@ -98,16 +98,16 @@ rule combine_data:
 
 rule create_plots:
     input:
-        combined = "data/combine_data/combined.csv",
-        distances = "data/combine_data/distances.csv"
+        combined = "results/combine_data/combined.csv",
+        distances = "results/combine_data/distances.csv"
     output:
-        pairs = "data/plots/pairs.png",
-        density = "data/plots/density.png",
-        nuc_id = "data/plots/nuc_id.png",
-        acc_id = "data/plots/acc_id.png",
-        chi_partial = "data/plots/chi_partial.png",
-        chi_partial_y = "data/plots/chi_partial_y.png",
-        chi_combined = "data/plots/chi_combined.png",
-        dist = "data/plots/dist.png"
+        pairs = "results/plots/pairs.png",
+        density = "results/plots/density.png",
+        nuc_id = "results/plots/nuc_id.png",
+        acc_id = "results/plots/acc_id.png",
+        chi_partial = "results/plots/chi_partial.png",
+        chi_partial_y = "results/plots/chi_partial_y.png",
+        chi_combined = "results/plots/chi_combined.png",
+        dist = "results/plots/dist.png"
     script:
         "scripts/create_plots.R"
