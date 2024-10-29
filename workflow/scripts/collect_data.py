@@ -213,12 +213,11 @@ cmd.iterate(f'({mem_rna_chains}) and ({donors_of_interest_str})',
 don_info_dict = {"don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "don_segi": [],
                  "count_1": [], "count_2": [], "b_factor": [], "DOI": [], "don_can_NA": [], "chi": []}
 for donor in stored.donor_list:
-    # Count the number of heavy atoms belonging to organic molecules or polymers near the donor. Exclude the nucleobase
-    # of the donor.
+    # Count the number of heavy atoms belonging to organic molecules or polymers near the donor.
     count_1 = cmd.count_atoms(f'((organic or polymer) within {snakemake.config["count_dist_1"]} of index {donor[0]}) '
-                              f'and not ((sidechain and byres index {donor[0]}) or elem H)')
+                              f'and not elem H')
     count_2 = cmd.count_atoms(f'((organic or polymer) within {snakemake.config["count_dist_2"]} of index {donor[0]}) '
-                              f'and not ((sidechain and byres index {donor[0]}) or elem H)')
+                              f'and not elem H')
     # Collect the b-factors for side chain atoms.
     stored.b_factors = []
     cmd.iterate(f"resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]} and sidechain and not elem H",
