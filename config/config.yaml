@@ -1,9 +1,10 @@
 # Provide the representative set file name.
 rep_set_file: "resources/nrlist_<id>.csv"
 
-# Where should PyMOL save mmCIF files fetched from the PDB and the modified structures?
+# Where should PyMOL save fetched mmCIF files, modified mmCIF files, and chain PDB files?
 original_mmcif_dir: "resources/original_mmCIF_files/"
 modified_mmcif_dir: "results/modified_mmcif_files/"
+chain_pdb_dir: "results/chain_pdb_files/"
 
 # What are the search radii?
 search_dist: 4.1
