@@ -98,7 +98,7 @@ def classify(grp):
 # Read the data for the equivalence class member.
 try:
     df = pd.read_csv(snakemake.input.data, comment="#", keep_default_na=False, na_values="NaN",
-                     dtype={"don_resi": "object", "acc_resi": "object", "don_chain": "object", "acc_chain": "object"})
+                     dtype={"don_resi": "str", "acc_resi": "str", "don_chain": "str", "acc_chain": "str"})
 # Write an empty file and exit if one of the below errors is encountered.
 except (FileNotFoundError, pd.errors.EmptyDataError):
     subprocess.run(["touch", snakemake.output.data])

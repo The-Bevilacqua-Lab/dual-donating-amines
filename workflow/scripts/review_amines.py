@@ -68,8 +68,8 @@ def check_acceptor(group):
 for idx in range(len(snakemake.input.data)):
     try:
         df = pd.read_csv(snakemake.input.data[idx], comment="#", keep_default_na=False, na_values="NaN",
-                         dtype={"don_resi": "object", "acc_resi": "object", "don_chain": "object",
-                                "acc_chain": "object"})
+                         dtype={"don_resi": "str", "acc_resi": "str", "don_chain": "str",
+                                "acc_chain": "str"})
         # If the data frame is empty, continue the loop.
         if df.empty:
             continue

@@ -43,7 +43,7 @@ if snakemake.config["commit_hash"]:
 
 # Read the data on the candidates.
 df = pd.read_csv(snakemake.input.candidates, comment="#", keep_default_na=False, na_values="NaN",
-                 dtype={"don_resi": "object", "don_chain": "object"})
+                 dtype={"don_resi": "str", "don_chain": "str"})
 
 # Create a list of candidates to cycle through.
 candidates = []
