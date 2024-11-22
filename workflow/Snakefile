@@ -16,8 +16,7 @@ rule all:
         "results/plots/acc_id.png",
         "results/plots/chi_partial.png",
         "results/plots/chi_partial_y.png",
-        "results/plots/chi_combined.png",
-        "results/plots/dist.png"
+        "results/plots/chi_combined.png"
 
 rule collect_data:
     output:
@@ -108,7 +107,6 @@ rule create_plots:
         acc_id = "results/plots/acc_id.png",
         chi_partial = "results/plots/chi_partial.png",
         chi_partial_y = "results/plots/chi_partial_y.png",
-        chi_combined = "results/plots/chi_combined.png",
-        dist = "results/plots/dist.png"
+        chi_combined = "results/plots/chi_combined.png"
     script:
         "scripts/create_plots.R"
