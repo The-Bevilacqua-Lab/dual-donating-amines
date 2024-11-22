@@ -49,6 +49,34 @@ pairs <- pairs_df %>% ggplot(aes(x = h_angle, y = h_acc_distance)) +
 ggsave(snakemake@output[["pairs"]], plot = pairs, width = 3.25,
        height = 3.25, units = "in", scale = 1)
 
+#### PSEUDOTORSION PLOTS ####
+
+# Extract the rows from the combined data frame relevant for these plots.
+pt_df <- combined_df %>%
+  filter(DOI == 1 & don_resn %in% c("A", "C", "G")) %>%
+  distinct(don_index, eq_class_member, .keep_all = TRUE)
+
+# Convert donor type from numeric to string.
+pt_df[pt_df$type == 0, "type"] <- "No"
+pt_df[pt_df$type == 1, "type"] <- "Single"
+pt_df[pt_df$type == 2, "type"] <- "Dual"
+pt_df$type <- factor(pt_df$type, levels = c("No", "Single", "Dual"))
+
+# Create the plot.
+pt_plot <- pt_df %>% ggplot(aes(x = eta, y = theta)) +
+  geom_bin_2d(binwidth = c(360/100, 360/100)) +
+  scale_fill_viridis(name = "Count") +
+  xlab(expression(paste("Eta (\ub0)"))) +
+  ylab(expression(paste("Theta (\ub0)"))) +
+  coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
+  theme_classic(base_size = 10) +
+  theme(legend.key.width = unit(0.125, "in")) +
+  facet_wrap( ~ type, nrow = 1)
+
+# Write the plot.
+ggsave(snakemake@output[["pseudotorsion"]], plot = pt_plot, width = 6.5,
+       height = 9, units = "in", scale = 1)
+
 #### HEAVY ATOM DENSITY PLOTS ####
 
 # Specify custom colors.

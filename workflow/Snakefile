@@ -102,6 +102,7 @@ rule create_plots:
         distances = "results/combine_data/distances.csv"
     output:
         pairs = "results/plots/pairs.png",
+        pseudotorsion = "results/plots/pseudotorsion.png",
         density = "results/plots/density.png",
         nuc_id = "results/plots/nuc_id.png",
         acc_id = "results/plots/acc_id.png",
