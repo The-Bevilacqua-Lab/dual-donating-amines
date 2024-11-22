@@ -49,7 +49,8 @@ combined_df = pd.DataFrame(columns=['don_index', 'don_name', 'don_resn', 'don_re
                                     'acc_resn', 'acc_resi', 'acc_chain', 'acc_segi', 'don_acc_distance',
                                     'h_acc_distance', 'don_angle', 'h_angle', 'h_dihedral', 'h_name', 'AOI', 'model',
                                     'PDB', 'eq_class_member', 'h_bond', 'type', 'acc_charge', 'geom', 'qm',
-                                    'base_pair'])
+                                    'base_pair', 'v0', 'v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'eta', 'theta', "eta'",
+                                    "theta'", 'alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'i1'])
 
 # Combine the dataframes from the different equivalence class members. Do not incorporate empty dataframes.
 for idx in range(len(snakemake.input.data)):
