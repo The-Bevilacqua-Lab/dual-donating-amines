@@ -14,6 +14,7 @@ import os
 import csv
 import subprocess
 import time
+from io import StringIO
 from pymol import cmd
 from pymol import stored
 import numpy as np
@@ -383,8 +384,45 @@ for index in indices:
 if not stored.check_one == stored.check_two:
     error(f"Error: The indices in equivalence class member {snakemake.wildcards.eq_class_member} changed.")
 
+# Check whether the folder exists for PyMOL to save the chain PDB files.
+# If it does not exist, create the folder.
+chain_pdb_dir = snakemake.config['chain_pdb_dir']
+if not os.path.isdir(chain_pdb_dir):
+    try:
+        os.mkdir(chain_pdb_dir)
+    except FileExistsError:
+        time.sleep(5.0)
+        if not os.path.isdir(chain_pdb_dir):
+            os.mkdir(chain_pdb_dir)
+
+# Save PDB files for each representative chain, run NaTorsion, and create a data frame with the output.
+for idx, chain in enumerate(chain_list):
+    cmd.save(f"{chain_pdb_dir}{pdb_id}_{chain}.pdb", f"chain {chain} and polymer.nucleic")
+    # Attempt to run NaTorsion and store output, abort the data collection if not successful.
+    try:
+        na_torsion_output = subprocess.run(["NaTorsion", f"{chain_pdb_dir}{pdb_id}_{chain}.pdb"],
+                                           cwd=os.path.dirname(os.path.realpath(__file__))[:-16],
+                                           capture_output=True).stdout.decode('ascii')
+    # TODO articulate explicit errors that were identified or else remove this try/except clause
+    except:
+        error(f"Error: There was an issue with running NaTorsion for {eq_class_mem_id}.")
+    # For the first chain considered, create na_torsion_df
+    if idx == 0:
+        na_torsion_df = pd.read_csv(StringIO(na_torsion_output), sep='\s+')
+        na_torsion_df['N'] = na_torsion_df['N'].str.upper()
+        na_torsion_df['c'] = chain
+    # For any additional chains, append its associated df to na_torsion_df
+    else:
+        additional_df = pd.read_csv(StringIO(na_torsion_output), sep='\s+')
+        additional_df['N'] = additional_df['N'].str.upper()
+        additional_df['c'] = chain
+        na_torsion_df = pd.concat([na_torsion_df, additional_df])
+na_torsion_df['resi'] = na_torsion_df['resi'].astype('object')
+
 # Prepare a master dataframe containing heavy atom count, b-factor, H-bonding data, and other relevant information.
 master_df = don_info_df.merge(don_h_bonds_df, how='outer').merge(acc_h_bonds_df, how='outer')
+master_df = master_df.merge(na_torsion_df, left_on=['don_resn', 'don_chain', 'don_resi'], right_on=['N', 'c', 'resi'],
+                            how='left').drop(columns=['N', 'c', 'resi'])
 master_df.loc[:, ['model', 'PDB', 'eq_class_member']] = [model, pdb_id, eq_class_mem_id]
 
 # Write a csv containing the data stored in the master dataframe.
