@@ -146,8 +146,6 @@ df.loc[df["acc_resn_name"].isin(can_neut), "acc_charge"] = "can_neut"
 df = df.assign(geom=0)
 don_acc_grp = ["don_index", "acc_index"]
 (df.loc[
-    # Only include atom pairs involving donors of interest.
-    (df["DOI"] == 1) &
     # For a given donor-acceptor pair, only include the hydrogen with the smaller D-H...A distance.
     (df.groupby(don_acc_grp)["h_acc_distance"]
      .transform(lambda grp: [mem == grp.min() for mem in grp])) &

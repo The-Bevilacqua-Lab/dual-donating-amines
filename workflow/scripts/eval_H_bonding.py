@@ -123,9 +123,8 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, acceptor_info, eq_class_mem
     # Get the DA-D-A angle.
     don_angle = cmd.get_angle(f'index {stored.don_ant[0][0]}', f'index {donor_atom[0]}', f'index {acceptor_atom[0]}')
     # Collect information about the acceptor antecedent atom.
-    stored.acc_ant = pd.NA
-    acc_angle = pd.NA
-    if not pd.isna(acceptor_info):
+    stored.acc_ant = []
+    if isinstance(acceptor_info, list):
         cmd.iterate(f'name {acceptor_info[4]} and neighbor index {acceptor_atom[0]}',
                     'stored.acc_ant.append((index, name, resn, resi, chain))')
         # Issue an error message if the number of identified acceptor antecedent atoms does not equal one.
@@ -136,6 +135,8 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, acceptor_info, eq_class_mem
         # Get the AA-A-D angle.
         acc_angle = cmd.get_angle(f'index {stored.acc_ant[0][0]}', f'index {acceptor_atom[0]}',
                                   f'index {donor_atom[0]}')
+    else:
+        acc_angle = pd.NA
     # If the donor is non-rotatable, use the donor hydrogen(s) locations to calculate the H-A distance(s) and angle(s).
     # Additionally, if the hydrogens belong to an RNA exocyclic amine, calculate the dihedral between the hydrogen
     # closest to the WCF nucleobase edge and the nearby endocyclic nitrogen that is part of the 6-membered ring. For
