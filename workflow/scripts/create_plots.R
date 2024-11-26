@@ -53,7 +53,8 @@ ggsave(snakemake@output[["pairs"]], plot = pairs, width = 3.25,
 
 # Extract the rows from the combined data frame relevant for these plots.
 pt_df <- combined_df %>%
-  filter(DOI == 1 & don_resn %in% c("A", "C", "G")) %>%
+  filter(DOI == 1 & don_resn %in% c("A", "C", "G") &
+           eta != -360 & theta != -360) %>%
   distinct(don_index, eq_class_member, .keep_all = TRUE)
 
 # Convert donor type from numeric to string.
@@ -62,20 +63,64 @@ pt_df[pt_df$type == 1, "type"] <- "Single"
 pt_df[pt_df$type == 2, "type"] <- "Dual"
 pt_df$type <- factor(pt_df$type, levels = c("No", "Single", "Dual"))
 
+# Translate the pseudotorsions to range from 0 to 360 degrees.
+pt_df[which(pt_df$eta >= 0), "eta_translated"] <-
+  pt_df[which(pt_df$eta >= 0), "eta"]
+pt_df[which(pt_df$eta < 0), "eta_translated"] <-
+  pt_df[which(pt_df$eta < 0), "eta"] + 360
+pt_df[which(pt_df$theta >= 0), "theta_translated"] <-
+  pt_df[which(pt_df$theta >= 0), "theta"]
+pt_df[which(pt_df$theta < 0), "theta_translated"] <-
+  pt_df[which(pt_df$theta < 0), "theta"] + 360
+
 # Create the plot.
-pt_plot <- pt_df %>% ggplot(aes(x = eta, y = theta)) +
+pt_no <- pt_df[which(pt_df$type == "No"),] %>%
+  ggplot(aes(x = eta_translated, y = theta_translated)) +
   geom_bin_2d(binwidth = c(360/100, 360/100)) +
   scale_fill_viridis(name = "Count") +
+  ggtitle("No") +
   xlab(expression(paste("Eta (\ub0)"))) +
   ylab(expression(paste("Theta (\ub0)"))) +
   coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
+  scale_x_continuous(breaks = seq(0, 360, 90)) +
+  scale_y_continuous(breaks = seq(0, 360, 90)) +
   theme_classic(base_size = 10) +
-  theme(legend.key.width = unit(0.125, "in")) +
-  facet_wrap( ~ type, nrow = 1)
+  theme(plot.title = element_text(hjust = 0.5),
+        legend.key.width = unit(0.125, "in"),
+        legend.key.height = unit(0.2, "in"))
+pt_single <- pt_df[which(pt_df$type == "Single"),] %>%
+  ggplot(aes(x = eta_translated, y = theta_translated)) +
+  geom_bin_2d(binwidth = c(360/100, 360/100)) +
+  scale_fill_viridis(name = "Count") +
+  ggtitle("Single") +
+  xlab(expression(paste("Eta (\ub0)"))) +
+  ylab(expression(paste("Theta (\ub0)"))) +
+  coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
+  scale_x_continuous(breaks = seq(0, 360, 90)) +
+  scale_y_continuous(breaks = seq(0, 360, 90)) +
+  theme_classic(base_size = 10) +
+  theme(plot.title = element_text(hjust = 0.5),
+        legend.key.width = unit(0.125, "in"),
+        legend.key.height = unit(0.2, "in"))
+pt_dual <- pt_df[which(pt_df$type == "Dual"),] %>%
+  ggplot(aes(x = eta_translated, y = theta_translated)) +
+  geom_bin_2d(binwidth = c(360/100, 360/100)) +
+  scale_fill_viridis(name = "Count") +
+  ggtitle("Dual") +
+  xlab(expression(paste("Eta (\ub0)"))) +
+  ylab(expression(paste("Theta (\ub0)"))) +
+  coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
+  scale_x_continuous(breaks = seq(0, 360, 90)) +
+  scale_y_continuous(breaks = seq(0, 360, 90)) +
+  theme_classic(base_size = 10) +
+  theme(plot.title = element_text(hjust = 0.5),
+        legend.key.width = unit(0.125, "in"),
+        legend.key.height = unit(0.2, "in"))
+pt_plot <- grid.arrange(pt_no, pt_single, pt_dual, nrow = 3)
 
 # Write the plot.
-ggsave(snakemake@output[["pseudotorsion"]], plot = pt_plot, width = 6.5,
-       height = 9, units = "in", scale = 1)
+ggsave(snakemake@output[["pseudotorsion"]], plot = pt_plot, width = 3.25,
+       height = 6, units = "in", scale = 1)
 
 #### HEAVY ATOM DENSITY PLOTS ####
 

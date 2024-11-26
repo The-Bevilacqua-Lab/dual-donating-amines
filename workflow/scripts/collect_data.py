@@ -417,12 +417,12 @@ for idx, chain in enumerate(chain_list):
         additional_df['N'] = additional_df['N'].str.upper()
         additional_df['c'] = chain
         na_torsion_df = pd.concat([na_torsion_df, additional_df])
-na_torsion_df['resi'] = na_torsion_df['resi'].astype('object')
+na_torsion_df['resi'] = na_torsion_df['resi'].astype('str')
 
 # Prepare a master dataframe containing heavy atom count, b-factor, H-bonding data, and other relevant information.
 master_df = don_info_df.merge(don_h_bonds_df, how='outer').merge(acc_h_bonds_df, how='outer')
 master_df = master_df.merge(na_torsion_df, left_on=['don_resn', 'don_chain', 'don_resi'], right_on=['N', 'c', 'resi'],
-                            how='left').drop(columns=['N', 'c', 'resi', 'chi'])
+                            how='left', suffixes=(None, '_y')).drop(columns=['N', 'c', 'resi', 'chi_y'])
 master_df.loc[:, ['model', 'PDB', 'eq_class_member']] = [model, pdb_id, eq_class_mem_id]
 
 # Write a csv containing the data stored in the master dataframe.
