@@ -77,7 +77,7 @@ for idx in range(len(snakemake.input.data)):
         # review_donor variable in the configuration file.
         keep_don_resn = snakemake.config["review_donor"].split(".")[0]
         keep_don_name = snakemake.config["review_donor"].split(".")[1]
-        df = df[(df["h_bond"] == 1) & (df["DOI"] == 1) & (df["type"] == 2) & (df["don_resn"] == keep_don_resn) &
+        df = df[(df["h_bond"] == 1) & (df["type"] == 2) & (df["don_resn"] == keep_don_resn) &
                 (df["don_name"] == keep_don_name)]
         # Determine whether each donor of interest donates to an acceptor that is specified by the review_acceptor
         # variable in the configuration file.

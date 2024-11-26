@@ -60,11 +60,9 @@ def evaluate(donor_atom, acceptor_atom, eq_class_mem, library, single_h_donors, 
     terminal_donating_atom = terminal_donor(donor_atom)
     # Determine whether the donor atom is listed in the residue library.
     # If found, collect other information about that atom.
-    donor_res = ''
     donor_info = []
     for residue in library:
         if donor_atom[2] == residue['res']:
-            donor_res = residue['res']
             for atom in residue['don']:
                 if donor_atom[1] == atom[0]:
                     donor_info = atom
@@ -76,16 +74,25 @@ def evaluate(donor_atom, acceptor_atom, eq_class_mem, library, single_h_donors, 
                 donor_info = terminal_donating_atom
             # break the loop since the residue was found
             break
-    # If any of the residues of the donor atoms or the atoms themselves were not found in the residue library, return a
-    # non-successful completion with the relevant note.
-    if not donor_res:
-        return [False, f"Error: The donor residue {donor_atom[4]}.{donor_atom[2]}.{donor_atom[3]} of {eq_class_mem} "
-                       f"was not found in the residue library when evaluating a potential H-bond."]
+    # If any of the donor atoms were not found in the residue library, return a non-successful completion.
     if not donor_info:
         return [False, f"Error: The donor atom {donor_atom[4]}.{donor_atom[2]}.{donor_atom[3]}.{donor_atom[1]} of "
                        f"{eq_class_mem} was not found in the residue library when evaluating a potential H-bond."]
+    # Determine whether the acceptor atom is listed in the residue library.
+    # If found, collect other information about that atom.
+    acceptor_info = pd.NA
+    for residue in library:
+        if acceptor_atom[2] == residue['res']:
+            for atom in residue['acc']:
+                if acceptor_atom[1] == atom[0]:
+                    acceptor_info = atom
+                    # break the loop since the atom was found
+                    break
+            # break the loop since the residue was found
+            break
     # Get the distance and angle values for the donor/acceptor pair.
-    geometry = calc_geom(donor_atom, acceptor_atom, donor_info, eq_class_mem, single_h_donors, dual_h_donors)
+    geometry = calc_geom(donor_atom, acceptor_atom, donor_info, acceptor_info, eq_class_mem, single_h_donors,
+                         dual_h_donors)
     # If the geometry calculation was not successful, return an explanation of what went wrong.
     geometry_successful = geometry[0]
     if not geometry_successful:
@@ -102,7 +109,7 @@ def evaluate(donor_atom, acceptor_atom, eq_class_mem, library, single_h_donors, 
             return [geometry_successful, [first_set, second_set]]
 
 
-def calc_geom(donor_atom, acceptor_atom, donor_info, eq_class_mem, single_h_donors, dual_h_donors):
+def calc_geom(donor_atom, acceptor_atom, donor_info, acceptor_info, eq_class_mem, single_h_donors, dual_h_donors):
     # Get the D-A distance.
     don_acc_distance = cmd.get_distance(f'index {donor_atom[0]}', f'index {acceptor_atom[0]}')
     # Collect information about the donor antecedent atom.
@@ -115,6 +122,20 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, eq_class_mem, single_h_dono
                        f"{donor_atom[2]}.{donor_atom[3]}.{donor_atom[1]} of {eq_class_mem}."]
     # Get the DA-D-A angle.
     don_angle = cmd.get_angle(f'index {stored.don_ant[0][0]}', f'index {donor_atom[0]}', f'index {acceptor_atom[0]}')
+    # Collect information about the acceptor antecedent atom.
+    stored.acc_ant = pd.NA
+    acc_angle = pd.NA
+    if not pd.isna(acceptor_info):
+        cmd.iterate(f'name {acceptor_info[4]} and neighbor index {acceptor_atom[0]}',
+                    'stored.acc_ant.append((index, name, resn, resi, chain))')
+        # Issue an error message if the number of identified acceptor antecedent atoms does not equal one.
+        if len(stored.acc_ant) != 1:
+            return [False, f"Error: The number of identified acceptor antecedent atoms does not equal one for "
+                           f"{acceptor_atom[4]}.{acceptor_atom[2]}.{acceptor_atom[3]}.{acceptor_atom[1]} of "
+                           f"{eq_class_mem}."]
+        # Get the AA-A-D angle.
+        acc_angle = cmd.get_angle(f'index {stored.acc_ant[0][0]}', f'index {acceptor_atom[0]}',
+                                  f'index {donor_atom[0]}')
     # If the donor is non-rotatable, use the donor hydrogen(s) locations to calculate the H-A distance(s) and angle(s).
     # Additionally, if the hydrogens belong to an RNA exocyclic amine, calculate the dihedral between the hydrogen
     # closest to the WCF nucleobase edge and the nearby endocyclic nitrogen that is part of the 6-membered ring. For
@@ -138,7 +159,7 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, eq_class_mem, single_h_dono
                 h_dihedral = [pd.NA, pd.NA]
                 h_name = [stored.hydrogen[0][1], pd.NA]
                 # Return the geometry values.
-                return [True, [[don_acc_distance, h_acc_distance[0], don_angle, h_angle[0], h_dihedral[0], h_name[0]]]]
+                return [True, [[don_acc_distance, h_acc_distance[0], don_angle, acc_angle, h_angle[0], h_dihedral[0], h_name[0]]]]
             elif f"{donor_atom[2]}.{donor_atom[1]}" in dual_h_donors:
                 return [False, f"Error: The atom {donor_atom[4]}.{donor_atom[2]}.{donor_atom[3]}.{donor_atom[1]} of "
                                f"{eq_class_mem} is included within the config file's dual_h_donors but only has one "
@@ -183,8 +204,8 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, eq_class_mem, single_h_dono
                     h_dihedral = [pd.NA, pd.NA]
                 h_name = [stored.hydrogen[0][1], stored.hydrogen[1][1]]
                 # Return the geometry values.
-                return [True, [[don_acc_distance, h_acc_distance[0], don_angle, h_angle[0], h_dihedral[0], h_name[0]],
-                               [don_acc_distance, h_acc_distance[1], don_angle, h_angle[1], h_dihedral[1], h_name[1]]]]
+                return [True, [[don_acc_distance, h_acc_distance[0], don_angle, acc_angle, h_angle[0], h_dihedral[0], h_name[0]],
+                               [don_acc_distance, h_acc_distance[1], don_angle, acc_angle, h_angle[1], h_dihedral[1], h_name[1]]]]
             else:
                 return [False, f"Error: The atom {donor_atom[4]}.{donor_atom[2]}.{donor_atom[3]}.{donor_atom[1]} of "
                                f"{eq_class_mem} is not included within the config file's dual_h_donors."]
@@ -194,4 +215,4 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, eq_class_mem, single_h_dono
                            f"{donor_atom[1]} of {eq_class_mem} has more than two hydrogens."]
     else:
         # Return the geometry values involving rotatable donors.
-        return [True, [[don_acc_distance, pd.NA, don_angle, pd.NA, pd.NA, pd.NA]]]
+        return [True, [[don_acc_distance, pd.NA, don_angle, acc_angle, pd.NA, pd.NA, pd.NA]]]

@@ -8,7 +8,6 @@ eq_class_members = scripts.parse_nrlist.parse_nrlist(config["rep_set_file"], con
 
 rule all:
     input:
-        "results/review_candidates/candidates.py",
         "results/review_amines/amines.py",
         "results/plots/pairs.png",
         "results/plots/density.png",
@@ -59,8 +58,7 @@ rule combine_data:
     input:
         data = expand("results/process_data/{eq_class_member}.csv", eq_class_member=eq_class_members)
     output:
-        combined = "results/combine_data/combined.csv",
-        distances = "results/combine_data/distances.csv"
+        combined = "results/combine_data/combined.csv"
     log:
         stdout = "results/logs/combine_data/output.stdout",
         stderr = "results/logs/combine_data/error.stderr"
@@ -71,8 +69,7 @@ rule combine_data:
 
 rule create_plots:
     input:
-        combined = "results/combine_data/combined.csv",
-        distances = "results/combine_data/distances.csv"
+        combined = "results/combine_data/combined.csv"
     output:
         pairs = "results/plots/pairs.png",
         pseudotorsion = "results/plots/pseudotorsion.png",

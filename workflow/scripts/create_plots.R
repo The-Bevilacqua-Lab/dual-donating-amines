@@ -15,7 +15,7 @@ combined_df <- read.csv(snakemake@input[["combined"]], header = TRUE,
 
 # Extract the rows from the combined data frame relevant for these plots.
 pairs_df <- combined_df %>%
-  filter(geom == 1 & DOI == 1 & don_resn %in% c("A", "C", "G")) %>%
+  filter(geom == 1 & don_resn %in% c("A", "C", "G")) %>%
   distinct(don_index, acc_index, eq_class_member, .keep_all = TRUE)
 
 # Find the maximum fill value corresponding to the general region below the
@@ -53,7 +53,7 @@ ggsave(snakemake@output[["pairs"]], plot = pairs, width = 3.25,
 
 # Extract the rows from the combined data frame relevant for these plots.
 pt_df <- combined_df %>%
-  filter(DOI == 1 & don_resn %in% c("A", "C", "G") &
+  filter(don_resn %in% c("A", "C", "G") &
            eta != -360 & theta != -360) %>%
   distinct(don_index, eq_class_member, .keep_all = TRUE)
 
@@ -129,7 +129,7 @@ custom_greens <- RColorBrewer::brewer.pal(4, "Greens")
 
 # Extract the rows from the combined data frame relevant for these plots.
 density_df <- combined_df %>%
-  filter(DOI == 1 & don_resn %in% c("A", "C", "G")) %>%
+  filter(don_resn %in% c("A", "C", "G")) %>%
   distinct(don_index, eq_class_member, .keep_all = TRUE)
 
 # Convert donor type from numeric to string.
@@ -200,7 +200,7 @@ ggsave(snakemake@output[["density"]], plot = density_plot, width = 6.5,
 
 # Extract the rows from the combined data frame relevant for these plots.
 nuc_id_df <- combined_df %>%
-  filter(DOI == 1 & don_resn %in% c("A", "C", "G")) %>%
+  filter(don_resn %in% c("A", "C", "G")) %>%
   distinct(don_index, eq_class_member, .keep_all = TRUE)
 
 # Convert donor type from numeric to string.
@@ -244,7 +244,7 @@ ggsave(snakemake@output[["nuc_id"]], plot = nuc_id_plot, width = 6.5,
 
 # Extract the rows from the combined data frame relevant for these plots.
 acc_id_df <- combined_df %>%
-  filter(DOI == 1 & h_bond == 1 & don_resn %in% c("A", "C", "G")) %>%
+  filter(h_bond == 1 & don_resn %in% c("A", "C", "G")) %>%
   distinct(don_index, acc_index, eq_class_member, .keep_all = TRUE)
 
 # Convert column to factor.
@@ -321,7 +321,7 @@ ggsave(snakemake@output[["acc_id"]], plot = acc_id_plot, width = 6.5,
 
 # Extract the rows from the combined data frame relevant for these plots.
 chi_df <- combined_df %>%
-  filter(DOI == 1 & don_resn %in% c("A", "C", "G")) %>%
+  filter(don_resn %in% c("A", "C", "G")) %>%
   distinct(don_index, eq_class_member, .keep_all = TRUE)
 
 # Convert donor type from numeric to string.
