@@ -7,109 +7,112 @@ This module contains the main residue library for this repo.
 #     0: donor/acceptor atom name
 #     1: donor/acceptor element
 #     2: is the donor/acceptor rotatable?
-#     3: donor/acceptor formal charge
+#     3: donor/acceptor formal charge according to PyMOL
 #     4: antecedent atom of donor/acceptor
 RESIDUE_LIBRARY = [
     {
         "res": "ALA",
         "don": [["N", "N", False, 0, "CA"]],
-        "acc": [["O", "O", False, 0, "C"]]
+        "acc": [["O", "O", False, 0, "C"], ["OXT", "O", False, 0, "C"]]
     },
     {
         "res": "ASP",
         "don": [["N", "N", False, 0, "CA"]],
-        "acc": [["O", "O", False, 0, "C"], ["OD1", "O", False, 0, "CG"], ["OD2", "O", False, -1, "CG"]]
+        "acc": [["O", "O", False, 0, "C"], ["OXT", "O", False, 0, "C"], ["OD1", "O", False, 0, "CG"],
+                ["OD2", "O", False, -1, "CG"]]
     },
     {
         "res": "ASN",
         "don": [["N", "N", False, 0, "CA"], ["ND2", "N", False, 0, "CG"]],
-        "acc": [["O", "O", False, 0, "C"], ["OD1", "O", False, 0, "CG"]]
+        "acc": [["O", "O", False, 0, "C"], ["OXT", "O", False, 0, "C"], ["OD1", "O", False, 0, "CG"]]
     },
     {
         "res": "ARG",
         "don": [["N", "N", False, 0, "CA"], ["NE", "N", False, 0, "CD"], ["NH1", "N", False, 1, "CZ"],
                 ["NH2", "N", False, 0, "CZ"]],
-        "acc": [["O", "O", False, 0, "C"]]
+        "acc": [["O", "O", False, 0, "C"], ["OXT", "O", False, 0, "C"]]
     },
     {
         "res": "CYS",
         "don": [["N", "N", False, 0, "CA"], ["SG", "S", True, 0, "CB"]],
-        "acc": [["O", "O", False, 0, "C"], ["SG", "S", True, 0, "CB"]]
+        "acc": [["O", "O", False, 0, "C"], ["OXT", "O", False, 0, "C"], ["SG", "S", True, 0, "CB"]]
     },
     {
         "res": "GLU",
         "don": [["N", "N", False, 0, "CA"]],
-        "acc": [["O", "O", False, 0, "C"], ["OE1", "O", False, 0, "CD"], ["OE2", "O", False, -1, "CD"]]
+        "acc": [["O", "O", False, 0, "C"], ["OXT", "O", False, 0, "C"], ["OE1", "O", False, 0, "CD"],
+                ["OE2", "O", False, -1, "CD"]]
     },
     {
         "res": "GLN",
         "don": [["N", "N", False, 0, "CA"], ["NE2", "N", False, 0, "CD"]],
-        "acc": [["O", "O", False, 0, "C"], ["OE1", "O", False, 0, "CD"]]
+        "acc": [["O", "O", False, 0, "C"], ["OXT", "O", False, 0, "C"], ["OE1", "O", False, 0, "CD"]]
     },
     {
         "res": "GLY",
         "don": [["N", "N", False, 0, "CA"]],
-        "acc": [["O", "O", False, 0, "C"]]
+        "acc": [["O", "O", False, 0, "C"], ["OXT", "O", False, 0, "C"]]
     },
     {
         "res": "HIS",
         "don": [["N", "N", False, 0, "CA"], ["ND1", "N", False, 0, "CG"], ["NE2", "N", False, 0, "CD2"]],
-        "acc": [["O", "O", False, 0, "C"], ["ND1", "N", False, 0, "CG"], ["NE2", "N", False, 0, "CD2"]]
+        "acc": [["O", "O", False, 0, "C"], ["OXT", "O", False, 0, "C"], ["ND1", "N", False, 0, "CG"],
+                ["NE2", "N", False, 0, "CD2"]]
     },
     {
         "res": "ILE",
         "don": [["N", "N", False, 0, "CA"]],
-        "acc": [["O", "O", False, 0, "C"]]
+        "acc": [["O", "O", False, 0, "C"], ["OXT", "O", False, 0, "C"]]
     },
     {
         "res": "LEU",
         "don": [["N", "N", False, 0, "CA"]],
-        "acc": [["O", "O", False, 0, "C"]]
+        "acc": [["O", "O", False, 0, "C"], ["OXT", "O", False, 0, "C"]]
     },
     {
         "res": "LYS",
         "don": [["N", "N", False, 0, "CA"], ["NZ", "N", True, 1, "CE"]],
-        "acc": [["O", "O", False, 0, "C"]]
+        "acc": [["O", "O", False, 0, "C"], ["OXT", "O", False, 0, "C"]]
     },
     {
         "res": "MET",
         "don": [["N", "N", False, 0, "CA"]],
-        "acc": [["O", "O", False, 0, "C"], ["SD", "S", True, 0, "CG"]]
+        "acc": [["O", "O", False, 0, "C"], ["OXT", "O", False, 0, "C"], ["SD", "S", True, 0, "CG"]]
     },
     {
         "res": "PHE",
         "don": [["N", "N", False, 0, "CA"]],
-        "acc": [["O", "O", False, 0, "C"]]
+        "acc": [["O", "O", False, 0, "C"], ["OXT", "O", False, 0, "C"]]
     },
     {
         "res": "PRO",
         "don": [],
-        "acc": [["O", "O", False, 0, "C"]]
+        "acc": [["O", "O", False, 0, "C"], ["OXT", "O", False, 0, "C"]]
     },
     {
         "res": "SER",
         "don": [["N", "N", False, 0, "CA"], ["OG", "O", True, 0, "CB"]],
-        "acc": [["O", "O", False, 0, "C"], ["OG", "O", True, 0, "CB"]]
+        "acc": [["O", "O", False, 0, "C"], ["OXT", "O", False, 0, "C"], ["OG", "O", True, 0, "CB"]]
     },
     {
         "res": "THR",
         "don": [["N", "N", False, 0, "CA"], ["OG1", "O", True, 0, "CB"]],
-        "acc": [["O", "O", False, 0, "C"], ["OG1", "O", True, 0, "CB"]]
+        "acc": [["O", "O", False, 0, "C"], ["OXT", "O", False, 0, "C"], ["OG1", "O", True, 0, "CB"]]
     },
     {
         "res": "TRP",
         "don": [["N", "N", False, 0, "CA"], ["NE1", "N", False, 0, "CD1"]],
-        "acc": [["O", "O", False, 0, "C"]]
+        "acc": [["O", "O", False, 0, "C"], ["OXT", "O", False, 0, "C"]]
     },
     {
         "res": "TYR",
         "don": [["N", "N", False, 0, "CA"], ["OH", "O", False, 0, "CZ"]],
-        "acc": [["O", "O", False, 0, "C"], ["OH", "O", False, 0, "CZ"]]
+        "acc": [["O", "O", False, 0, "C"], ["OXT", "O", False, 0, "C"], ["OH", "O", False, 0, "CZ"]]
     },
     {
         "res": "VAL",
         "don": [["N", "N", False, 0, "CA"]],
-        "acc": [["O", "O", False, 0, "C"]]
+        "acc": [["O", "O", False, 0, "C"], ["OXT", "O", False, 0, "C"]]
     },
     {
         "res": "A",
