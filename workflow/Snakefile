@@ -55,32 +55,6 @@ rule review_amines:
     script:
         "scripts/review_amines.py"
 
-rule identify_candidates:
-    input:
-        data = expand("results/process_data/{eq_class_member}.csv", eq_class_member=eq_class_members)
-    output:
-        candidates = "results/identify_candidates/candidates.csv"
-    log:
-        stdout = "results/logs/identify_candidates/output.stdout",
-        stderr = "results/logs/identify_candidates/error.stderr"
-    conda:
-        "envs/general.yaml"
-    script:
-        "scripts/identify_candidates.py"
-
-rule review_candidates:
-    input:
-        candidates = "results/identify_candidates/candidates.csv"
-    output:
-        script = "results/review_candidates/candidates.py"
-    log:
-        stdout = "results/logs/review_candidates/output.stdout",
-        stderr = "results/logs/review_candidates/error.stderr"
-    conda:
-        "envs/general.yaml"
-    script:
-        "scripts/review_candidates.py"
-
 rule combine_data:
     input:
         data = expand("results/process_data/{eq_class_member}.csv", eq_class_member=eq_class_members)
