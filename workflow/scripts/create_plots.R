@@ -377,3 +377,6 @@ ggsave(snakemake@output[["chi_partial_y"]], plot = chi_plot_partial_y, width = 3
        height = 9, units = "in", scale = 1)
 ggsave(snakemake@output[["chi_combined"]], plot = chi_plot_combined, width = 6.5,
        height = 9, units = "in", scale = 1)
+
+# Remove the default Rplots.pdf generated.
+file.remove('Rplots.pdf')
