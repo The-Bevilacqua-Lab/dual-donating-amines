@@ -31,7 +31,7 @@ if snakemake.config["commit_hash"]:
     repo_changes = list(subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"],
                                                 cwd=os.path.dirname(os.path.realpath(__file__)))
                         .decode('ascii').strip().split("\n"))
-    acceptable_changes = ['config/config.yaml', snakemake.config["rep_set_file"], snakemake.config["add_res_file"]]
+    acceptable_changes = ['config/config.yaml', snakemake.config["rep_set_file"]]
     for file in repo_changes:
         if file.split(' ')[-1] in acceptable_changes:
             repo_changes.remove(file)
