@@ -43,13 +43,13 @@ if snakemake.config["commit_hash"]:
         sys.exit(1)
 
 # Initialize the combined dataframe.
-combined_df = pd.DataFrame(columns=['don_index', 'don_name', 'don_resn', 'don_resi', 'don_chain', 'don_segi', 'count_1',
-                                    'count_2', 'b_factor', 'chi', 'acc_index', 'acc_name', 'acc_resn', 'acc_resi',
-                                    'acc_chain', 'acc_segi', 'don_acc_distance', 'h_acc_distance', 'don_angle',
-                                    'acc_angle', 'h_angle', 'h_dihedral', 'h_name', 'model', 'PDB', 'eq_class_member',
-                                    'h_bond', 'type', 'acc_charge', 'geom', 'v0', 'v1', 'v2', 'v3', 'v4', 'v5', 'v6',
-                                    'eta', 'theta', "eta'", "theta'", 'alpha', 'beta', 'gamma', 'delta', 'epsilon',
-                                    'zeta', 'i1'])
+combined_df = pd.DataFrame(columns=['don_index', 'don_name', 'don_resn', 'don_resi', 'don_chain', 'don_segi', 'don_alt',
+                                    'count_1', 'count_2', 'b_factor', 'chi', 'acc_index', 'acc_name', 'acc_resn',
+                                    'acc_resi', 'acc_chain', 'acc_segi', 'acc_alt', 'don_acc_distance',
+                                    'h_acc_distance', 'don_angle', 'acc_angle', 'h_angle', 'h_dihedral', 'h_name',
+                                    'model', 'PDB', 'eq_class_member', 'h_bond', 'type', 'acc_charge', 'geom', 'v0',
+                                    'v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'eta', 'theta', "eta'", "theta'", 'alpha',
+                                    'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'i1'])
 
 # Combine the dataframes from the different equivalence class members. Do not incorporate empty dataframes.
 for idx in range(len(snakemake.input.data)):

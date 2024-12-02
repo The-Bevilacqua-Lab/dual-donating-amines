@@ -184,7 +184,7 @@ for index in indices:
 # Store a list of donors of interest from the equivalence class member RNA chains.
 stored.donor_list = []
 cmd.iterate(f'({mem_rna_chains}) and ({donors_of_interest_str})',
-            'stored.donor_list.append([index, name, resn, resi, chain, segi])')
+            'stored.donor_list.append([index, name, resn, resi, chain, segi, alt])')
 
 # Store the number of heavy atoms belonging to organic molecules or polymers near the donor of interest within a
 # dictionary. Additionally, store the average b-factor of the heavy atoms that make up the nucleobase containing the
@@ -252,7 +252,7 @@ for donor in stored.donor_list:
     stored.acceptors = []
     cmd.iterate(f'(acceptors within {snakemake.config["search_dist"]} of index {donor[0]}) and (organic or polymer) '
                 f'and not (sidechain and byres index {donor[0]})',
-                'stored.acceptors.append([index, name, resn, resi, chain, segi])')
+                'stored.acceptors.append([index, name, resn, resi, chain, segi, alt])')
     # Add the acceptors to the atom pair dictionary.
     for acceptor in stored.acceptors:
         row = donor + acceptor + [f'{donor[2]}.{donor[1]}', f'{acceptor[2]}.{acceptor[1]}']
@@ -264,9 +264,10 @@ don_atom_pair_df = pd.DataFrame(don_atom_pair_dict)
 
 # Acquire the H-bonding geometry measurements for all acceptors near each donor of interest.
 don_h_bonds_dict = {"don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "don_segi": [],
-                    "acc_index": [], "acc_name": [], "acc_resn": [], "acc_resi": [], "acc_chain": [], "acc_segi": [],
-                    "don_resn_name": [], "acc_resn_name": [], "don_acc_distance": [], "h_acc_distance": [],
-                    "don_angle": [], "acc_angle": [], "h_angle": [], "h_dihedral": [], "h_name": []}
+                    "don_alt": [], "acc_index": [], "acc_name": [], "acc_resn": [], "acc_resi": [], "acc_chain": [],
+                    "acc_segi": [], "acc_alt": [], "don_resn_name": [], "acc_resn_name": [], "don_acc_distance": [],
+                    "h_acc_distance": [], "don_angle": [], "acc_angle": [], "h_angle": [], "h_dihedral": [],
+                    "h_name": []}
 for atom_pair in don_atom_pair_df.itertuples():
     # Store the donor and acceptor atom values for the dataframe row.
     don_list = [atom_pair.don_index, atom_pair.don_name, atom_pair.don_resn, atom_pair.don_resi, atom_pair.don_chain]
@@ -281,7 +282,8 @@ for atom_pair in don_atom_pair_df.itertuples():
     # Add the H-bond measurements to the dictionary.
     else:
         for h_bond in h_bond_list[1]:
-            row = (don_list + [atom_pair.don_segi] + acc_list + [atom_pair.acc_segi] +
+            row = (don_list + [atom_pair.don_segi, atom_pair.don_alt] +
+                   acc_list + [atom_pair.acc_segi, atom_pair.acc_alt] +
                    [atom_pair.don_resn_name, atom_pair.acc_resn_name] + h_bond)
             for key, value in zip(don_h_bonds_dict, row):
                 don_h_bonds_dict[key].append(value)
