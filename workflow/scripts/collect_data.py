@@ -23,6 +23,7 @@ from datetime import datetime
 import residue_library
 import eval_H_bonding
 import remove_alt_conf
+import atom_depth
 
 # Redirect stdout and stderr to log files.
 stdout = sys.stdout
@@ -238,6 +239,13 @@ for donor in stored.donor_list:
     row = donor + [count_1, count_2, b_factor_avg, chi]
     for key, value in zip(don_info_dict, row):
         don_info_dict[key].append(value)
+
+# Calculate the atom depth for each donor of interest.
+depths = atom_depth.atom_depth(pdb_id, model, eq_class_mem_id, stored.donor_list)
+if type(depths) is list:
+    don_info_dict["depths"] = depths
+else:
+    error(depths)
 
 # Create a dataframe based on the info dictionary.
 don_info_df = pd.DataFrame(don_info_dict).astype("str")
