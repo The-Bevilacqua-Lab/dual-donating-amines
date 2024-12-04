@@ -6,9 +6,9 @@ from Bio.PDB.MMCIFParser import MMCIFParser
 from Bio.PDB.ResidueDepth import get_surface, min_dist
 
 
-def atom_depth(pdb_id, model, eq_class_mem_id, donor_list):
+def atom_depth(pdb_id, model, eq_class_mem_id, donor_list, original_mmcif_dir):
     parser = MMCIFParser()
-    structure = parser.get_structure(pdb_id, f"{snakemake.config['original_mmcif_dir']}{pdb_id.lower()}.cif")
+    structure = parser.get_structure(pdb_id, f"{original_mmcif_dir}{pdb_id.lower()}.cif")
     surface = get_surface(structure[model])
     distances = []
     for pymol_donor in donor_list:

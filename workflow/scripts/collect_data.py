@@ -241,7 +241,7 @@ for donor in stored.donor_list:
         don_info_dict[key].append(value)
 
 # Calculate the atom depth for each donor of interest.
-depths = atom_depth.atom_depth(pdb_id, model, eq_class_mem_id, stored.donor_list)
+depths = atom_depth.atom_depth(pdb_id, model, eq_class_mem_id, stored.donor_list, original_mmcif_dir)
 if type(depths) is list:
     don_info_dict["depths"] = depths
 else:
