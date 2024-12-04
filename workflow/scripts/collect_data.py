@@ -241,7 +241,8 @@ for donor in stored.donor_list:
         don_info_dict[key].append(value)
 
 # Calculate the atom depth for each donor of interest.
-depths = atom_depth.atom_depth(pdb_id, model, eq_class_mem_id, stored.donor_list, original_mmcif_dir)
+msms = snakemake.config["msms"]
+depths = atom_depth.atom_depth(pdb_id, model, eq_class_mem_id, stored.donor_list, original_mmcif_dir, msms)
 if type(depths) is list:
     don_info_dict["depths"] = depths
 else:
@@ -253,8 +254,8 @@ don_info_df = pd.DataFrame(don_info_dict).astype("str")
 # Store a list of acceptors near the donors of interest within an atom pair dictionary. Also include two keys which have
 # values containing both residue and atom names for donor and acceptor atoms.
 don_atom_pair_dict = {"don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "don_segi": [],
-                      "acc_index": [], "acc_name": [], "acc_resn": [], "acc_resi": [], "acc_chain": [], "acc_segi": [],
-                      "don_resn_name": [], "acc_resn_name": []}
+                      "don_alt": [], "acc_index": [], "acc_name": [], "acc_resn": [], "acc_resi": [], "acc_chain": [],
+                      "acc_segi": [], "acc_alt": [], "don_resn_name": [], "acc_resn_name": []}
 for donor in stored.donor_list:
     # Find the acceptors near the donor. Exclude the nucleobase of the donor.
     stored.acceptors = []
