@@ -2,7 +2,7 @@ channels:
   - conda-forge
 dependencies:
   - python=3.11.0
-  - pymol-open-source=2.5.0
+  - pymol-open-source=3.0.0
   - git=2.44.0
   - pandas=2.2.1
   - r-base=4.4.1
