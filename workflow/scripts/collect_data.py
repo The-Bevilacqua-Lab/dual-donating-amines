@@ -23,6 +23,7 @@ from datetime import datetime
 import residue_library
 import eval_H_bonding
 import remove_alt_conf
+import sasa
 
 # Redirect stdout and stderr to log files.
 stdout = sys.stdout
@@ -238,6 +239,13 @@ for donor in stored.donor_list:
     row = donor + [count_1, count_2, b_factor_avg, chi]
     for key, value in zip(don_info_dict, row):
         don_info_dict[key].append(value)
+
+# Calculate the SASA using Bio.PDB for each donor of interest and add it to the dictionary.
+sasa_values = sasa.sasa(pdb_id, model, eq_class_mem_id, stored.donor_list, original_mmcif_dir)
+if type(sasa_values) is list:
+    don_info_dict["SASA"] = sasa_values
+else:
+    error(sasa_values)
 
 # Create a dataframe based on the info dictionary.
 don_info_df = pd.DataFrame(don_info_dict).astype("str")
