@@ -14,10 +14,6 @@ count_dist_2: 12.5
 # What are the cutoffs?
 h_dist_max: 2.5
 h_ang_min: 140.0
-general_b_factor_cutoff: 79.0
-
-# What is the executable for MSMS?
-msms: "msms.x86_64Darwin.2.6.1"
 
 # What are the residue and atom names of the donors that are to be considered, categorized by how many hydrogens they
 # have?
