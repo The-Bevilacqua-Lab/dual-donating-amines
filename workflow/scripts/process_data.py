@@ -12,8 +12,6 @@ from datetime import datetime
 import pandas as pd
 import residue_library
 
-# TODO incorporate b-factor filter including removing residues with b-factor of 0
-
 # Redirect stdout and stderr to log files.
 stdout = sys.stdout
 stderr = sys.stderr
