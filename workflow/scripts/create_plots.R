@@ -196,6 +196,50 @@ density_plot <- grid.arrange(density_1_plot, density_2_plot, nrow = 2)
 ggsave(snakemake@output[["density"]], plot = density_plot, width = 6.5,
        height = 9, units = "in", scale = 1)
 
+#### SASA PLOTS ####
+
+# Specify custom colors.
+custom_greens <- RColorBrewer::brewer.pal(4, "Greens")
+
+# Extract the rows from the combined data frame relevant for these plots.
+sasa_df <- combined_df %>%
+  filter(don_resn %in% c("A", "C", "G")) %>%
+  distinct(don_index, eq_class_member, .keep_all = TRUE)
+
+# Convert donor type from numeric to string.
+sasa_df[sasa_df$type == 0, "type"] <- "No"
+sasa_df[sasa_df$type == 1, "type"] <- "Single"
+sasa_df[sasa_df$type == 2, "type"] <- "Dual"
+sasa_df$type <- factor(sasa_df$type, levels = c("No",
+                                                "Single",
+                                                "Dual"))
+
+# Calculate samples sizes.
+sasa_summary <- sasa_df %>% summarise(n = n(), .by = c(type, don_resn))
+
+# Specify the variables for the plots.
+ylim <- c(-0.01, 0.07)
+ratio <- (3/diff(ylim))*1.5
+
+# Create the plots.
+sasa_plot <- sasa_df %>% ggplot(aes(x=type, y=SASA, fill=type)) +
+  geom_violin(show.legend = FALSE) +
+  geom_boxplot(width = 0.2, alpha = 0, outlier.size = 1, show.legend = FALSE) +
+  geom_text(data = sasa_summary,
+            aes(x=type, y=-0.005,
+                label = paste("n = ", prettyNum(n, big.mark = ","), sep = "")),
+            size = 10, size.unit = "pt", vjust = 1, angle = 30) +
+  coord_fixed(ratio = ratio, xlim = c(1, 3), ylim = ylim) +
+  xlab("Type of Amine H-Bonding") +
+  ylab(expression(paste("SASA (\uc5\ub2)"))) +
+  scale_fill_manual(values = custom_greens[2:4]) +
+  theme_bw(base_size = 10) +
+  facet_wrap( ~ don_resn, nrow = 1)
+
+# Write the plots.
+ggsave(snakemake@output[["sasa"]], plot = sasa_plot, width = 6.5,
+       height = 4, units = "in", scale = 1)
+
 #### NUCLEOBASE IDENTITY PLOT ####
 
 # Extract the rows from the combined data frame relevant for these plots.
