@@ -24,6 +24,7 @@ import residue_library
 import eval_H_bonding
 import remove_alt_conf
 import sasa
+from parse_mmCIF import retrieve_model
 
 # Redirect stdout and stderr to log files.
 stdout = sys.stdout
@@ -154,14 +155,41 @@ mem_rna_chains = " ".join(["chain " + chain for chain in chain_list])
 cmd.fetch(pdb_id)
 
 # If the structure contains more than one model (or "state" in PyMOL), create a new PyMOL object of just that model. If
-# only a single model exists, change the name of the object to identify the model number.
-if cmd.count_states(pdb_id) > 1:
-    cmd.create(f'{pdb_id}_state_{model}', selection=pdb_id,
-               source_state=model,
-               target_state=1)
-    cmd.delete(pdb_id)
-else:
+# only a single model exists, change the name of the object to match the format of objects derived from structures that
+# have multiple models. Additionally, model numbers typically start at 1 and then increment upwards by 1 for each
+# additional model present. Depending on the situation, throw an error, make a note, and/or reset the model variable
+# when an unusual model numbering is detected.
+num_models = cmd.count_states(pdb_id)
+# Based on the number of models present, determine what the expected model numbers would be. This will match how PyMOL
+# assigns the states.
+normal_model_list = list(range(1, num_models + 1))
+# Retrieve the model numbers specified by the mmCIF file.
+actual_model_list = retrieve_model(original_mmcif_dir, pdb_id)
+if num_models > 1:
+    print(f"Note: Equivalence class member {eq_class_mem_id} has multiple models.")
+    if actual_model_list == normal_model_list:
+        cmd.create(f'{pdb_id}_state_{model}', selection=pdb_id,
+                   source_state=model,
+                   target_state=1)
+        cmd.delete(pdb_id)
+    else:
+        error(f"Error: There are multiple models in {eq_class_mem_id}, and the model numbers in the mmCIF do not match "
+              f"how PyMOL numbers the states.")
+elif num_models == 1:
+    # Make note if the model number in the mmCIF differs from 1.
+    if not actual_model_list == normal_model_list:
+        error(f"Note: There is a single model in {eq_class_mem_id}, and the model number in the mmCIF is not 1, which "
+              f"does not match the PyMOL numbering.")
+    # Make a note if the representative structure model differs from 1 and then reset it to 1.
+    if not model == normal_model_list[0]:
+        error(f"Note: There is a single model in {eq_class_mem_id}, and the model number specified for this "
+              f"representative structure is not 1, which does not match the PyMOL numbering. This model number will be "
+              f"reset to 1.")
+        model = 1
     cmd.set_name(pdb_id, f'{pdb_id}_state_{model}')
+else:
+    error("Error: An issue occurred when working with the number of models (i.e., PyMOL states) present in the "
+          f"structure for {eq_class_mem_id}.")
 
 # Remove atoms representing alternative conformations.
 remove_status = remove_alt_conf.remove(eq_class_mem_id)
