@@ -7,3 +7,4 @@ dependencies:
   - pandas=2.2.1
   - r-base=4.4.1
   - biopython=1.84
+  - gemmi=0.7.0
