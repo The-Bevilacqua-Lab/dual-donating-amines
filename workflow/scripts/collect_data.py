@@ -167,6 +167,18 @@ normal_model_list = list(range(1, num_models + 1))
 actual_model_list = retrieve_model(original_mmcif_dir, pdb_id)
 if num_models > 1:
     print(f"Note: Equivalence class member {eq_class_mem_id} has multiple models.")
+    # Ensure that the list of model numbers in the mmCIF file matches the expected list of model numbers. This is
+    # important because the model variable is initially set to the value reported for the equivalence class member,
+    # which is retrieved from the mmCIF file by the BGSU Representative Sets of RNA 3D Structures algorithm. These
+    # values from the mmCIF file could be any range of numbers. Meanwhile, the "states" in PyMOL seem to always start
+    # at 1 and then increment upwards by 1 for each addition model present. Therefore, for the keyword argument
+    # "source_state=model" below to work, the model numbering convention used in the mmCIF file needs to match the
+    # state numbering convention used in PyMOL. Lastly, even if the mmCIF model list matches the expected model list,
+    # this does not guarantee that the model evaluated by this script will match the model evaluated by the BGSU
+    # algorithm. The BGSU algorithm typically, if not always, considers the first version of a PDB entry. As new
+    # versions of PDB entries are released, the model numbers can change. Thus, unless the version of the PDB entry
+    # (i.e., mmCIF file) evaluated by this script exactly matches the version evaluated by the BGSU algorithm,
+    # differences in model numbers may exist.
     if actual_model_list == normal_model_list:
         cmd.create(f'{pdb_id}_state_{model}', selection=pdb_id,
                    source_state=model,
