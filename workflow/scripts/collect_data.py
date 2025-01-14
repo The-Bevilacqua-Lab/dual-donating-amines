@@ -162,7 +162,7 @@ cmd.fetch(pdb_id)
 num_models = cmd.count_states(pdb_id)
 # Based on the number of models present, determine what the expected model numbers would be. This will match how PyMOL
 # assigns the states.
-normal_model_list = list(range(1, num_models + 1))
+normal_model_list = [str(number) for number in range(1, num_models + 1)]
 # Retrieve the model numbers specified by the mmCIF file.
 actual_model_list = retrieve_model(original_mmcif_dir, pdb_id)
 if num_models > 1:
@@ -190,14 +190,14 @@ if num_models > 1:
 elif num_models == 1:
     # Make note if the model number in the mmCIF differs from 1.
     if not actual_model_list == normal_model_list:
-        error(f"Note: There is a single model in {eq_class_mem_id}, and the model number in the mmCIF is not 1, which "
+        print(f"Note: There is a single model in {eq_class_mem_id}, and the model number in the mmCIF is not 1, which "
               f"does not match the PyMOL numbering.")
     # Make a note if the representative structure model differs from 1 and then reset it to 1.
     if not model == normal_model_list[0]:
-        error(f"Note: There is a single model in {eq_class_mem_id}, and the model number specified for this "
+        print(f"Note: There is a single model in {eq_class_mem_id}, and the model number specified for this "
               f"representative structure is not 1, which does not match the PyMOL numbering. This model number will be "
               f"reset to 1.")
-        model = 1
+        model = "1"
     cmd.set_name(pdb_id, f'{pdb_id}_state_{model}')
 else:
     error("Error: An issue occurred when working with the number of models (i.e., PyMOL states) present in the "
