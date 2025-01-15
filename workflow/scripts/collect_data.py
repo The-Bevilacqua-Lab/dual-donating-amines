@@ -42,9 +42,6 @@ def error(msg):
     # If the structure has already been loaded, save the modified structure if specified.
     if cmd.count_atoms('all') > 0 and snakemake.config["save_modified_mmcif"]:
         cmd.save(modified_mmcif_dir + eq_class_mem_id + ".cif")
-    # If the structure has already been loaded, remove the original mmCIF if specified.
-    if cmd.count_atoms('all') > 0 and snakemake.config["remove_original_mmcif"]:
-        subprocess.run(["rm", original_mmcif_dir + f"{pdb_id}.cif".lower()])
     # Print the error message.
     print(msg)
     # Close files, reset stdout and stderr, and exit.
@@ -400,10 +397,6 @@ master_df.to_csv(snakemake.output.data, index=False, mode='a', na_rep='NaN')
 # Save the modified structure if specified.
 if snakemake.config["save_modified_mmcif"]:
     cmd.save(modified_mmcif_dir + eq_class_mem_id + ".cif")
-
-# Remove the original mmCIF if specified.
-if snakemake.config["remove_original_mmcif"]:
-    subprocess.run(["rm", original_mmcif_dir + f"{pdb_id}.cif".lower()])
 
 # Close files and reset stdout and stderr.
 stdout_file.close()
