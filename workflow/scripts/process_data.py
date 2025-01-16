@@ -20,6 +20,21 @@ stderr_file = open(snakemake.log.stderr, mode='w')
 sys.stdout = stdout_file
 sys.stderr = stderr_file
 
+
+# This function is to be run if an error is encountered.
+def error(msg):
+    # Create the output files expected by Snakemake.
+    subprocess.run(["touch", snakemake.output.data])
+    # Print the error message.
+    print(msg)
+    # Close files, reset stdout and stderr, and exit.
+    stdout_file.close()
+    stderr_file.close()
+    sys.stdout = stdout
+    sys.stderr = stderr
+    sys.exit(0)
+
+
 # If commit_hash is set to true in the Snakemake configuration file, check if any changes have been made to the repo and
 # get the hash of the current git commit. If uncommitted changes have been made to anything other than files listed in
 # the acceptable_changes variable defined below, print an error message and exit.
@@ -93,6 +108,52 @@ def classify(grp):
         return grp
 
 
+# Define a function to identify the pair of acceptors that a dual H-bonding amine is donating to. If there is more than
+# one acceptor for a given hydrogen, choose the acceptor that exhibits the best (greatest) H-bonding angle.
+def find_pairs(grp):
+    # If the type is not 2, set the values to NA.
+    if pd.isna(grp.iloc[0, :].loc['type']) or grp.iloc[0, :].loc['type'] != 2:
+        return grp
+    h_name_list = []
+    for row in grp.itertuples():
+        if not pd.isna(row.h_bond):
+            if row.h_bond == 1 and row.h_name not in h_name_list:
+                h_name_list.append(row.h_name)
+    if len(h_name_list) != 2:
+        error("Error: During the process_data rule, exactly two hydrogens were not identified when the find_pairs "
+              f"function was run for an amine classified as dual H-bonding in {eq_class_mem_id}.")
+    acc_pair_1 = []
+    acc_pair_2 = []
+    for row in grp.itertuples():
+        if row.h_bond == 1 and row.h_name == h_name_list[0]:
+            acc_pair_1.append(row)
+        if row.h_bond == 1 and row.h_name == h_name_list[1]:
+            acc_pair_2.append(row)
+    for pair in [acc_pair_1, acc_pair_2]:
+        if len(pair) > 1:
+            best_ang = pair[0]
+            for named_series in pair[1:]:
+                if named_series.h_angle > best_ang.h_angle:
+                    best_ang = named_series
+            if pair == acc_pair_1:
+                acc_pair_1 = best_ang
+            elif pair == acc_pair_2:
+                acc_pair_2 = best_ang
+        else:
+            if pair == acc_pair_1:
+                acc_pair_1 = pair[0]
+            elif pair == acc_pair_2:
+                acc_pair_2 = pair[0]
+    grp['acc_pair_1_name'], grp['acc_pair_1_resn'], grp['acc_pair_1_resi'], grp['acc_pair_1_chain'] = (
+        acc_pair_1.acc_name, acc_pair_1.acc_resn, acc_pair_1.acc_resi, acc_pair_1.acc_chain)
+    grp['acc_pair_2_name'], grp['acc_pair_2_resn'], grp['acc_pair_2_resi'], grp['acc_pair_2_chain'] = (
+        acc_pair_2.acc_name, acc_pair_2.acc_resn, acc_pair_2.acc_resi, acc_pair_2.acc_chain)
+    return grp
+
+
+# Create an identifier for the equivalence class member.
+eq_class_mem_id = snakemake.input.data[21:-4]
+
 # Read the data for the equivalence class member.
 try:
     df = pd.read_csv(snakemake.input.data, comment="#", keep_default_na=False, na_values="NaN",
@@ -114,6 +175,12 @@ df = df.apply(h_bonding, axis=1)
 df = df.assign(type=pd.NA)
 df.loc[:, ~df.columns.isin(["don_index"])] = (
     df.groupby("don_index", group_keys=False).apply(classify, include_groups=False))
+
+# Add two new columns that identifies the pair of acceptors corresponding to dual H-bonding amines.
+df = df.assign(acc_pair_1_name=pd.NA, acc_pair_1_resn=pd.NA, acc_pair_1_resi=pd.NA, acc_pair_1_chain=pd.NA,
+               acc_pair_2_name=pd.NA, acc_pair_2_resn=pd.NA, acc_pair_2_resi=pd.NA, acc_pair_2_chain=pd.NA)
+df.loc[:, ~df.columns.isin(["don_index"])] = (
+    df.groupby("don_index", group_keys=False).apply(find_pairs, include_groups=False))
 
 # Prepare a list of acceptor residue and atom names from canonical amino acids and nucleic acids that have substantially
 # greater negative charge.
