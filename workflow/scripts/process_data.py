@@ -111,7 +111,7 @@ def classify(grp):
 # Define a function to identify the pair of acceptors that a dual H-bonding amine is donating to. If there is more than
 # one acceptor for a given hydrogen, choose the acceptor that exhibits the best (greatest) H-bonding angle.
 def find_pairs(grp):
-    # If the type is not 2, set the values to NA.
+    # If the type is not 2, do not change the values.
     if pd.isna(grp.iloc[0, :].loc['type']) or grp.iloc[0, :].loc['type'] != 2:
         return grp
     h_name_list = []
@@ -151,6 +151,63 @@ def find_pairs(grp):
     return grp
 
 
+# TODO split this into two functions, one that renames acceptors and another that combines them. The function that renames acceptors should be applied to all acceptors to replace the need to do this again in the R script for the acc id plot.
+
+# Create a new column with the names of both atoms of the acceptor pair corresponding to dual H-bonding amines. Some
+# names will be changed from what is used in the PDB. For instance, both OP1 and OP2 atoms will be renamed NPO. Which
+# one of the two acceptors appears first will depend on how the two acceptors are sorted after combining into a list.
+# Having consistent sorting of acceptors is important for the eventual plotting of this data. If the acceptor pairs
+# are not consistently sorted, different instances of the same acceptor pair could be diluted into two bins. For
+# instance, the pairings "A(N7), N(NPO)" and "N(NPO), A(N7)" would be binned separately when they are actually the same.
+def combine_acc(grp):
+    # If acc_pair_1_name is NA, do not change the values.
+    if pd.isna(grp.iloc[0, :].loc['acc_pair_1_name']):
+        return grp
+    rna = ["A", "C", "G", "U"]
+    dna = ["DA", "DC", "DG", "DT"]
+    amino_acids = ["ALA", "ASP", "ASN", "ARG", "CYS", "GLU", "GLN", "GLY", "HIS", "ILE", "LEU", "LYS", "MET", "PHE",
+                   "PRO", "SER", "THR", "TRP", "TYR", "VAL"]
+    # Create the name for the first acceptor.
+    if (grp.iloc[0, :].loc['acc_pair_1_resn'] in rna and
+            grp.iloc[0, :].loc['acc_pair_1_name'] in ["OP1", "OP2", "O2'", "O3'","O4'", "O5'"]):
+        if grp.iloc[0, :].loc['acc_pair_1_name'] in ["OP1", "OP2"]:
+            acc_pair_1_resn_name = "N(NPO)"
+        else:
+            acc_pair_1_resn_name = f"N({grp.iloc[0, :].loc['acc_pair_1_name']})"
+    elif (grp.iloc[0, :].loc['acc_pair_1_resn'] in dna and
+            grp.iloc[0, :].loc['acc_pair_1_name'] in ["OP1", "OP2", "O3'","O4'", "O5'"]):
+        if grp.iloc[0, :].loc['acc_pair_1_name'] in ["OP1", "OP2"]:
+            acc_pair_1_resn_name = "DN(NPO)"
+        else:
+            acc_pair_1_resn_name = f"DN({grp.iloc[0, :].loc['acc_pair_1_name']})"
+    elif grp.iloc[0, :].loc['acc_pair_1_resn'] in amino_acids and grp.iloc[0, :].loc['acc_pair_1_name'] == "O":
+        acc_pair_1_resn_name = "AA(O)"
+    else:
+        acc_pair_1_resn_name = f"{grp.iloc[0, :].loc['acc_pair_1_resn']}({grp.iloc[0, :].loc['acc_pair_1_name']})"
+    # Create the name for the second acceptor.
+    if (grp.iloc[0, :].loc['acc_pair_2_resn'] in rna and
+            grp.iloc[0, :].loc['acc_pair_2_name'] in ["OP1", "OP2", "O2'", "O3'","O4'", "O5'"]):
+        if grp.iloc[0, :].loc['acc_pair_2_name'] in ["OP1", "OP2"]:
+            acc_pair_2_resn_name = "N(NPO)"
+        else:
+            acc_pair_2_resn_name = f"N({grp.iloc[0, :].loc['acc_pair_2_name']})"
+    elif (grp.iloc[0, :].loc['acc_pair_2_resn'] in dna and
+            grp.iloc[0, :].loc['acc_pair_2_name'] in ["OP1", "OP2", "O3'","O4'", "O5'"]):
+        if grp.iloc[0, :].loc['acc_pair_2_name'] in ["OP1", "OP2"]:
+            acc_pair_2_resn_name = "DN(NPO)"
+        else:
+            acc_pair_2_resn_name = f"DN({grp.iloc[0, :].loc['acc_pair_2_name']})"
+    elif grp.iloc[0, :].loc['acc_pair_2_resn'] in amino_acids and grp.iloc[0, :].loc['acc_pair_2_name'] == "O":
+        acc_pair_2_resn_name = "AA(O)"
+    else:
+        acc_pair_2_resn_name = f"{grp.iloc[0, :].loc['acc_pair_2_resn']}({grp.iloc[0, :].loc['acc_pair_2_name']})"
+    # Combine the names within a list, then sort it.
+    combined_list = [acc_pair_1_resn_name, acc_pair_2_resn_name]
+    combined_list.sort()
+    # Update the acc_pair_combined column to a string representation of the sorted list and then return.
+    grp['acc_pair_combined'] = f"{combined_list[0]}, {combined_list[1]}"
+    return grp
+
 # Create an identifier for the equivalence class member.
 eq_class_mem_id = snakemake.input.data[21:-4]
 
@@ -181,6 +238,11 @@ df = df.assign(acc_pair_1_name=pd.NA, acc_pair_1_resn=pd.NA, acc_pair_1_resi=pd.
                acc_pair_2_name=pd.NA, acc_pair_2_resn=pd.NA, acc_pair_2_resi=pd.NA, acc_pair_2_chain=pd.NA)
 df.loc[:, ~df.columns.isin(["don_index"])] = (
     df.groupby("don_index", group_keys=False).apply(find_pairs, include_groups=False))
+
+# Create a new column with the names of both acceptors. See the combine_acc function for more details.
+df = df.assign(acc_pair_combined=pd.NA)
+df.loc[:, ~df.columns.isin(["don_index"])] = (
+    df.groupby("don_index", group_keys=False).apply(combine_acc, include_groups=False))
 
 # Prepare a list of acceptor residue and atom names from canonical amino acids and nucleic acids that have substantially
 # greater negative charge.

@@ -318,6 +318,38 @@ acc_id_plot <- grid.arrange(acc_id_1_plot, acc_id_2_plot, nrow = 2)
 # Write the plots.
 ggsave(snakemake@output[["acc_id"]], plot = acc_id_plot, width = 6.5, height = 9, units = "in", scale = 1)
 
+#### ACCEPTOR PAIR IDENTITY PLOT ####
+
+# Extract the rows from the combined data frame relevant for these plots.
+acc_pair_id_df <- combined_df %>% filter(don_resn %in% c("A", "C", "G")) %>%
+  distinct(don_index, eq_class_member, .keep_all = TRUE)
+
+# Convert column to factor.
+acc_pair_id_df$type <- factor(acc_pair_id_df$type, levels = c(0, 1, 2))
+
+# Calculate samples sizes and merge into data frame.
+acc_pair_id_df <- merge(acc_pair_id_df, summarise(acc_pair_id_df, n_resn_pair_type = n(),
+                                                  .by = c(don_resn, acc_pair_combined, type)))
+
+# Only keep one row for each donor resn, acceptor pair, and type combination.
+acc_pair_id_df <- acc_pair_id_df %>% distinct(don_resn, acc_pair_combined, type, .keep_all = TRUE)
+
+# Create the plot.
+acc_pair_id_plot <- acc_pair_id_df %>% filter(type == 2) %>%
+  ggplot(aes(x=reorder_within(acc_pair_combined, n_resn_pair_type, don_resn), y=n_resn_pair_type, fill=type)) +
+  geom_col(width = 0.8, color = "black", show.legend = FALSE) +
+  xlab("Pair of Acceptor Atoms") +
+  ylab(expression(paste("Count"))) +
+  scale_x_reordered(limits = function(x) rev(x)[1:10]) +
+  scale_fill_manual(values = custom_greens[4]) +
+  theme_bw(base_size = 10) +
+  theme(aspect.ratio = 1.5) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
+  facet_wrap( ~ don_resn, nrow = 1, scales = "free")
+
+# Write the plots.
+ggsave(snakemake@output[["acc_pair_id"]], plot = acc_pair_id_plot, width = 6.5, height = 9, units = "in", scale = 1)
+
 ### CHI PLOT ###
 
 # Extract the rows from the combined data frame relevant for these plots.
