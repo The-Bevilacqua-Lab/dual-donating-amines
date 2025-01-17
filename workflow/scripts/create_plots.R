@@ -110,9 +110,6 @@ ggsave(snakemake@output[["pseudotorsion"]], plot = pt_plot, width = 3.25, height
 
 #### HEAVY ATOM DENSITY PLOTS ####
 
-# Specify custom colors.
-custom_greens <- RColorBrewer::brewer.pal(4, "Greens")
-
 # Extract the rows from the combined data frame relevant for these plots.
 density_df <- combined_df %>% filter(don_resn %in% c("A", "C", "G")) %>% 
   distinct(don_index, eq_class_member, .keep_all = TRUE)
@@ -140,8 +137,8 @@ ratio_1 <- (3/diff(ylim_1))*1.5
 ratio_2 <- (3/diff(ylim_2))*1.5
 
 # Create the plots.
-density_1_plot <- density_df %>% ggplot(aes(x=type, y=density_1, fill=type)) +
-  geom_violin(show.legend = FALSE) +
+density_1_plot <- density_df %>% ggplot(aes(x=type, y=density_1)) +
+  geom_violin(fill = "grey", show.legend = FALSE) +
   geom_boxplot(width = 0.2, alpha = 0, outlier.size = 1, show.legend = FALSE) +
   geom_text(data = density_summary, aes(x=type, y=-0.005, 
                                         label = paste("n = ", prettyNum(n, big.mark = ","), sep = "")), 
@@ -150,12 +147,11 @@ density_1_plot <- density_df %>% ggplot(aes(x=type, y=density_1, fill=type)) +
   ggtitle(paste("Atoms \u2264 ", snakemake@config[["count_dist_1"]], " \uc5", sep = "")) +
   xlab("Type of Amine H-Bonding") +
   ylab(expression(paste("Density (Atoms/\uc5\ub3)"))) +
-  scale_fill_manual(values = custom_greens[2:4]) +
   theme_bw(base_size = 10) +
   theme(plot.title = element_text(hjust = 0.5)) +
   facet_wrap( ~ don_resn, nrow = 1)
-density_2_plot <- density_df %>% ggplot(aes(x=type, y=density_2, fill=type)) +
-  geom_violin(show.legend = FALSE) +
+density_2_plot <- density_df %>% ggplot(aes(x=type, y=density_2)) +
+  geom_violin(fill = "grey", show.legend = FALSE) +
   geom_boxplot(width = 0.2, alpha = 0, outlier.size = 1, show.legend = FALSE) +
   geom_text(data = density_summary, aes(x=type, y=-0.005, 
                                         label = paste("n = ", prettyNum(n, big.mark = ","), sep = "")),
@@ -165,7 +161,6 @@ density_2_plot <- density_df %>% ggplot(aes(x=type, y=density_2, fill=type)) +
                 snakemake@config[["count_dist_2"]], " \uc5", sep = "")) +
   xlab("Type of Amine H-Bonding") +
   ylab(expression(paste("Density (Atoms/\uc5\ub3)"))) +
-  scale_fill_manual(values = custom_greens[2:4]) +
   theme_bw(base_size = 10) +
   theme(plot.title = element_text(hjust = 0.5)) +
   facet_wrap( ~ don_resn, nrow = 1)
@@ -175,9 +170,6 @@ density_plot <- grid.arrange(density_1_plot, density_2_plot, nrow = 2)
 ggsave(snakemake@output[["density"]], plot = density_plot, width = 6.5, height = 9, units = "in", scale = 1)
 
 #### SASA PLOTS ####
-
-# Specify custom colors.
-custom_greens <- RColorBrewer::brewer.pal(4, "Greens")
 
 # Extract the rows from the combined data frame relevant for these plots.
 sasa_df <- combined_df %>% filter(don_resn %in% c("A", "C", "G")) %>% 
@@ -197,8 +189,8 @@ ylim <- c(-0.01, 0.07)
 ratio <- (3/diff(ylim))*1.5
 
 # Create the plots.
-sasa_plot <- sasa_df %>% ggplot(aes(x=type, y=SASA, fill=type)) +
-  geom_violin(show.legend = FALSE) +
+sasa_plot <- sasa_df %>% ggplot(aes(x=type, y=SASA)) +
+  geom_violin(fill = "grey", show.legend = FALSE) +
   geom_boxplot(width = 0.2, alpha = 0, outlier.size = 1, show.legend = FALSE) +
   geom_text(data = sasa_summary, aes(x=type, y=-0.005, 
                                      label = paste("n = ", prettyNum(n, big.mark = ","), sep = "")),
@@ -206,7 +198,6 @@ sasa_plot <- sasa_df %>% ggplot(aes(x=type, y=SASA, fill=type)) +
   coord_fixed(ratio = ratio, xlim = c(1, 3), ylim = ylim) +
   xlab("Type of Amine H-Bonding") +
   ylab(expression(paste("SASA (\uc5\ub2)"))) +
-  scale_fill_manual(values = custom_greens[2:4]) +
   theme_bw(base_size = 10) +
   facet_wrap( ~ don_resn, nrow = 1)
 
@@ -236,13 +227,12 @@ nuc_id_df <- nuc_id_df %>% distinct(don_resn, type, .keep_all = TRUE)
 nuc_id_df <-nuc_id_df %>% mutate(occurance = n_resn_type/sum(n_resn_type)*100)
 
 # Create the plot.
-nuc_id_plot <- nuc_id_df %>% ggplot(aes(x=type, y=occurance, fill=type)) +
-  geom_col(width = 0.8, color = "black", show.legend = FALSE) +
-  geom_text(aes(x=type, y=occurance+max(occurance)*0.05, label=paste(round(occurance, digits = 1), "%", sep = "")), 
+nuc_id_plot <- nuc_id_df %>% ggplot(aes(x=type, y=occurance)) +
+  geom_col(width = 0.8, color = "black", fill = "grey", show.legend = FALSE) +
+  geom_text(aes(x=type, y=occurance+max(occurance)*0.05, label=paste(round(occurance, digits = 1), "%", sep = "")),
             inherit.aes = FALSE) +
   xlab("Type of Amine H-Bonding") +
   ylab(expression(paste("Occurrence (%)"))) +
-  scale_fill_manual(values = custom_greens[2:4]) +
   theme_bw(base_size = 10) +
   theme(aspect.ratio = 1.5) +
   facet_wrap( ~ don_resn, nrow = 1)
@@ -290,25 +280,21 @@ acc_id_df <- acc_id_df %>% distinct(don_resn, acc_resn_name, type, .keep_all = T
 
 # Create the plot.
 acc_id_1_plot <- acc_id_df %>% filter(type == 1) %>%
-  ggplot(aes(x=reorder_within(acc_resn_name, n_resn_type, don_resn), y=n_resn_type, fill=type)) +
-  geom_col(width = 0.8, color = "black", show.legend = FALSE) +
-  ggtitle("Single H-Bonding Amines") +
+  ggplot(aes(x=reorder_within(acc_resn_name, n_resn_type, don_resn), y=n_resn_type)) +
+  geom_col(width = 0.8, color = "black", fill = "grey", show.legend = FALSE) +
   xlab("Acceptor Atom") +
   ylab(expression(paste("Count"))) +
   scale_x_reordered(limits = function(x) rev(x)[1:10]) +
-  scale_fill_manual(values = custom_greens[3]) +
   theme_bw(base_size = 10) +
   theme(aspect.ratio = 1.5) +
   theme(plot.title = element_text(hjust = 0.5), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
   facet_wrap( ~ don_resn, nrow = 1, scales = "free")
 acc_id_2_plot <- acc_id_df %>% filter(type == 2) %>%
-  ggplot(aes(x=reorder_within(acc_resn_name, n_resn_type, don_resn), y=n_resn_type, fill=type)) +
-  geom_col(width = 0.8, color = "black", show.legend = FALSE) +
-  ggtitle("Dual H-Bonding Amines") +
+  ggplot(aes(x=reorder_within(acc_resn_name, n_resn_type, don_resn), y=n_resn_type)) +
+  geom_col(width = 0.8, color = "black", fill = "grey", show.legend = FALSE) +
   xlab("Acceptor Atom") +
   ylab(expression(paste("Count"))) +
   scale_x_reordered(limits = function(x) rev(x)[1:10]) +
-  scale_fill_manual(values = custom_greens[4]) +
   theme_bw(base_size = 10) +
   theme(aspect.ratio = 1.5) +
   theme(plot.title = element_text(hjust = 0.5), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
@@ -336,12 +322,11 @@ acc_pair_id_df <- acc_pair_id_df %>% distinct(don_resn, acc_pair_combined, type,
 
 # Create the plot.
 acc_pair_id_plot <- acc_pair_id_df %>% filter(type == 2) %>%
-  ggplot(aes(x=reorder_within(acc_pair_combined, n_resn_pair_type, don_resn), y=n_resn_pair_type, fill=type)) +
-  geom_col(width = 0.8, color = "black", show.legend = FALSE) +
+  ggplot(aes(x=reorder_within(acc_pair_combined, n_resn_pair_type, don_resn), y=n_resn_pair_type)) +
+  geom_col(width = 0.8, color = "black", fill = "grey", show.legend = FALSE) +
   xlab("Pair of Acceptor Atoms") +
   ylab(expression(paste("Count"))) +
   scale_x_reordered(limits = function(x) rev(x)[1:10]) +
-  scale_fill_manual(values = custom_greens[4]) +
   theme_bw(base_size = 10) +
   theme(aspect.ratio = 1.5) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
@@ -393,14 +378,13 @@ for (split_idx in seq_along(chi_split)) {
 chi_bins$type <- factor(chi_bins$type, levels = c("No", "Single", "Dual"))
 
 # Create the plots of a segment of the 360 range.
-chi_plot_partial <- chi_bins %>% ggplot(aes(x=mids, y=density, fill=type)) +
-  geom_col(show.legend = FALSE) +
+chi_plot_partial <- chi_bins %>% ggplot(aes(x=mids, y=density)) +
+  geom_col(fill = "grey", show.legend = FALSE) +
   coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi/8, end = pi*3/4) +
   scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) +
   scale_y_continuous(limits = c(0, 0.0018)) +
   xlab(expression(paste("\u03c7 (\ub0)"))) +
   ylab(element_blank()) +
-  scale_fill_manual(values = custom_greens[2:4], name = "Type") +
   theme_bw(base_size = 10) +
   theme(plot.margin = margin(t = 0, r = 0.1, b = 0, l = 0.3, "in"),
         panel.border = element_blank(),
@@ -411,14 +395,13 @@ chi_plot_partial <- chi_bins %>% ggplot(aes(x=mids, y=density, fill=type)) +
   facet_nested_wrap(vars(don_resn, type), nrow = 3, scales = "fixed")
 
 # Create the plots of a segment of the 360 range with the y-axis displayed.
-chi_plot_partial_y <- chi_bins %>% ggplot(aes(x=mids, y=density, fill=type)) +
-  geom_col(show.legend = FALSE) +
+chi_plot_partial_y <- chi_bins %>% ggplot(aes(x=mids, y=density)) +
+  geom_col(fill = "grey", show.legend = FALSE) +
   coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi/8, end = pi*3/4) +
   scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) +
   scale_y_continuous(limits = c(0, 0.0018)) +
   xlab(expression(paste("\u03c7 (\ub0)"))) +
   ylab(element_blank()) +
-  scale_fill_manual(values = custom_greens[2:4], name = "Type") +
   theme_bw(base_size = 10) +
   theme(plot.margin = margin(t = 0, r = 0.1, b = 0, l = 0.3, "in"),
         panel.border = element_blank(),
