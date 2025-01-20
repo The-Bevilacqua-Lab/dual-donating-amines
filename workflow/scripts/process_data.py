@@ -144,10 +144,15 @@ def find_pairs(grp):
                 acc_pair_1 = pair[0]
             elif pair == acc_pair_2:
                 acc_pair_2 = pair[0]
+    # Do the acceptors belong to the same residue?
+    same_resi = False
+    if acc_pair_1.acc_resi == acc_pair_2.acc_resi and acc_pair_1.acc_chain == acc_pair_2.acc_chain:
+        same_resi = True
     grp['acc_pair_1_name'], grp['acc_pair_1_resn'], grp['acc_pair_1_resi'], grp['acc_pair_1_chain'] = (
         acc_pair_1.acc_name, acc_pair_1.acc_resn, acc_pair_1.acc_resi, acc_pair_1.acc_chain)
     grp['acc_pair_2_name'], grp['acc_pair_2_resn'], grp['acc_pair_2_resi'], grp['acc_pair_2_chain'] = (
         acc_pair_2.acc_name, acc_pair_2.acc_resn, acc_pair_2.acc_resi, acc_pair_2.acc_chain)
+    grp['same_resi'] = same_resi
     return grp
 
 
@@ -235,7 +240,8 @@ df.loc[:, ~df.columns.isin(["don_index"])] = (
 
 # Add two new columns that identifies the pair of acceptors corresponding to dual H-bonding amines.
 df = df.assign(acc_pair_1_name=pd.NA, acc_pair_1_resn=pd.NA, acc_pair_1_resi=pd.NA, acc_pair_1_chain=pd.NA,
-               acc_pair_2_name=pd.NA, acc_pair_2_resn=pd.NA, acc_pair_2_resi=pd.NA, acc_pair_2_chain=pd.NA)
+               acc_pair_2_name=pd.NA, acc_pair_2_resn=pd.NA, acc_pair_2_resi=pd.NA, acc_pair_2_chain=pd.NA,
+               same_resi=pd.NA)
 df.loc[:, ~df.columns.isin(["don_index"])] = (
     df.groupby("don_index", group_keys=False).apply(find_pairs, include_groups=False))
 

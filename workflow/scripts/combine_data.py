@@ -49,9 +49,10 @@ combined_df = pd.DataFrame(columns=['don_index', 'don_name', 'don_resn', 'don_re
                                     'h_acc_distance', 'don_angle', 'acc_angle', 'h_angle', 'h_dihedral', 'h_name',
                                     'model', 'PDB', 'eq_class_member', 'h_bond', 'type', 'acc_pair_1_name',
                                     'acc_pair_1_resn', 'acc_pair_1_resi', 'acc_pair_1_chain', 'acc_pair_2_name',
-                                    'acc_pair_2_resn', 'acc_pair_2_resi', 'acc_pair_2_chain', 'acc_pair_combined',
-                                    'acc_charge', 'geom', 'v0', 'v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'eta', 'theta',
-                                    "eta'", "theta'", 'alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'i1'])
+                                    'acc_pair_2_resn', 'acc_pair_2_resi', 'acc_pair_2_chain', 'same_resi',
+                                    'acc_pair_combined', 'acc_charge', 'geom', 'v0', 'v1', 'v2', 'v3', 'v4', 'v5', 'v6',
+                                    'eta', 'theta', "eta'", "theta'", 'alpha', 'beta', 'gamma', 'delta', 'epsilon',
+                                    'zeta', 'i1'])
 
 # Combine the dataframes from the different equivalence class members. Do not incorporate empty dataframes.
 for idx in range(len(snakemake.input.data)):
