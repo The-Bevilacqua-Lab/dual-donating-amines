@@ -4,8 +4,8 @@ library(gridExtra)
 library(dplyr)
 library(tidyr)
 library(tidytext)
-library(svglite)
 library(ggh4x)
+library(ggpattern)
 
 #### H-BONDING MEASUREMENT PLOTS ####
 
@@ -30,8 +30,8 @@ pairs <- pairs_df %>% ggplot(aes(x = h_angle, y = h_acc_distance)) +
   geom_segment(x=180, y=1.0, xend=180, yend=2.5, linewidth=0.4, linetype=2, colour="Red") +
   geom_segment(x=140, y=1.0, xend=180, yend=1.0, linewidth=0.4, linetype=2, colour="Red") +
   scale_fill_viridis(limits = c(1, max_value), name = "Count") +
-  xlab(expression(paste("Angle (\ub0)"))) +
-  ylab(expression(paste("Distance (\uc5)"))) +
+  xlab("Angle (\ub0)") +
+  ylab("Distance (\uc5)") +
   coord_fixed(ratio = 120/2.0, xlim = c(60, 180), ylim = c(1.0, 3.0)) +
   scale_x_continuous(breaks = seq(60, 180, 30)) +
   scale_y_continuous(breaks = seq(1.0, 3.0, 0.4)) +
@@ -60,14 +60,81 @@ pt_df[which(pt_df$eta < 0), "eta_translated"] <- pt_df[which(pt_df$eta < 0), "et
 pt_df[which(pt_df$theta >= 0), "theta_translated"] <- pt_df[which(pt_df$theta >= 0), "theta"]
 pt_df[which(pt_df$theta < 0), "theta_translated"] <- pt_df[which(pt_df$theta < 0), "theta"] + 360
 
-# Create the plot.
-pt_no <- pt_df[which(pt_df$type == "No"),] %>%
+# Set the width of the square bin.
+bin_w <- 360/100
+
+# Set the boundaries of the central region.
+eta_min <- 90+bin_w*16
+eta_max <- 180+bin_w*2
+theta_min <- 90+bin_w*21
+theta_max <- 180+bin_w*24
+
+# Prepare a data frame with pseudotorsions outside the central region.
+pt_df_out <- pt_df %>%
+  filter(((eta_translated < eta_min | eta_translated > eta_max) &
+            (theta_translated > theta_min | theta_translated < theta_max)) |
+           ((theta_translated < theta_min | theta_translated > theta_max) &
+              (eta_translated > eta_min | eta_translated < eta_max)))
+
+# Create the plot with all eta theta values and a red-dashed box outlining the central region.
+pt_no_all <- pt_df[which(pt_df$type == "No"),] %>%
+  ggplot(aes(x = eta_translated, y = theta_translated)) +
+  geom_bin_2d(binwidth = c(360/100, 360/100)) +
+  geom_rect(xmin = eta_min, xmax = eta_max, ymin = theta_min, ymax = theta_max,
+            linewidth=0.1, linetype=2, colour="Red", fill=NA) +
+  scale_fill_viridis(name = "Count") +
+  ggtitle("No") +
+  xlab("Eta (\ub0)") +
+  ylab("Theta (\ub0)") +
+  coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
+  scale_x_continuous(breaks = seq(0, 360, 90)) +
+  scale_y_continuous(breaks = seq(0, 360, 90)) +
+  theme_classic(base_size = 10) +
+  theme(plot.title = element_text(hjust = 0.5),
+        legend.key.width = unit(0.125, "in"),
+        legend.key.height = unit(0.2, "in"))
+pt_single_all <- pt_df[which(pt_df$type == "Single"),] %>%
+  ggplot(aes(x = eta_translated, y = theta_translated)) +
+  geom_bin_2d(binwidth = c(360/100, 360/100)) +
+  geom_rect(xmin = eta_min, xmax = eta_max, ymin = theta_min, ymax = theta_max,
+            linewidth=0.1, linetype=2, colour="Red", fill=NA) +
+  scale_fill_viridis(name = "Count") +
+  ggtitle("Single") +
+  xlab("Eta (\ub0)") +
+  ylab("Theta (\ub0)") +
+  coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
+  scale_x_continuous(breaks = seq(0, 360, 90)) +
+  scale_y_continuous(breaks = seq(0, 360, 90)) +
+  theme_classic(base_size = 10) +
+  theme(plot.title = element_text(hjust = 0.5),
+        legend.key.width = unit(0.125, "in"),
+        legend.key.height = unit(0.2, "in"))
+pt_dual_all <- pt_df[which(pt_df$type == "Dual"),] %>%
+  ggplot(aes(x = eta_translated, y = theta_translated)) +
+  geom_bin_2d(binwidth = c(360/100, 360/100)) +
+  geom_rect(xmin = eta_min, xmax = eta_max, ymin = theta_min, ymax = theta_max,
+            linewidth=0.1, linetype=2, colour="Red", fill=NA) +
+  scale_fill_viridis(name = "Count") +
+  ggtitle("Dual") +
+  xlab("Eta (\ub0)") +
+  ylab("Theta (\ub0)") +
+  coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
+  scale_x_continuous(breaks = seq(0, 360, 90)) +
+  scale_y_continuous(breaks = seq(0, 360, 90)) +
+  theme_classic(base_size = 10) +
+  theme(plot.title = element_text(hjust = 0.5),
+        legend.key.width = unit(0.125, "in"),
+        legend.key.height = unit(0.2, "in"))
+pt_plot_all <- grid.arrange(pt_no_all, pt_single_all, pt_dual_all, nrow = 3)
+
+# Create the plot with eta theta values outside the central region.
+pt_no_out <- pt_df_out[which(pt_df_out$type == "No"),] %>%
   ggplot(aes(x = eta_translated, y = theta_translated)) +
   geom_bin_2d(binwidth = c(360/100, 360/100)) +
   scale_fill_viridis(name = "Count") +
   ggtitle("No") +
-  xlab(expression(paste("Eta (\ub0)"))) +
-  ylab(expression(paste("Theta (\ub0)"))) +
+  xlab("Eta (\ub0)") +
+  ylab("Theta (\ub0)") +
   coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
   scale_x_continuous(breaks = seq(0, 360, 90)) +
   scale_y_continuous(breaks = seq(0, 360, 90)) +
@@ -75,13 +142,13 @@ pt_no <- pt_df[which(pt_df$type == "No"),] %>%
   theme(plot.title = element_text(hjust = 0.5),
         legend.key.width = unit(0.125, "in"),
         legend.key.height = unit(0.2, "in"))
-pt_single <- pt_df[which(pt_df$type == "Single"),] %>%
+pt_single_out <- pt_df_out[which(pt_df_out$type == "Single"),] %>%
   ggplot(aes(x = eta_translated, y = theta_translated)) +
   geom_bin_2d(binwidth = c(360/100, 360/100)) +
   scale_fill_viridis(name = "Count") +
   ggtitle("Single") +
-  xlab(expression(paste("Eta (\ub0)"))) +
-  ylab(expression(paste("Theta (\ub0)"))) +
+  xlab("Eta (\ub0)") +
+  ylab("Theta (\ub0)") +
   coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
   scale_x_continuous(breaks = seq(0, 360, 90)) +
   scale_y_continuous(breaks = seq(0, 360, 90)) +
@@ -89,13 +156,13 @@ pt_single <- pt_df[which(pt_df$type == "Single"),] %>%
   theme(plot.title = element_text(hjust = 0.5),
         legend.key.width = unit(0.125, "in"),
         legend.key.height = unit(0.2, "in"))
-pt_dual <- pt_df[which(pt_df$type == "Dual"),] %>%
+pt_dual_out <- pt_df_out[which(pt_df_out$type == "Dual"),] %>%
   ggplot(aes(x = eta_translated, y = theta_translated)) +
   geom_bin_2d(binwidth = c(360/100, 360/100)) +
   scale_fill_viridis(name = "Count") +
   ggtitle("Dual") +
-  xlab(expression(paste("Eta (\ub0)"))) +
-  ylab(expression(paste("Theta (\ub0)"))) +
+  xlab("Eta (\ub0)") +
+  ylab("Theta (\ub0)") +
   coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
   scale_x_continuous(breaks = seq(0, 360, 90)) +
   scale_y_continuous(breaks = seq(0, 360, 90)) +
@@ -103,22 +170,26 @@ pt_dual <- pt_df[which(pt_df$type == "Dual"),] %>%
   theme(plot.title = element_text(hjust = 0.5),
         legend.key.width = unit(0.125, "in"),
         legend.key.height = unit(0.2, "in"))
-pt_plot <- grid.arrange(pt_no, pt_single, pt_dual, nrow = 3)
+pt_plot_out <- grid.arrange(pt_no_out, pt_single_out, pt_dual_out, nrow = 3)
 
 # Write the plot.
-ggsave(snakemake@output[["pseudotorsion"]], plot = pt_plot, width = 3.25, height = 6, units = "in", scale = 1)
+ggsave(snakemake@output[["pseudotorsion_all"]], plot = pt_plot_all, width = 3.25, height = 6, units = "in", scale = 1)
+ggsave(snakemake@output[["pseudotorsion_out"]], plot = pt_plot_out, width = 3.25, height = 6, units = "in", scale = 1)
 
 #### HEAVY ATOM DENSITY PLOTS ####
 
 # Extract the rows from the combined data frame relevant for these plots.
-density_df <- combined_df %>% filter(don_resn %in% c("A", "C", "G")) %>% 
+density_all_df <- combined_df %>% filter(don_resn %in% c("A", "C", "G")) %>%
   distinct(don_index, eq_class_member, .keep_all = TRUE)
 
 # Convert donor type from numeric to string.
-density_df[density_df$type == 0, "type"] <- "No"
-density_df[density_df$type == 1, "type"] <- "Single"
-density_df[density_df$type == 2, "type"] <- "Dual"
-density_df$type <- factor(density_df$type, levels = c("No", "Single", "Dual"))
+density_all_df[density_all_df$type == 0, "type"] <- "No"
+density_all_df[density_all_df$type == 1, "type"] <- "Single"
+density_all_df[density_all_df$type == 2, "type"] <- "Dual"
+density_all_df$type <- factor(density_all_df$type, levels = c("No", "Single", "Dual"))
+
+# Create a column that contains the donor atom name along with the donor residue name.
+density_all_df <- density_all_df %>% mutate(don_label = paste(don_resn, "(", don_name, ")", sep = ""))
 
 # Add density columns.
 volume_1 <- (4/3)*pi*snakemake@config[["count_dist_1"]]**3
@@ -127,118 +198,309 @@ volume_diff <- volume_2 - volume_1
 density_df$density_1 <- density_df$count_1/volume_1
 density_df$density_2 <- (density_df$count_2-density_df$count_1)/volume_diff
 
-# Calculate samples sizes.
-density_summary <- density_df %>% summarise(n = n(), .by = c(type, don_resn))
+# Calculate sample sizes from the non-filtered data set.
+density_summary_all <- density_all_df %>%
+  summarise(n = n(), den_2_med = median(density_2), .by = c(type, don_label))
 
 # Specify the variables for the plots.
-ylim_1 <- c(-0.01, 0.08)
-ylim_2 <- c(-0.01, 0.07)
+ylim_1 <- c(-22, 210)
+ylim_2 <- c(-22, 150)
 ratio_1 <- (3/diff(ylim_1))*1.5
 ratio_2 <- (3/diff(ylim_2))*1.5
 
-# Create the plots.
-density_1_plot <- density_df %>% ggplot(aes(x=type, y=density_1)) +
+# Create the box plots with all data (outliers included).
+density_1_all_plot <- density_all_df %>% ggplot(aes(x=type, y=density_1*1000)) +
   geom_violin(fill = "grey", show.legend = FALSE) +
   geom_boxplot(width = 0.2, alpha = 0, outlier.size = 1, show.legend = FALSE) +
-  geom_text(data = density_summary, aes(x=type, y=-0.005, 
-                                        label = paste("n = ", prettyNum(n, big.mark = ","), sep = "")), 
+  geom_text(data = density_summary_all, aes(x=type, y=-0.005,
+                                        label = paste("n = ", prettyNum(n, big.mark = ","), sep = "")),
             size = 10, size.unit = "pt", vjust = 1, angle = 30) +
   coord_fixed(ratio = ratio_1, xlim = c(1, 3), ylim = ylim_1) +
-  ggtitle(paste("Atoms \u2264 ", snakemake@config[["count_dist_1"]], " \uc5", sep = "")) +
+  ggtitle(paste("Atoms \u2264 ", snakemake@config[["count_dist_1"]], " \uc5", " Outliers Removed",sep = "")) +
   xlab("Type of Amine H-Bonding") +
-  ylab(expression(paste("Density (Atoms/\uc5\ub3)"))) +
+  ylab("Density (heavy-atoms/nm\ub3)") +
   theme_bw(base_size = 10) +
   theme(plot.title = element_text(hjust = 0.5)) +
-  facet_wrap( ~ don_resn, nrow = 1)
-density_2_plot <- density_df %>% ggplot(aes(x=type, y=density_2)) +
+  facet_wrap( ~ don_label, nrow = 1)
+density_2_all_plot <- density_all_df %>% ggplot(aes(x=type, y=density_2*1000)) +
   geom_violin(fill = "grey", show.legend = FALSE) +
   geom_boxplot(width = 0.2, alpha = 0, outlier.size = 1, show.legend = FALSE) +
-  geom_text(data = density_summary, aes(x=type, y=-0.005, 
+  geom_text(data = density_summary_all, aes(x=type, y=-0.005,
+                                        label = paste("n = ", prettyNum(n, big.mark = ","), sep = "")),
+            size = 10, size.unit = "pt", vjust = 1, angle = 30) +
+  coord_fixed(ratio = ratio_2, xlim = c(1, 3), ylim = ylim_2) +
+  ggtitle(paste(snakemake@config[["count_dist_1"]], " \uc5 \u003c Atoms \u2264 ",
+                snakemake@config[["count_dist_2"]], " \uc5", " Outliers Removed", sep = "")) +
+  xlab("Type of Amine H-Bonding") +
+  ylab("Density (heavy-atoms/nm\ub3)") +
+  theme_bw(base_size = 10) +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  facet_wrap( ~ don_label, nrow = 1)
+
+# Write the plots.
+ggsave(snakemake@output[["density_1_all"]], plot = density_1_all_plot, width = 6.5, height = 9, units = "in", scale = 1)
+ggsave(snakemake@output[["density_2_all"]], plot = density_2_all_plot, width = 6.5, height = 9, units = "in", scale = 1)
+
+# Calculate quantile values for both densities.
+density_quantiles <- density_all_df %>% summarise(iqr_1 = IQR(density_1),
+                                                  q1_1 = quantile(density_1, 0.25),
+                                                  q3_1 = quantile(density_1, 0.75),
+                                                  iqr_2 = IQR(density_2),
+                                                  q1_2 = quantile(density_2, 0.25),
+                                                  q3_2 = quantile(density_2, 0.75),
+                                                  .by = c(type, don_label))
+
+# Calculate some stats on the IQR for density 1.
+avg_iqr_1_n <- sum(density_quantiles[density_quantiles$type == "No",]$iqr_1)/3
+avg_iqr_1_s <- sum(density_quantiles[density_quantiles$type == "Single",]$iqr_1)/3
+avg_iqr_1_d <- sum(density_quantiles[density_quantiles$type == "Dual",]$iqr_1)/3
+n_d_1_drop <- ((avg_iqr_1_n-avg_iqr_1_d)/avg_iqr_1_n)*100 # 48.78049 %
+s_d_1_drop <- ((avg_iqr_1_s-avg_iqr_1_d)/avg_iqr_1_s)*100 # 14.28571 %
+
+# Calculate some stats on the IQR for density 2.
+avg_iqr_2_n <- sum(density_quantiles[density_quantiles$type == "No",]$iqr_2)/3
+avg_iqr_2_s <- sum(density_quantiles[density_quantiles$type == "Single",]$iqr_2)/3
+avg_iqr_2_d <- sum(density_quantiles[density_quantiles$type == "Dual",]$iqr_2)/3
+n_d_2_drop <- ((avg_iqr_2_n-avg_iqr_2_d)/avg_iqr_2_n)*100 # 36.9403 %
+s_d_2_drop <- ((avg_iqr_2_s-avg_iqr_2_d)/avg_iqr_2_s)*100 # 24.55357 %
+
+# Create a data frame with outliers for both densities filtered out.
+density_filtered_df <- merge(density_all_df, density_quantiles) %>%
+  filter(density_1 >= q1_1 - 2 * iqr_1 & density_1 <= q3_1 + 2 * iqr_1) %>%
+  filter(density_2 >= q1_2 - 2 * iqr_2 & density_2 <= q3_2 + 2 * iqr_2)
+
+# Calculate sample sizes from the filtered data set.
+density_summary_filtered <- density_filtered_df %>%
+  summarise(n = n(), den_1_med = median(density_1), den_2_med = median(density_2), .by = c(type, don_label))
+
+# Specify the variables for the plots.
+ylim_1 <- c(-8, 80)
+ylim_2 <- c(-6, 60)
+ratio_1 <- (3/diff(ylim_1))*1.25
+ratio_2 <- (3/diff(ylim_2))*1.25
+
+# Create the box plots with outliers filtered out.
+density_1_filtered_plot <- density_filtered_df %>% ggplot(aes(x=type, y=density_1*1000)) +
+  geom_violin(fill = "grey", show.legend = FALSE) +
+  geom_boxplot(width = 0.2, alpha = 0, outlier.size = 1, show.legend = FALSE) +
+  geom_text(data = density_summary_filtered, aes(x=type, y=-0.005,
+                                        label = paste("n = ", prettyNum(n, big.mark = ","), sep = "")),
+            size = 10, size.unit = "pt", vjust = 1, angle = 30) +
+  coord_fixed(ratio = ratio_1, xlim = c(1, 3), ylim = ylim_1) +
+  # ggtitle(paste("Atoms \u2264 ", snakemake@config[["count_dist_1"]], " \uc5", " Outliers Removed",sep = "")) +
+  xlab("Type of Amine H-Bonding") +
+  ylab("Density (heavy-atoms/nm\ub3)") +
+  theme_bw(base_size = 10) +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  facet_wrap( ~ don_label, nrow = 1)
+density_2_filtered_plot <- density_filtered_df %>% ggplot(aes(x=type, y=density_2*1000)) +
+  geom_violin(fill = "grey", show.legend = FALSE) +
+  geom_boxplot(width = 0.2, alpha = 0, outlier.size = 1, show.legend = FALSE) +
+  geom_text(data = density_summary_filtered, aes(x=type, y=-0.005,
                                         label = paste("n = ", prettyNum(n, big.mark = ","), sep = "")),
             size = 10, size.unit = "pt", vjust = 1, angle = 30) +
   coord_fixed(ratio = ratio_2, xlim = c(1, 3), ylim = ylim_2) +
   ggtitle(paste(snakemake@config[["count_dist_1"]], " \uc5 \u003c Atoms \u2264 ", 
-                snakemake@config[["count_dist_2"]], " \uc5", sep = "")) +
+                snakemake@config[["count_dist_2"]], " \uc5", " Outliers Removed", sep = "")) +
   xlab("Type of Amine H-Bonding") +
-  ylab(expression(paste("Density (Atoms/\uc5\ub3)"))) +
+  ylab("Density (heavy-atoms/nm\ub3)") +
   theme_bw(base_size = 10) +
   theme(plot.title = element_text(hjust = 0.5)) +
-  facet_wrap( ~ don_resn, nrow = 1)
-density_plot <- grid.arrange(density_1_plot, density_2_plot, nrow = 2)
+  facet_wrap( ~ don_label, nrow = 1)
 
 # Write the plots.
-ggsave(snakemake@output[["density"]], plot = density_plot, width = 6.5, height = 9, units = "in", scale = 1)
+ggsave(snakemake@output[["density_1_filtered"]],
+       plot = density_1_filtered_plot, width = 6, height = 9, units = "in", scale = 1)
+ggsave(snakemake@output[["density_2_filtered"]],
+       plot = density_2_filtered_plot, width = 6, height = 9, units = "in", scale = 1)
+
+# Perform Mann-Whitney tests for density 2 with outliers removed.
+
+# I do not think the distributions being compared are fully independent from one another, an assumption of the
+# Mann-Whitney test. I may want to consider this further before confidently relying on these p-values.
+
+# Adenine
+adenine <- density_filtered_df[(density_filtered_df$don_resn == "A"),]
+a_no <- adenine[adenine$type == "No", "density_2"]
+a_single <- adenine[adenine$type == "Single", "density_2"]
+a_dual <- adenine[adenine$type == "Dual", "density_2"]
+# A - No to A - Single
+cat("\nA - No to A - Single Mann-Whitney test for density 2 with outliers removed\n\n")
+print(wilcox.test(a_no, a_single)) # W = 352982486, p-value < 2.2e-16
+# A - Single to A - Dual
+cat("\nA - Single to A - Dual Mann-Whitney test for density 2 with outliers removed\n\n")
+print(wilcox.test(a_single, a_dual)) # W = 47115675, p-value < 2.2e-16
+
+# Cytosine
+cytosine <- density_filtered_df[(density_filtered_df$don_resn == "C"),]
+c_no <- cytosine[cytosine$type == "No", "density_2"]
+c_single <- cytosine[cytosine$type == "Single", "density_2"]
+c_dual <- cytosine[cytosine$type == "Dual", "density_2"]
+# C - No to C - Single
+cat("\nC - No to C - Single Mann-Whitney test for density 2 with outliers removed\n\n")
+print(wilcox.test(c_no, c_single)) # W = 218199061, p-value < 2.2e-16
+# C - Single to C - Dual
+cat("\nC - Single to C - Dual Mann-Whitney test for density 2 with outliers removed\n\n")
+print(wilcox.test(c_single, c_dual)) # W = 35739526, p-value < 2.2e-16
+
+# Guanine
+guanine <- density_filtered_df[(density_filtered_df$don_resn == "G"),]
+g_no <- guanine[guanine$type == "No", "density_2"]
+g_single <- guanine[guanine$type == "Single", "density_2"]
+g_dual <- guanine[guanine$type == "Dual", "density_2"]
+# G - No to G - Single
+cat("\nG - No to G - Single Mann-Whitney test for density 2 with outliers removed\n\n")
+print(wilcox.test(g_no, g_single)) # W = 400955757, p-value = 2.059e-06
+# G - Single to G - Dual
+cat("\nG - Single to G - Dual Mann-Whitney test for density 2 with outliers removed\n\n")
+print(wilcox.test(g_single, g_dual)) # W = 124882421, p-value < 2.2e-16
 
 #### SASA PLOTS ####
 
 # Extract the rows from the combined data frame relevant for these plots.
-sasa_df <- combined_df %>% filter(don_resn %in% c("A", "C", "G")) %>% 
+sasa_all_df <- combined_df %>% filter(don_resn %in% c("A", "C", "G")) %>%
   distinct(don_index, eq_class_member, .keep_all = TRUE)
 
 # Convert donor type from numeric to string.
-sasa_df[sasa_df$type == 0, "type"] <- "No"
-sasa_df[sasa_df$type == 1, "type"] <- "Single"
-sasa_df[sasa_df$type == 2, "type"] <- "Dual"
-sasa_df$type <- factor(sasa_df$type, levels = c("No", "Single", "Dual"))
+sasa_all_df[sasa_all_df$type == 0, "type"] <- "No"
+sasa_all_df[sasa_all_df$type == 1, "type"] <- "Single"
+sasa_all_df[sasa_all_df$type == 2, "type"] <- "Dual"
+sasa_all_df$type <- factor(sasa_all_df$type, levels = c("No", "Single", "Dual"))
 
-# Calculate samples sizes.
-sasa_summary <- sasa_df %>% summarise(n = n(), .by = c(type, don_resn))
+# Create a column that contains the donor atom name along with the donor residue name.
+sasa_all_df <- sasa_all_df %>% mutate(don_label = paste(don_resn, "(", don_name, ")", sep = ""))
+
+# Calculate sample sizes from the non-filtered data set.
+sasa_summary_all <- sasa_all_df %>%
+  summarise(n = n(), sasa_med = median(SASA), .by = c(type, don_label))
+
+# Check the median values for C single donating amines and G no donating amines.
+c_single <- sasa_all_df %>% filter(type == "Single" & don_resn == "C")
+print(median(c_single$SASA)) # 8.748707
+g_no <- sasa_all_df %>% filter(type == "No" & don_resn == "G")
+print(median(g_no$SASA)) # 8.748707
 
 # Specify the variables for the plots.
-ylim <- c(-0.01, 0.07)
+ylim <- c(-8.5, 60)
 ratio <- (3/diff(ylim))*1.5
 
-# Create the plots.
-sasa_plot <- sasa_df %>% ggplot(aes(x=type, y=SASA)) +
+# Create the box plots with all data (outliers included).
+sasa_all_box_plot <- sasa_all_df %>% ggplot(aes(x=type, y=SASA)) +
   geom_violin(fill = "grey", show.legend = FALSE) +
   geom_boxplot(width = 0.2, alpha = 0, outlier.size = 1, show.legend = FALSE) +
-  geom_text(data = sasa_summary, aes(x=type, y=-0.005, 
-                                     label = paste("n = ", prettyNum(n, big.mark = ","), sep = "")),
+  geom_text(data = sasa_summary_all, aes(x=type, y=-4, label = paste("n = ", prettyNum(n, big.mark = ","), sep = "")),
             size = 10, size.unit = "pt", vjust = 1, angle = 30) +
   coord_fixed(ratio = ratio, xlim = c(1, 3), ylim = ylim) +
   xlab("Type of Amine H-Bonding") +
-  ylab(expression(paste("SASA (\uc5\ub2)"))) +
+  ylab("SASA (\uc5\ub2)") +
   theme_bw(base_size = 10) +
-  facet_wrap( ~ don_resn, nrow = 1)
+  theme(plot.title = element_text(hjust = 0.5)) +
+  facet_wrap( ~ don_label, nrow = 1)
 
 # Write the plots.
-ggsave(snakemake@output[["sasa"]], plot = sasa_plot, width = 6.5, height = 4, units = "in", scale = 1)
+ggsave(snakemake@output[["sasa_all_box"]], plot = sasa_all_box_plot, width = 6.5, height = 9, units = "in", scale = 1)
 
-#### NUCLEOBASE IDENTITY PLOT ####
+# Specify the variables for the plots.
+ylim <- c(0, 15)
+ratio <- (3/diff(ylim))*2
+
+# Create the column plot with all data (outliers included).
+sasa_all_col_plot <- sasa_summary_all %>% ggplot(aes(x=type, y=sasa_med)) +
+  geom_col(width = 0.8, linewidth = 0.3, color = "black", fill = "grey", show.legend = FALSE) +
+  geom_text(aes(x=type, y=sasa_med+max(sasa_med)*0.05, label=round(sasa_med, digits = 1)),
+            size = 10, size.unit = "pt", vjust = 0, inherit.aes = FALSE) +
+  coord_fixed(ratio = ratio, xlim = c(1, 3), ylim = ylim) +
+  xlab("Type of Amine H-Bonding") +
+  ylab("Median SASA (\uc5\ub2)") +
+  theme_bw(base_size = 10) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+  facet_wrap( ~ don_label, nrow = 1)
+
+# Write the plots.
+ggsave(snakemake@output[["sasa_all_col"]], plot = sasa_all_col_plot, width = 3.5, height = 4, units = "in", scale = 1)
+
+# Calculate quantile values for both densities.
+sasa_quantiles <- sasa_all_df %>% summarise(iqr = IQR(SASA),
+                                            q1 = quantile(SASA, 0.25),
+                                            q3 = quantile(SASA, 0.75),
+                                            .by = c(type, don_label))
+
+# Calculate some stats on the IQRs.
+avg_iqr_n <- sum(sasa_quantiles[sasa_quantiles$type == "No",]$iqr)/3 # 18.591
+avg_iqr_s <- sum(sasa_quantiles[sasa_quantiles$type == "Single",]$iqr)/3 # 9.842296
+avg_iqr_d <- sum(sasa_quantiles[sasa_quantiles$type == "Dual",]$iqr)/3 # 0.3645295
+n_d_drop <- ((avg_iqr_n-avg_iqr_d)/avg_iqr_n)*100 # 98.03922 %
+s_d_drop <- ((avg_iqr_s-avg_iqr_d)/avg_iqr_s)*100 # 96.2963 %
+
+# Create a data frame with outliers for both densities filtered out.
+sasa_filtered_df <- merge(sasa_all_df, sasa_quantiles) %>%
+  filter(SASA >= q1 - 2 * iqr & SASA <= q3 + 2 * iqr)
+
+# Calculate sample sizes from the filtered data set.
+sasa_summary_filtered <- sasa_filtered_df %>%
+  summarise(n = n(), sasa_med = median(SASA), .by = c(type, don_label))
+
+# Specify the variables for the plots.
+ylim <- c(-8.5, 60)
+ratio <- (3/diff(ylim))*1.5
+
+# Create the box plots with outliers filtered out.
+sasa_filtered_box_plot <- sasa_filtered_df %>% ggplot(aes(x=type, y=SASA)) +
+  geom_violin(fill = "grey", show.legend = FALSE) +
+  geom_boxplot(width = 0.2, alpha = 0, outlier.size = 1, show.legend = FALSE) +
+  geom_text(data = sasa_summary_filtered, aes(x=type, y=-4,
+                                              label = paste("n = ", prettyNum(n, big.mark = ","), sep = "")),
+            size = 10, size.unit = "pt", vjust = 1, angle = 30) +
+  coord_fixed(ratio = ratio, xlim = c(1, 3), ylim = ylim) +
+  xlab("Type of Amine H-Bonding") +
+  ylab("SASA (\uc5\ub2)") +
+  theme_bw(base_size = 10) +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  facet_wrap( ~ don_label, nrow = 1)
+
+# Write the plots.
+ggsave(snakemake@output[["sasa_filtered_box"]], plot = sasa_filtered_box_plot, width = 6.5, height = 9, units = "in",
+       scale = 1)
+
+#### DONOR IDENTITY PLOT ####
 
 # Extract the rows from the combined data frame relevant for these plots.
-nuc_id_df <- combined_df %>% filter(don_resn %in% c("A", "C", "G")) %>%
+don_id_df <- combined_df %>% filter(don_resn %in% c("A", "C", "G")) %>%
   distinct(don_index, eq_class_member, .keep_all = TRUE)
 
 # Convert donor type from numeric to string.
-nuc_id_df[nuc_id_df$type == 0, "type"] <- "No"
-nuc_id_df[nuc_id_df$type == 1, "type"] <- "Single"
-nuc_id_df[nuc_id_df$type == 2, "type"] <- "Dual"
-nuc_id_df$type <- factor(nuc_id_df$type, levels = c("No", "Single", "Dual"))
+don_id_df[don_id_df$type == 0, "type"] <- "No"
+don_id_df[don_id_df$type == 1, "type"] <- "Single"
+don_id_df[don_id_df$type == 2, "type"] <- "Dual"
+don_id_df$type <- factor(don_id_df$type, levels = c("No", "Single", "Dual"))
+
+# Create a column that contains the donor atom name along with the donor residue name.
+don_id_df <- don_id_df %>% mutate(don_label = paste(don_resn, "(", don_name, ")", sep = ""))
 
 # Calculate samples sizes and merge into dataframe.
-nuc_id_df <- merge(nuc_id_df, summarise(nuc_id_df, n_resn = n(), .by = c(don_resn)))
-nuc_id_df <- merge(nuc_id_df, summarise(nuc_id_df, n_resn_type = n(), .by = c(don_resn, type)))
+don_id_df <- merge(don_id_df, summarise(don_id_df, n_resn = n(), .by = c(don_label)))
+don_id_df <- merge(don_id_df, summarise(don_id_df, n_don_type = n(), .by = c(don_label, type)))
 
 # Only keep one row for each donor residue and donor type combination.
-nuc_id_df <- nuc_id_df %>% distinct(don_resn, type, .keep_all = TRUE)
+don_id_df <- don_id_df %>% distinct(don_label, type, .keep_all = TRUE)
 
 # Add a column that specifies the percent occurrence for each category.
-nuc_id_df <-nuc_id_df %>% mutate(occurance = n_resn_type/sum(n_resn_type)*100)
+don_id_df <-don_id_df %>% mutate(occurance = n_don_type/sum(n_don_type)*100)
 
 # Create the plot.
-nuc_id_plot <- nuc_id_df %>% ggplot(aes(x=type, y=occurance)) +
-  geom_col(width = 0.8, color = "black", fill = "grey", show.legend = FALSE) +
+don_id_plot <- don_id_df %>% ggplot(aes(x=type, y=occurance)) +
+  geom_col(width = 0.8, linewidth = 0.3, color = "black", fill = "grey", show.legend = FALSE) +
   geom_text(aes(x=type, y=occurance+max(occurance)*0.05, label=paste(round(occurance, digits = 1), "%", sep = "")),
-            inherit.aes = FALSE) +
+            vjust = 0, inherit.aes = FALSE) +
   xlab("Type of Amine H-Bonding") +
-  ylab(expression(paste("Occurrence (%)"))) +
+  ylab("Occurrence (%)") +
+  scale_y_continuous(limits = c(0, 27)) +
   theme_bw(base_size = 10) +
-  theme(aspect.ratio = 1.5) +
-  facet_wrap( ~ don_resn, nrow = 1)
+  theme(aspect.ratio = 1) +
+  facet_wrap( ~ don_label, nrow = 1)
 
 # Write the plots.
-ggsave(snakemake@output[["nuc_id"]], plot = nuc_id_plot, width = 6.5, height = 9, units = "in", scale = 1)
+ggsave(snakemake@output[["don_id"]], plot = don_id_plot, width = 6, height = 5, units = "in", scale = 1)
 
 #### ACCEPTOR IDENTITY PLOT ####
 
@@ -249,91 +511,117 @@ acc_id_df <- combined_df %>% filter(h_bond == 1 & don_resn %in% c("A", "C", "G")
 # Convert column to factor.
 acc_id_df$type <- factor(acc_id_df$type, levels = c(0, 1, 2))
 
+# Create a column that contains the donor atom name along with the donor residue name.
+acc_id_df <- acc_id_df %>% mutate(don_label = paste(don_resn, "(", don_name, ")", sep = ""))
+
 # Create a column with values that specify both the acceptor resn and name.
-acc_id_df <-acc_id_df %>% mutate(acc_resn_name = paste(acc_resn, "(", acc_name, ")", sep = ""))
+acc_id_df <-acc_id_df %>% mutate(acc_label = paste(acc_resn, "(", acc_name, ")", sep = ""))
 
-# Combine values in the acc_resn_name column that involve common backbone acceptor atoms for RNA.
+# Combine values in the acc_label column that involve common backbone acceptor atoms for RNA.
 rna <- c("A", "C", "G", "U")
-acc_id_df[acc_id_df$acc_resn %in% rna & acc_id_df$acc_name %in% c("OP1", "OP2"), "acc_resn_name"] <- "N(NPO)"
-acc_id_df[acc_id_df$acc_resn %in% rna & acc_id_df$acc_name == "O2'", "acc_resn_name"] <- "N(O2')"
-acc_id_df[acc_id_df$acc_resn %in% rna & acc_id_df$acc_name == "O3'", "acc_resn_name"] <- "N(O3')"
-acc_id_df[acc_id_df$acc_resn %in% rna & acc_id_df$acc_name == "O4'", "acc_resn_name"] <- "N(O4')"
-acc_id_df[acc_id_df$acc_resn %in% rna & acc_id_df$acc_name == "O5'", "acc_resn_name"] <- "N(O5')"
+acc_id_df[acc_id_df$acc_resn %in% rna & acc_id_df$acc_name %in% c("OP1", "OP2"), "acc_label"] <- "N(NPO)"
+acc_id_df[acc_id_df$acc_resn %in% rna & acc_id_df$acc_name == "O2'", "acc_label"] <- "N(O2')"
+acc_id_df[acc_id_df$acc_resn %in% rna & acc_id_df$acc_name == "O3'", "acc_label"] <- "N(O3')"
+acc_id_df[acc_id_df$acc_resn %in% rna & acc_id_df$acc_name == "O4'", "acc_label"] <- "N(O4')"
+acc_id_df[acc_id_df$acc_resn %in% rna & acc_id_df$acc_name == "O5'", "acc_label"] <- "N(O5')"
 
-# Combine values in the acc_resn_name column that involve common backbone acceptor atoms for DNA.
+# Combine values in the acc_label column that involve common backbone acceptor atoms for DNA.
 dna <- c("DA", "DC", "DG", "DT")
-acc_id_df[acc_id_df$acc_resn %in% dna & acc_id_df$acc_name %in% c("OP1", "OP2"), "acc_resn_name"] <- "DN(NPO)"
-acc_id_df[acc_id_df$acc_resn %in% dna & acc_id_df$acc_name == "O3'", "acc_resn_name"] <- "DN(O3')"
-acc_id_df[acc_id_df$acc_resn %in% dna & acc_id_df$acc_name == "O4'", "acc_resn_name"] <- "DN(O4')"
-acc_id_df[acc_id_df$acc_resn %in% dna & acc_id_df$acc_name == "O5'", "acc_resn_name"] <- "DN(O5')"
+acc_id_df[acc_id_df$acc_resn %in% dna & acc_id_df$acc_name %in% c("OP1", "OP2"), "acc_label"] <- "DN(NPO)"
+acc_id_df[acc_id_df$acc_resn %in% dna & acc_id_df$acc_name == "O3'", "acc_label"] <- "DN(O3')"
+acc_id_df[acc_id_df$acc_resn %in% dna & acc_id_df$acc_name == "O4'", "acc_label"] <- "DN(O4')"
+acc_id_df[acc_id_df$acc_resn %in% dna & acc_id_df$acc_name == "O5'", "acc_label"] <- "DN(O5')"
 
-# Combine values in the acc_resn_name column that involve common backbone acceptor atoms for amino acids.
+# Combine values in the acc_label column that involve common backbone acceptor atoms for amino acids.
 amino_acids <- c("ALA", "ASP", "ASN", "ARG", "CYS", "GLU", "GLN", "GLY", "HIS", "ILE", "LEU", "LYS", "MET", "PHE",
                  "PRO", "SER", "THR", "TRP", "TYR", "VAL")
-acc_id_df[acc_id_df$acc_resn %in% amino_acids & acc_id_df$acc_name == "O", "acc_resn_name"] <- "AA(O)"
+acc_id_df[acc_id_df$acc_resn %in% amino_acids & acc_id_df$acc_name == "O", "acc_label"] <- "AA(O)"
 
 # Calculate samples sizes and merge into data frame.
-acc_id_df <- merge(acc_id_df, summarise(acc_id_df, n_resn_type = n(), .by = c(don_resn, acc_resn_name, type)))
+acc_id_df <- merge(acc_id_df, summarise(acc_id_df, n_don_acc_type = n(), .by = c(don_label, acc_label, type)))
 
 # Only keep one row for each acceptor atom and donor type combination.
-acc_id_df <- acc_id_df %>% distinct(don_resn, acc_resn_name, type, .keep_all = TRUE)
+acc_id_df <- acc_id_df %>% distinct(don_label, acc_label, type, .keep_all = TRUE)
 
 # Create the plot.
 acc_id_1_plot <- acc_id_df %>% filter(type == 1) %>%
-  ggplot(aes(x=reorder_within(acc_resn_name, n_resn_type, don_resn), y=n_resn_type)) +
+  ggplot(aes(x=reorder_within(acc_label, n_don_acc_type, don_label), y=n_don_acc_type)) +
   geom_col(width = 0.8, color = "black", fill = "grey", show.legend = FALSE) +
   xlab("Acceptor Atom") +
-  ylab(expression(paste("Count"))) +
+  ylab("Count") +
   scale_x_reordered(limits = function(x) rev(x)[1:10]) +
   theme_bw(base_size = 10) +
-  theme(aspect.ratio = 1.5) +
-  theme(plot.title = element_text(hjust = 0.5), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
-  facet_wrap( ~ don_resn, nrow = 1, scales = "free")
+  theme(aspect.ratio = 1) +
+  theme(plot.title = element_text(hjust = 0.5), axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+  facet_wrap( ~ don_label, nrow = 1, scales = "free_x")
 acc_id_2_plot <- acc_id_df %>% filter(type == 2) %>%
-  ggplot(aes(x=reorder_within(acc_resn_name, n_resn_type, don_resn), y=n_resn_type)) +
+  ggplot(aes(x=reorder_within(acc_label, n_don_acc_type, don_label), y=n_don_acc_type)) +
   geom_col(width = 0.8, color = "black", fill = "grey", show.legend = FALSE) +
   xlab("Acceptor Atom") +
-  ylab(expression(paste("Count"))) +
+  ylab("Count") +
   scale_x_reordered(limits = function(x) rev(x)[1:10]) +
   theme_bw(base_size = 10) +
-  theme(aspect.ratio = 1.5) +
-  theme(plot.title = element_text(hjust = 0.5), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
-  facet_wrap( ~ don_resn, nrow = 1, scales = "free")
+  theme(aspect.ratio = 1) +
+  theme(plot.title = element_text(hjust = 0.5), axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+  facet_wrap( ~ don_label, nrow = 1, scales = "free_x")
 acc_id_plot <- grid.arrange(acc_id_1_plot, acc_id_2_plot, nrow = 2)
 
 # Write the plots.
-ggsave(snakemake@output[["acc_id"]], plot = acc_id_plot, width = 6.5, height = 9, units = "in", scale = 1)
+ggsave(snakemake@output[["acc_id"]], plot = acc_id_plot, width = 6, height = 9, units = "in", scale = 1)
 
 #### ACCEPTOR PAIR IDENTITY PLOT ####
 
 # Extract the rows from the combined data frame relevant for these plots.
-acc_pair_id_df <- combined_df %>% filter(don_resn %in% c("A", "C", "G")) %>%
+acc_pair_id_df <- combined_df %>% filter(don_resn %in% c("A", "C", "G") & type == 2) %>%
   distinct(don_index, eq_class_member, .keep_all = TRUE)
 
-# Convert column to factor.
-acc_pair_id_df$type <- factor(acc_pair_id_df$type, levels = c(0, 1, 2))
+# Create a column that contains the donor atom name along with the donor residue name.
+acc_pair_id_df <- acc_pair_id_df %>% mutate(don_label = paste(don_resn, "(", don_name, ")", sep = ""))
 
-# Calculate samples sizes and merge into data frame.
-acc_pair_id_df <- merge(acc_pair_id_df, summarise(acc_pair_id_df, n_resn_pair_type = n(),
-                                                  .by = c(don_resn, acc_pair_combined, type)))
+# Create a data frame with just acceptor pairs that belong to the same residue.
+acc_pair_id_same_df <- acc_pair_id_df %>% filter(same_resi == "True")
 
-# Only keep one row for each donor resn, acceptor pair, and type combination.
-acc_pair_id_df <- acc_pair_id_df %>% distinct(don_resn, acc_pair_combined, type, .keep_all = TRUE)
+# Calculate samples sizes and merge into the data frames.
+acc_pair_id_df <- merge(acc_pair_id_df, summarise(acc_pair_id_df, n_resn_pair = n(),
+                                                  .by = c(don_label, acc_pair_combined)))
+acc_pair_id_same_df <- merge(acc_pair_id_same_df, summarise(acc_pair_id_same_df, n_resn_pair_same = n(),
+                                                            .by = c(don_label, acc_pair_combined)))
+
+# Only keep one row for each donor resn and acceptor pair combination.
+acc_pair_id_df <- acc_pair_id_df %>% distinct(don_label, acc_pair_combined, .keep_all = TRUE)
+acc_pair_id_same_df <- acc_pair_id_same_df %>% distinct(don_label, acc_pair_combined, .keep_all = TRUE)
+
+# Add a column specifying the sample sizes for acceptor pairs that belong to the same residue.
+acc_pair_id_df <- merge(acc_pair_id_df, acc_pair_id_same_df[,c("don_label", "acc_pair_combined", "n_resn_pair_same")],
+                        all.x = TRUE)
+
+# Create a column that indicates the fraction of acceptor pairs that belong to the same residue. Fractions that would
+# be 0 will be given a value of NA.
+acc_pair_id_df <- acc_pair_id_df %>% mutate(fraction_label = NA)
+acc_pair_id_df[which(!is.na(acc_pair_id_df$n_resn_pair_same)), "fraction_label"] <-
+  paste(acc_pair_id_df[which(!is.na(acc_pair_id_df$n_resn_pair_same)), "n_resn_pair_same"], "/",
+        acc_pair_id_df[which(!is.na(acc_pair_id_df$n_resn_pair_same)), "n_resn_pair"], sep = " ")
 
 # Create the plot.
-acc_pair_id_plot <- acc_pair_id_df %>% filter(type == 2) %>%
-  ggplot(aes(x=reorder_within(acc_pair_combined, n_resn_pair_type, don_resn), y=n_resn_pair_type)) +
+acc_pair_id_plot <- acc_pair_id_df %>%
+  ggplot(aes(x=reorder_within(acc_pair_combined, n_resn_pair, don_label), y=n_resn_pair)) +
   geom_col(width = 0.8, color = "black", fill = "grey", show.legend = FALSE) +
+  geom_col_pattern(aes(y=n_resn_pair_same),
+                   width = 0.8, color = "black", fill = "grey", pattern = "stripe", pattern_fill = "black",
+                   pattern_size = 0, pattern_angle = 45, pattern_spacing = 0.02) +
+  geom_text(aes(y=n_resn_pair+max(n_resn_pair)*0.05, label=fraction_label),
+            size = 10, size.unit = "pt", hjust = 0, vjust = 0, angle = 45) +
   xlab("Pair of Acceptor Atoms") +
-  ylab(expression(paste("Count"))) +
+  ylab("Count") +
   scale_x_reordered(limits = function(x) rev(x)[1:10]) +
+  scale_y_continuous(limits = c(0, 2100)) +
   theme_bw(base_size = 10) +
-  theme(aspect.ratio = 1.5) +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
-  facet_wrap( ~ don_resn, nrow = 1, scales = "free")
+  theme(aspect.ratio = 1) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+  facet_wrap( ~ don_label, nrow = 1, scales = "free_x")
 
 # Write the plots.
-ggsave(snakemake@output[["acc_pair_id"]], plot = acc_pair_id_plot, width = 6.5, height = 9, units = "in", scale = 1)
+ggsave(snakemake@output[["acc_pair_id"]], plot = acc_pair_id_plot, width = 6, height = 5, units = "in", scale = 1)
 
 ### CHI PLOT ###
 
@@ -383,7 +671,7 @@ chi_plot_partial <- chi_bins %>% ggplot(aes(x=mids, y=density)) +
   coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi/8, end = pi*3/4) +
   scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) +
   scale_y_continuous(limits = c(0, 0.0018)) +
-  xlab(expression(paste("\u03c7 (\ub0)"))) +
+  xlab("\u03c7 (\ub0)") +
   ylab(element_blank()) +
   theme_bw(base_size = 10) +
   theme(plot.margin = margin(t = 0, r = 0.1, b = 0, l = 0.3, "in"),
@@ -400,7 +688,7 @@ chi_plot_partial_y <- chi_bins %>% ggplot(aes(x=mids, y=density)) +
   coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi/8, end = pi*3/4) +
   scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) +
   scale_y_continuous(limits = c(0, 0.0018)) +
-  xlab(expression(paste("\u03c7 (\ub0)"))) +
+  xlab("\u03c7 (\ub0)") +
   ylab(element_blank()) +
   theme_bw(base_size = 10) +
   theme(plot.margin = margin(t = 0, r = 0.1, b = 0, l = 0.3, "in"),
@@ -418,7 +706,7 @@ chi_plot_combined <- chi_df %>% ggplot(aes(x=chi_adjusted)) +
   annotate("segment", color = "red", linetype = "dashed", x = -20, y = 10^5, xend = 130, yend = 10^5) +
   scale_x_continuous(limits = c(-180, 180), breaks = seq(-180, 180, 45)) +
   scale_y_continuous(transform = "log10", name = "Count") +
-  xlab(expression(paste("\u03c7 (\ub0)"))) +
+  xlab("\u03c7 (\ub0)") +
   theme_bw(base_size = 10) +
   theme(aspect.ratio = 0.25)
 
