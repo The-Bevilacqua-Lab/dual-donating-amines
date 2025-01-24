@@ -10,13 +10,21 @@ rule all:
     input:
         "results/review_amines/amines.py",
         "results/plots/pairs.png",
-        "results/plots/density.png",
-        "results/plots/nuc_id.png",
+        "results/plots/pseudotorsion_all.png",
+        "results/plots/pseudotorsion_out.png",
+        "results/plots/don_id.png",
         "results/plots/acc_id.png",
+        "results/plots/acc_pair_id.png",
         "results/plots/chi_partial.png",
         "results/plots/chi_partial_y.png",
         "results/plots/chi_combined.png",
-        "results/plots/sasa.png"
+        "results/plots/density_1_all.png",
+        "results/plots/density_2_all.png",
+        "results/plots/density_1_filtered.png",
+        "results/plots/density_2_filtered.png",
+        "results/plots/sasa_all_box.png",
+        "results/plots/sasa_all_col.png",
+        "results/plots/sasa_filtered_box.png"
 
 rule collect_data:
     output:
@@ -73,13 +81,20 @@ rule create_plots:
         combined = "results/combine_data/combined.csv"
     output:
         pairs = "results/plots/pairs.png",
-        pseudotorsion = "results/plots/pseudotorsion.png",
-        density = "results/plots/density.png",
-        nuc_id = "results/plots/nuc_id.png",
+        pseudotorsion_all = "results/plots/pseudotorsion_all.png",
+        pseudotorsion_out = "results/plots/pseudotorsion_out.png",
+        don_id = "results/plots/don_id.png",
         acc_id = "results/plots/acc_id.png",
+        acc_pair_id = "results/plots/acc_pair_id.png",
         chi_partial = "results/plots/chi_partial.png",
         chi_partial_y = "results/plots/chi_partial_y.png",
         chi_combined = "results/plots/chi_combined.png",
-        sasa = "results/plots/sasa.png"
+        density_1_all = "results/plots/density_1_all.png",
+        density_2_all = "results/plots/density_2_all.png",
+        density_1_filtered = "results/plots/density_1_filtered.png",
+        density_2_filtered = "results/plots/density_2_filtered.png",
+        sasa_all_box= "results/plots/sasa_all_box.png",
+        sasa_all_col= "results/plots/sasa_all_col.png",
+        sasa_filtered_box = "results/plots/sasa_filtered_box.png"
     script:
         "scripts/create_plots.R"
