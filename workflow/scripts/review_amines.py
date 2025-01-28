@@ -1,126 +1,82 @@
 """
-Create a script that is to be used with PyMOL to review dual H-bonding amines that involve a donor and acceptor that are
-specified in the configuration file.
+Create a script that is to be used with PyMOL to review dual H-bonding amines from the combined.csv file that is output
+from combine_data.py. This could also be a different CSV file with the same format as combined.csv. The dual H-bonding
+amines in the data are then filtered based on the supplied arguments.
 """
 
-import sys
-import os
-import subprocess
+import argparse
 from datetime import datetime
 import pandas as pd
 
-# Redirect stdout and stderr to log files.
-stdout = sys.stdout
-stderr = sys.stderr
-stdout_file = open(snakemake.log.stdout, mode='w')
-stderr_file = open(snakemake.log.stderr, mode='w')
-sys.stdout = stdout_file
-sys.stderr = stderr_file
+# Parse the arguments.
+parser = argparse.ArgumentParser(prog='Review Amines', description='Create a Python script that can be used with PyMOL '
+                                                                   'to review identified dual H-bonding amines.')
+parser.add_argument('input_file')
+parser.add_argument('output_file')
+parser.add_argument('--lower_eta', type=float,
+                    help='What is the lower bound (inclusive) for the eta values?')
+parser.add_argument('--upper_eta', type=float, help='What is the upper bound for the eta values?')
+parser.add_argument('--lower_theta', type=float,
+                    help='What is the lower bound (inclusive) for the theta values?')
+parser.add_argument('--upper_theta', type=float, help='What is the upper bound for the theta values?')
+parser.add_argument('--lower_chi', type=float,
+                    help='What is the lower bound (inclusive) for the chi values?')
+parser.add_argument('--upper_chi', type=float, help='What is the upper bound for the chi values?')
+parser.add_argument('--don_resn', type=str,
+                    help='What is the name of the donor residue (e.g., A, C, or G)?')
+args = parser.parse_args()
 
-# If commit_hash is set to true in the Snakemake configuration file, check if any changes have been made to the repo and
-# get the hash of the current git commit. If uncommitted changes have been made to anything other than files listed in
-# the acceptable_changes variable defined below, print an error message and exit.
-repo_changes = []
-commit_hash = ""
-if snakemake.config["commit_hash"]:
-    repo_changes = list(subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"],
-                                                cwd=os.path.dirname(os.path.realpath(__file__)))
-                        .decode('ascii').strip().split("\n"))
-    acceptable_changes = ['config/config.yaml', snakemake.config["rep_set_file"]]
-    for file in repo_changes:
-        if file.split(' ')[-1] in acceptable_changes:
-            repo_changes.remove(file)
-    if len(repo_changes) == 0:
-        commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"],
-                                              cwd=os.path.dirname(os.path.realpath(__file__))).decode('ascii').strip()
-    # Print the error message, close files, reset stdout and stderr, and exit.
-    else:
-        print("Error: Uncommitted changes have been made to the repo.")
-        stdout_file.close()
-        stderr_file.close()
-        sys.stdout = stdout
-        sys.stderr = stderr
-        sys.exit(1)
+# Read the data.
+df = pd.read_csv(args.input_file, comment="#", keep_default_na=False, na_values="NaN", dtype="str")
 
+# Remove irrelevant or redundant rows such that each dual H-bonding amine is only represented one time.
+df = df[df['type'] == '2'].drop_duplicates(subset=['don_index', 'eq_class_member'])
 
-# Define a function to determine whether a donor of interest donates to an acceptor that is specified by the
-# review_acceptor variable in the configuration file. If it does not, exclude the donor of interest from further
-# consideration by returning an empty data frame.
-def check_acceptor(group):
-    nucleic_acids = ['A', 'C', 'G', 'U', 'DA', 'DC', 'DG', 'DT']
-    keep_acc_resn = snakemake.config["review_acceptor"].split(".")[0]
-    keep_acc_name = snakemake.config["review_acceptor"].split(".")[1]
-    acc_present = False
-    # Check whether any of the acceptors are the acceptor specified in the config file.
-    for row in group.itertuples():
-        # If the residue name is specified as "N", it can be any canonical nucleic acid.
-        if ((row.acc_resn == keep_acc_resn or (keep_acc_resn == "N" and row.acc_resn in nucleic_acids)) and
-                row.acc_name == keep_acc_name):
-            acc_present = True
-    # If the specified acceptor is not present, remove all rows in the group.
-    if not acc_present:
-        group = group.truncate(after=-1)
-    return group
-
-
-# Read the data from the different equivalence class members. Filter out structures and amines based on criteria
-# specified within the configuration file.
-for idx in range(len(snakemake.input.data)):
-    try:
-        df = pd.read_csv(snakemake.input.data[idx], comment="#", keep_default_na=False, na_values="NaN",
-                         dtype={"don_resi": "str", "acc_resi": "str", "don_chain": "str",
-                                "acc_chain": "str"})
-        # If the data frame is empty, continue the loop.
-        if df.empty:
-            continue
-        # Only keep H-bonding interactions for donors of interest that are dual H-bonding and that are specified by the
-        # review_donor variable in the configuration file.
-        keep_don_resn = snakemake.config["review_donor"].split(".")[0]
-        keep_don_name = snakemake.config["review_donor"].split(".")[1]
-        df = df[(df["h_bond"] == 1) & (df["type"] == 2) & (df["don_resn"] == keep_don_resn) &
-                (df["don_name"] == keep_don_name)]
-        # Determine whether each donor of interest donates to an acceptor that is specified by the review_acceptor
-        # variable in the configuration file.
-        df.loc[:, ~df.columns.isin(["don_index"])] = (df.groupby("don_index", group_keys=False)
-                                                      .apply(check_acceptor, include_groups=False))
-        # Remove all rows that received NaN values from the check_acceptor function.
-        df = df[~df["acc_index"].isna()]
-        # Concatenate the data frame containing dual H-bonding amines from the single equivalence class member to the
-        # data frame containing amines from all members.
-        if idx == 0:
-            combined_df = df.copy()
-        else:
-            # noinspection PyUnboundLocalVariable
-            combined_df = pd.concat([combined_df, df])
-    # Continue the loop if one of the below errors is encountered.
-    except (FileNotFoundError, pd.errors.EmptyDataError):
-        continue
+# Apply the filters specified by the arguments.
+if args.lower_eta is not None:
+    df = df[df['eta'].astype(float) >= args.lower_eta]
+if args.upper_eta is not None:
+    df = df[df['eta'].astype(float) < args.upper_eta]
+if args.lower_theta is not None:
+    df = df[df['theta'].astype(float) >= args.lower_theta]
+if args.upper_theta is not None:
+    df = df[df['theta'].astype(float) < args.upper_theta]
+if args.lower_chi is not None:
+    df = df[df['chi'].astype(float) >= args.lower_chi]
+if args.upper_chi is not None:
+    df = df[df['chi'].astype(float) < args.upper_chi]
+if args.don_resn is not None:
+    df = df[df['don_resn'] == args.don_resn]
 
 # Write the Python script that is to be used with PyMOL.
-with open(snakemake.output.script, "w") as file:
-    if commit_hash:
-        file.write(f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}")
-    file.write(f"# representative set file: {snakemake.config['rep_set_file']}")
+with open(args.output_file, "w") as file:
     file.write(f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}")
+    if args.lower_eta is not None:
+        file.write(f"# eta lower bound (inclusive): {args.lower_eta}")
+    if args.upper_eta is not None:
+        file.write(f"# eta upper bound: {args.upper_eta}")
+    if args.lower_theta is not None:
+        file.write(f"# theta lower bound (inclusive): {args.lower_theta}")
+    if args.upper_theta is not None:
+        file.write(f"# theta upper bound: {args.upper_theta}")
+    if args.lower_chi is not None:
+        file.write(f"# chi lower bound (inclusive): {args.lower_chi}")
+    if args.upper_chi is not None:
+        file.write(f"# chi upper bound: {args.upper_chi}")
+    if args.don_resn is not None:
+        file.write(f"# don_resn: {args.don_resn}")
     file.write("# this script is to be used with PyMOL\n\n")
     file.write("from pymol import cmd\n\n")
     file.write("amines = [\n")
-    last_grp = list(combined_df.groupby(["don_index", "eq_class_member"]).groups.keys())[-1]
-    for grp, mem in combined_df.groupby(["don_index", "eq_class_member"]):
-        for i, pair in enumerate(mem.to_dict('index').values()):
-            if i == 0:
-                file.write(f'    [["{pair["don_name"]}", "{pair["don_resi"]}", "{pair["don_chain"]}", '
-                           f'"{pair["acc_name"]}", "{pair["acc_resi"]}", "{pair["acc_chain"]}", "{pair["PDB"]}", '
-                           f'"{pair["model"]}"]')
-            else:
-                file.write(f', ["{pair["don_name"]}", "{pair["don_resi"]}", "{pair["don_chain"]}", '
-                           f'"{pair["acc_name"]}", "{pair["acc_resi"]}", "{pair["acc_chain"]}", "{pair["PDB"]}", '
-                           f'"{pair["model"]}"]')
-            if i == mem["don_index"].size - 1:
-                if grp != last_grp:
-                    file.write('],\n')
-                else:
-                    file.write(']\n]\n\n')
+    for idx, row in enumerate(df.itertuples()):
+        if idx == 0:
+            file.write(f'    [[{row.don_name}, {row.don_resi}, {row.don_chain}, {row.acc_pair_1_name}, {row.acc_pair_1_resi}, {row.acc_pair_1_chain}, {row.PDB}, {row.model}]')
+        else:
+            file.write(f', [{row.don_name}, {row.don_resi}, {row.don_chain}, {row.acc_pair_2_name}, {row.acc_pair_2_resi}, {row.acc_pair_2_chain}, {row.PDB}, {row.model}]')
+        if idx == df["don_index"].size - 1:
+            file.write(']\n]\n\n')
+        else:
+            file.write('],\n')
     file.write("# Establish initial settings.\n")
     file.write("amine_num = 1\n")
     file.write("current_pdb = '####'\n")
@@ -201,9 +157,3 @@ with open(snakemake.output.script, "w") as file:
     file.write("cmd.extend('goto', goto)\n")
     file.write("cmd.extend('n', n)\n")
     file.write("cmd.extend('p', p)\n")
-
-# Close files and reset stdout and stderr.
-stdout_file.close()
-stderr_file.close()
-sys.stdout = stdout
-sys.stderr = stderr
