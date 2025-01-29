@@ -11,6 +11,9 @@ import pandas as pd
 # Parse the arguments.
 parser = argparse.ArgumentParser(prog='Review Amines', description='Create a Python script that can be used with PyMOL '
                                                                    'to review identified dual H-bonding amines.')
+parser.add_argument('search_dist', type=str,
+                    help='What is the maximum distance from the parent nucleobase of the amine that surrounding '
+                         'residues must reside within to be shown?')
 parser.add_argument('input_file')
 parser.add_argument('output_file')
 parser.add_argument('--lower_eta', type=float,
@@ -26,9 +29,6 @@ parser.add_argument('--lower_chi', type=float,
 parser.add_argument('--upper_chi', type=float, help='What is the upper bound for the chi values?')
 parser.add_argument('--don_resn', type=str,
                     help='What is the name of the donor residue (e.g., A, C, or G)?')
-parser.add_argument('--search_dist', type=str,
-                    help='What is the maximum distance from the parent nucleobase of the amine that surrounding '
-                         'residues must reside within to be shown?')
 args = parser.parse_args()
 
 # Read the data.
@@ -64,35 +64,37 @@ if args.don_resn is not None:
 
 # Write the Python script that is to be used with PyMOL.
 with open(args.output_file, "w") as file:
-    file.write(f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}")
+    file.write(f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}\n")
+    file.write(f"# search distance: {args.search_dist} angstroms\n")
     if args.lower_eta is not None:
-        file.write(f"# eta lower bound (inclusive): {args.lower_eta}")
+        file.write(f"# eta lower bound (inclusive): {args.lower_eta}\n")
     if args.upper_eta is not None:
-        file.write(f"# eta upper bound: {args.upper_eta}")
+        file.write(f"# eta upper bound: {args.upper_eta}\n")
     if args.lower_theta is not None:
-        file.write(f"# theta lower bound (inclusive): {args.lower_theta}")
+        file.write(f"# theta lower bound (inclusive): {args.lower_theta}\n")
     if args.upper_theta is not None:
-        file.write(f"# theta upper bound: {args.upper_theta}")
+        file.write(f"# theta upper bound: {args.upper_theta}\n")
     if args.lower_chi is not None:
-        file.write(f"# chi lower bound (inclusive): {args.lower_chi}")
+        file.write(f"# chi lower bound (inclusive): {args.lower_chi}\n")
     if args.upper_chi is not None:
-        file.write(f"# chi upper bound: {args.upper_chi}")
+        file.write(f"# chi upper bound: {args.upper_chi}\n")
     if args.don_resn is not None:
-        file.write(f"# don_resn: {args.don_resn}")
+        file.write(f"# don_resn: {args.don_resn}\n")
     file.write("# this script is to be used with PyMOL\n\n")
     file.write("from pymol import cmd\n\n")
     file.write("amines = [\n")
     for idx, row in enumerate(df.itertuples()):
-        if idx == 0:
-            file.write(f'    [[{row.don_name}, {row.don_resi}, {row.don_chain}, {row.acc_pair_1_name}, '
-                       f'{row.acc_pair_1_resi}, {row.acc_pair_1_chain}, {row.PDB}, {row.model}]')
-        else:
-            file.write(f', [{row.don_name}, {row.don_resi}, {row.don_chain}, {row.acc_pair_2_name}, '
-                       f'{row.acc_pair_2_resi}, {row.acc_pair_2_chain}, {row.PDB}, {row.model}]')
+        # Write this for the first acceptor pair.
+        file.write(f'    [["{row.don_name}", "{int(row.don_resi)}", "{row.don_chain}", "{row.acc_pair_1_name}", '
+                   f'"{int(float(row.acc_pair_1_resi))}", "{row.acc_pair_1_chain}", "{row.PDB}", "{row.model}"]')
+        # Write this for the second acceptor pair.
+        file.write(f', ["{row.don_name}", "{int(row.don_resi)}", "{row.don_chain}", "{row.acc_pair_2_name}", '
+                   f'"{int(float(row.acc_pair_2_resi))}", "{row.acc_pair_2_chain}", "{row.PDB}", "{row.model}"]]')
+        # Determine if this is the last row.
         if idx == df["don_index"].size - 1:
-            file.write(']\n]\n\n')
+            file.write('\n]\n\n')
         else:
-            file.write('],\n')
+            file.write(',\n')
     file.write("# Establish initial settings.\n")
     file.write("amine_num = 1\n")
     file.write("current_pdb = '####'\n")
