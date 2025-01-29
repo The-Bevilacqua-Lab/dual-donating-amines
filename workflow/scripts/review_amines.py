@@ -14,11 +14,13 @@ parser = argparse.ArgumentParser(prog='Review Amines', description='Create a Pyt
 parser.add_argument('input_file')
 parser.add_argument('output_file')
 parser.add_argument('--lower_eta', type=float,
-                    help='What is the lower bound (inclusive) for the eta values?')
-parser.add_argument('--upper_eta', type=float, help='What is the upper bound for the eta values?')
+                    help='What is the lower bound (inclusive) for the eta values, ranging from 0 to 360?')
+parser.add_argument('--upper_eta', type=float,
+                    help='What is the upper bound for the eta values, ranging from 0 to 360?')
 parser.add_argument('--lower_theta', type=float,
-                    help='What is the lower bound (inclusive) for the theta values?')
-parser.add_argument('--upper_theta', type=float, help='What is the upper bound for the theta values?')
+                    help='What is the lower bound (inclusive) for the theta values, ranging from 0 to 360?')
+parser.add_argument('--upper_theta', type=float,
+                    help='What is the upper bound for the theta values, ranging from 0 to 360?')
 parser.add_argument('--lower_chi', type=float,
                     help='What is the lower bound (inclusive) for the chi values?')
 parser.add_argument('--upper_chi', type=float, help='What is the upper bound for the chi values?')
@@ -32,15 +34,22 @@ df = pd.read_csv(args.input_file, comment="#", keep_default_na=False, na_values=
 # Remove irrelevant or redundant rows such that each dual H-bonding amine is only represented one time.
 df = df[df['type'] == '2'].drop_duplicates(subset=['don_index', 'eq_class_member'])
 
-# Apply the filters specified by the arguments.
+# Translate the pseudotorsions to range from 0 to 360 degrees.
+df.loc[df['eta'].astype(float) >= 0, 'eta_translated'] = df.loc[df['eta'].astype(float) >= 0, 'eta']
+df.loc[df['eta'].astype(float) < 0, 'eta_translated'] = df.loc[df['eta'].astype(float) < 0, 'eta'] + 360
+df.loc[df['theta'].astype(float) >= 0, 'theta_translated'] = df.loc[df['theta'].astype(float) >= 0, 'theta']
+df.loc[df['theta'].astype(float) < 0, 'theta_translated'] = df.loc[df['theta'].astype(float) < 0, 'theta'] + 360
+
+# Apply the filters specified by the arguments. Eta/theta values of -360 should not be included when eta/theta bounds
+# are specified.
 if args.lower_eta is not None:
-    df = df[df['eta'].astype(float) >= args.lower_eta]
+    df = df[(df['eta'].astype(float) != -360) & (df['eta_translated'].astype(float) >= args.lower_eta)]
 if args.upper_eta is not None:
-    df = df[df['eta'].astype(float) < args.upper_eta]
+    df = df[(df['eta'].astype(float) != -360) & (df['eta_translated'].astype(float) < args.upper_eta)]
 if args.lower_theta is not None:
-    df = df[df['theta'].astype(float) >= args.lower_theta]
+    df = df[(df['theta'].astype(float) != -360) & (df['theta_translated'].astype(float) >= args.lower_theta)]
 if args.upper_theta is not None:
-    df = df[df['theta'].astype(float) < args.upper_theta]
+    df = df[(df['theta'].astype(float) != -360) & (df['theta_translated'].astype(float) < args.upper_theta)]
 if args.lower_chi is not None:
     df = df[df['chi'].astype(float) >= args.lower_chi]
 if args.upper_chi is not None:
