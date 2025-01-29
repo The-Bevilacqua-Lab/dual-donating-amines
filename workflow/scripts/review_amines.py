@@ -135,7 +135,7 @@ with open(args.output_file, "w") as file:
     file.write("    cmd.color('grey60', 'elem C')\n")
     file.write("    cmd.show('sticks', f'resi {amines[num-1][0][1]} and chain {amines[num-1][0][2]}')\n")
     file.write("    cmd.color('cyan', 'elem C and visible')\n")
-    file.write("    cmd.show('sticks', 'byres all within " + {args.search_dist} +
+    file.write("    cmd.show('sticks', 'byres all within " + args.search_dist +
                " of (visible and sidechain)')\n")
     file.write("    for i2, pair in enumerate(amines[i1]):\n")
     file.write("        cmd.distance(f'dist_{num}_{i2}',\n"
