@@ -26,6 +26,9 @@ parser.add_argument('--lower_chi', type=float,
 parser.add_argument('--upper_chi', type=float, help='What is the upper bound for the chi values?')
 parser.add_argument('--don_resn', type=str,
                     help='What is the name of the donor residue (e.g., A, C, or G)?')
+parser.add_argument('--search_dist', type=str,
+                    help='What is the maximum distance from the parent nucleobase of the amine that surrounding '
+                         'residues must reside within to be shown?')
 args = parser.parse_args()
 
 # Read the data.
@@ -37,7 +40,8 @@ df = df[df['type'] == '2'].drop_duplicates(subset=['don_index', 'eq_class_member
 # Translate the pseudotorsions to range from 0 to 360 degrees.
 df.loc[df['eta'].astype(float) >= 0, 'eta_translated'] = df.loc[df['eta'].astype(float) >= 0, 'eta'].astype(float)
 df.loc[df['eta'].astype(float) < 0, 'eta_translated'] = df.loc[df['eta'].astype(float) < 0, 'eta'].astype(float) + 360
-df.loc[df['theta'].astype(float) >= 0, 'theta_translated'] = df.loc[df['theta'].astype(float) >= 0, 'theta'].astype(float)
+df.loc[df['theta'].astype(float) >= 0, 'theta_translated'] = (
+    df.loc[df['theta'].astype(float) >= 0, 'theta'].astype(float))
 df.loc[df['theta'].astype(float) < 0, 'theta_translated'] = (
         df.loc[df['theta'].astype(float) < 0, 'theta'].astype(float) + 360)
 
@@ -80,9 +84,11 @@ with open(args.output_file, "w") as file:
     file.write("amines = [\n")
     for idx, row in enumerate(df.itertuples()):
         if idx == 0:
-            file.write(f'    [[{row.don_name}, {row.don_resi}, {row.don_chain}, {row.acc_pair_1_name}, {row.acc_pair_1_resi}, {row.acc_pair_1_chain}, {row.PDB}, {row.model}]')
+            file.write(f'    [[{row.don_name}, {row.don_resi}, {row.don_chain}, {row.acc_pair_1_name}, '
+                       f'{row.acc_pair_1_resi}, {row.acc_pair_1_chain}, {row.PDB}, {row.model}]')
         else:
-            file.write(f', [{row.don_name}, {row.don_resi}, {row.don_chain}, {row.acc_pair_2_name}, {row.acc_pair_2_resi}, {row.acc_pair_2_chain}, {row.PDB}, {row.model}]')
+            file.write(f', [{row.don_name}, {row.don_resi}, {row.don_chain}, {row.acc_pair_2_name}, '
+                       f'{row.acc_pair_2_resi}, {row.acc_pair_2_chain}, {row.PDB}, {row.model}]')
         if idx == df["don_index"].size - 1:
             file.write(']\n]\n\n')
         else:
@@ -129,7 +135,7 @@ with open(args.output_file, "w") as file:
     file.write("    cmd.color('grey60', 'elem C')\n")
     file.write("    cmd.show('sticks', f'resi {amines[num-1][0][1]} and chain {amines[num-1][0][2]}')\n")
     file.write("    cmd.color('cyan', 'elem C and visible')\n")
-    file.write("    cmd.show('sticks', 'byres all within " + str(snakemake.config["search_dist"]) +
+    file.write("    cmd.show('sticks', 'byres all within " + {args.search_dist} +
                " of (visible and sidechain)')\n")
     file.write("    for i2, pair in enumerate(amines[i1]):\n")
     file.write("        cmd.distance(f'dist_{num}_{i2}',\n"
