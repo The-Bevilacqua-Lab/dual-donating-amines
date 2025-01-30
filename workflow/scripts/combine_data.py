@@ -49,8 +49,7 @@ combined_df = pd.DataFrame()
 for idx in range(len(snakemake.input.data)):
     try:
         member_df = pd.read_csv(snakemake.input.data[idx], comment="#", keep_default_na=False, na_values="NaN",
-                                dtype={"don_resi": "str", "acc_resi": "str", "don_chain": "str",
-                                       "acc_chain": "str"})
+                                dtype="str")
         if combined_df.empty and not member_df.empty:
             combined_df = member_df.copy()
         elif not member_df.empty:
