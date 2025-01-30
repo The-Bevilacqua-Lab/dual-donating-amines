@@ -85,11 +85,11 @@ with open(args.output_file, "w") as file:
     file.write("amines = [\n")
     for idx, row in enumerate(df.itertuples()):
         # Write this for the first acceptor pair.
-        file.write(f'    [["{row.don_name}", "{int(row.don_resi)}", "{row.don_chain}", "{row.acc_pair_1_name}", '
-                   f'"{int(float(row.acc_pair_1_resi))}", "{row.acc_pair_1_chain}", "{row.PDB}", "{row.model}"]')
+        file.write(f'    [["{row.don_name}", "{row.don_resi}", "{row.don_chain}", "{row.acc_pair_1_name}", '
+                   f'"{row.acc_pair_1_resi}", "{row.acc_pair_1_chain}", "{row.PDB}", "{row.model}"]')
         # Write this for the second acceptor pair.
-        file.write(f', ["{row.don_name}", "{int(row.don_resi)}", "{row.don_chain}", "{row.acc_pair_2_name}", '
-                   f'"{int(float(row.acc_pair_2_resi))}", "{row.acc_pair_2_chain}", "{row.PDB}", "{row.model}"]]')
+        file.write(f', ["{row.don_name}", "{row.don_resi}", "{row.don_chain}", "{row.acc_pair_2_name}", '
+                   f'"{row.acc_pair_2_resi}", "{row.acc_pair_2_chain}", "{row.PDB}", "{row.model}"]]')
         # Determine if this is the last row.
         if idx == df["don_index"].size - 1:
             file.write('\n]\n\n')
