@@ -198,48 +198,45 @@ volume_diff <- volume_2 - volume_1
 density_df$density_1 <- density_df$count_1/volume_1
 density_df$density_2 <- (density_df$count_2-density_df$count_1)/volume_diff
 
+# Pivot the density_1 and density_2 columns to place the values in a single column.
+density_all_pivot_df <- density_all_df %>%
+  pivot_longer(cols = c(density_1, density_2), names_to = "density_type", values_to = "density_values")
+
+# Change the density_type naming.
+density_all_pivot_df[density_all_pivot_df$density_type == "density_1", "density_type"] <- "ROI 1"
+density_all_pivot_df[density_all_pivot_df$density_type == "density_2", "density_type"] <- "ROI 2"
+
 # Calculate sample sizes from the non-filtered data set.
-density_summary_all <- density_all_df %>%
-  summarise(n = n(), den_2_med = median(density_2), .by = c(type, don_label))
+density_summary_all <- density_all_pivot_df %>%
+  summarise(n = n(), den_med = median(density_values), .by = c(type, don_label, density_type))
+
+# Color Palette: black, orange, sky blue, bluish green, yellow, blue, vermilion, reddish purple
+# Colors from DOI 10.1038/nmeth.1618
+color_palette <- c(rgb(0/255, 0/255, 0/255), rgb(230/255, 159/255, 0/255), rgb(86/255, 180/255, 233/255),
+                   rgb(0/255, 158/255, 115/255), rgb(240/255, 228/255, 66/255), rgb(0/255, 114/255, 178/255),
+                   rgb(213/255, 94/255, 0/255), rgb(204/255, 121/255, 167/255))
 
 # Specify the variables for the plots.
-ylim_1 <- c(-22, 210)
-ylim_2 <- c(-22, 150)
-ratio_1 <- (3/diff(ylim_1))*1.5
-ratio_2 <- (3/diff(ylim_2))*1.5
+ylim <- c(-80, 200)
+ratio <- (3/diff(ylim))*2
 
 # Create the box plots with all data (outliers included).
-density_1_all_plot <- density_all_df %>% ggplot(aes(x=type, y=density_1*1000)) +
-  geom_violin(fill = "grey", show.legend = FALSE) +
-  geom_boxplot(width = 0.2, alpha = 0, outlier.size = 1, show.legend = FALSE) +
-  geom_text(data = density_summary_all, aes(x=type, y=-0.005,
-                                        label = paste("n = ", prettyNum(n, big.mark = ","), sep = "")),
-            size = 10, size.unit = "pt", vjust = 1, angle = 30) +
-  coord_fixed(ratio = ratio_1, xlim = c(1, 3), ylim = ylim_1) +
-  ggtitle(paste("Atoms \u2264 ", snakemake@config[["count_dist_1"]], " \uc5", " Outliers Removed",sep = "")) +
+density_all_plot <- density_all_pivot_df %>% ggplot(aes(x=type, y=density_values*1000, fill=density_type)) +
+  geom_violin(show.legend = FALSE) +
+  geom_boxplot(width = 0.2, alpha = 0, show.legend = FALSE) +
+  geom_text(data = density_summary_all,
+            aes(x=type, y=-45, label = paste("n = ", prettyNum(n, big.mark = ","), sep = "")),
+            size = 8, size.unit = "pt", hjust = 0.5, vjust = 0.5, angle = 60) +
+  coord_fixed(ratio = ratio, xlim = c(1, 3), ylim = ylim) +
+  scale_fill_manual(values = c(color_palette[3], color_palette[6])) +
   xlab("Type of Amine H-Bonding") +
   ylab("Density (heavy-atoms/nm\ub3)") +
   theme_bw(base_size = 10) +
-  theme(plot.title = element_text(hjust = 0.5)) +
-  facet_wrap( ~ don_label, nrow = 1)
-density_2_all_plot <- density_all_df %>% ggplot(aes(x=type, y=density_2*1000)) +
-  geom_violin(fill = "grey", show.legend = FALSE) +
-  geom_boxplot(width = 0.2, alpha = 0, outlier.size = 1, show.legend = FALSE) +
-  geom_text(data = density_summary_all, aes(x=type, y=-0.005,
-                                        label = paste("n = ", prettyNum(n, big.mark = ","), sep = "")),
-            size = 10, size.unit = "pt", vjust = 1, angle = 30) +
-  coord_fixed(ratio = ratio_2, xlim = c(1, 3), ylim = ylim_2) +
-  ggtitle(paste(snakemake@config[["count_dist_1"]], " \uc5 \u003c Atoms \u2264 ",
-                snakemake@config[["count_dist_2"]], " \uc5", " Outliers Removed", sep = "")) +
-  xlab("Type of Amine H-Bonding") +
-  ylab("Density (heavy-atoms/nm\ub3)") +
-  theme_bw(base_size = 10) +
-  theme(plot.title = element_text(hjust = 0.5)) +
-  facet_wrap( ~ don_label, nrow = 1)
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+  facet_nested_wrap(vars(density_type, don_label), nrow = 1, scales = "fixed")
 
 # Write the plots.
-ggsave(snakemake@output[["density_1_all"]], plot = density_1_all_plot, width = 6.5, height = 9, units = "in", scale = 1)
-ggsave(snakemake@output[["density_2_all"]], plot = density_2_all_plot, width = 6.5, height = 9, units = "in", scale = 1)
+ggsave(snakemake@output[["density_all"]], plot = density_all_plot, width = 6, height = 3, units = "in", scale = 1)
 
 # Calculate quantile values for both densities.
 density_quantiles <- density_all_df %>% summarise(iqr_1 = IQR(density_1),
@@ -251,16 +248,16 @@ density_quantiles <- density_all_df %>% summarise(iqr_1 = IQR(density_1),
                                                   .by = c(type, don_label))
 
 # Calculate some stats on the IQR for density 1.
-avg_iqr_1_n <- sum(density_quantiles[density_quantiles$type == "No",]$iqr_1)/3
-avg_iqr_1_s <- sum(density_quantiles[density_quantiles$type == "Single",]$iqr_1)/3
-avg_iqr_1_d <- sum(density_quantiles[density_quantiles$type == "Dual",]$iqr_1)/3
+avg_iqr_1_n <- sum(density_quantiles[density_quantiles$type == "No",]$iqr_1)/3 # 0.0154675
+avg_iqr_1_s <- sum(density_quantiles[density_quantiles$type == "Single",]$iqr_1)/3 # 0.009242776
+avg_iqr_1_d <- sum(density_quantiles[density_quantiles$type == "Dual",]$iqr_1)/3 # 0.007922379
 n_d_1_drop <- ((avg_iqr_1_n-avg_iqr_1_d)/avg_iqr_1_n)*100 # 48.78049 %
 s_d_1_drop <- ((avg_iqr_1_s-avg_iqr_1_d)/avg_iqr_1_s)*100 # 14.28571 %
 
 # Calculate some stats on the IQR for density 2.
-avg_iqr_2_n <- sum(density_quantiles[density_quantiles$type == "No",]$iqr_2)/3
-avg_iqr_2_s <- sum(density_quantiles[density_quantiles$type == "Single",]$iqr_2)/3
-avg_iqr_2_d <- sum(density_quantiles[density_quantiles$type == "Dual",]$iqr_2)/3
+avg_iqr_2_n <- sum(density_quantiles[density_quantiles$type == "No",]$iqr_2)/3 # 0.01392768
+avg_iqr_2_s <- sum(density_quantiles[density_quantiles$type == "Single",]$iqr_2)/3 # 0.01164105
+avg_iqr_2_d <- sum(density_quantiles[density_quantiles$type == "Dual",]$iqr_2)/3 # 0.008782754
 n_d_2_drop <- ((avg_iqr_2_n-avg_iqr_2_d)/avg_iqr_2_n)*100 # 36.9403 %
 s_d_2_drop <- ((avg_iqr_2_s-avg_iqr_2_d)/avg_iqr_2_s)*100 # 24.55357 %
 
@@ -269,50 +266,45 @@ density_filtered_df <- merge(density_all_df, density_quantiles) %>%
   filter(density_1 >= q1_1 - 2 * iqr_1 & density_1 <= q3_1 + 2 * iqr_1) %>%
   filter(density_2 >= q1_2 - 2 * iqr_2 & density_2 <= q3_2 + 2 * iqr_2)
 
+# Pivot the density_1 and density_2 columns to place the values in a single column.
+density_filtered_pivot_df <- density_filtered_df %>%
+  pivot_longer(cols = c(density_1, density_2), names_to = "density_type", values_to = "density_values")
+
+# Change the density_type naming.
+density_filtered_pivot_df[density_filtered_pivot_df$density_type == "density_1", "density_type"] <- "ROI 1"
+density_filtered_pivot_df[density_filtered_pivot_df$density_type == "density_2", "density_type"] <- "ROI 2"
+
 # Calculate sample sizes from the filtered data set.
-density_summary_filtered <- density_filtered_df %>%
-  summarise(n = n(), den_1_med = median(density_1), den_2_med = median(density_2), .by = c(type, don_label))
+density_summary_filtered <- density_filtered_pivot_df %>%
+  summarise(n = n(), den_med = median(density_values), .by = c(type, don_label, density_type))
+
+# Create the labels for sample sizes. Labels for ROI 2 will be blank to save room on the plots. The sample sizes for
+# ROI 2 are the same as those for ROI 1.
+density_summary_filtered <- density_summary_filtered %>%
+  mutate(sample_label = paste("n = ", prettyNum(n, big.mark = ","), sep = ""))
+density_summary_filtered[density_summary_filtered$density_type == "ROI 2", "sample_label"] <- ""
 
 # Specify the variables for the plots.
-ylim_1 <- c(-8, 80)
-ylim_2 <- c(-6, 60)
-ratio_1 <- (3/diff(ylim_1))*1.25
-ratio_2 <- (3/diff(ylim_2))*1.25
+ylim <- c(-15, 80)
+ratio <- (3/diff(ylim))*2
 
 # Create the box plots with outliers filtered out.
-density_1_filtered_plot <- density_filtered_df %>% ggplot(aes(x=type, y=density_1*1000)) +
-  geom_violin(fill = "grey", show.legend = FALSE) +
-  geom_boxplot(width = 0.2, alpha = 0, outlier.size = 1, show.legend = FALSE) +
-  geom_text(data = density_summary_filtered, aes(x=type, y=-0.005,
-                                        label = paste("n = ", prettyNum(n, big.mark = ","), sep = "")),
-            size = 10, size.unit = "pt", vjust = 1, angle = 30) +
-  coord_fixed(ratio = ratio_1, xlim = c(1, 3), ylim = ylim_1) +
-  # ggtitle(paste("Atoms \u2264 ", snakemake@config[["count_dist_1"]], " \uc5", " Outliers Removed",sep = "")) +
+density_filtered_plot <- density_filtered_pivot_df %>% ggplot(aes(x=type, y=density_values*1000, fill=density_type)) +
+  geom_violin(show.legend = FALSE) +
+  geom_boxplot(width = 0.2, alpha = 0, show.legend = FALSE) +
+  geom_text(data = density_summary_filtered,
+            aes(x=type, y=-4, label = sample_label),
+            size = 8, size.unit = "pt", hjust = 0.5, vjust = 0.5, angle = 60) +
+  coord_fixed(ratio = ratio, xlim = c(1, 3), ylim = ylim) +
+  scale_fill_manual(values = c(color_palette[3], color_palette[6])) +
   xlab("Type of Amine H-Bonding") +
   ylab("Density (heavy-atoms/nm\ub3)") +
   theme_bw(base_size = 10) +
-  theme(plot.title = element_text(hjust = 0.5)) +
-  facet_wrap( ~ don_label, nrow = 1)
-density_2_filtered_plot <- density_filtered_df %>% ggplot(aes(x=type, y=density_2*1000)) +
-  geom_violin(fill = "grey", show.legend = FALSE) +
-  geom_boxplot(width = 0.2, alpha = 0, outlier.size = 1, show.legend = FALSE) +
-  geom_text(data = density_summary_filtered, aes(x=type, y=-0.005,
-                                        label = paste("n = ", prettyNum(n, big.mark = ","), sep = "")),
-            size = 10, size.unit = "pt", vjust = 1, angle = 30) +
-  coord_fixed(ratio = ratio_2, xlim = c(1, 3), ylim = ylim_2) +
-  ggtitle(paste(snakemake@config[["count_dist_1"]], " \uc5 \u003c Atoms \u2264 ", 
-                snakemake@config[["count_dist_2"]], " \uc5", " Outliers Removed", sep = "")) +
-  xlab("Type of Amine H-Bonding") +
-  ylab("Density (heavy-atoms/nm\ub3)") +
-  theme_bw(base_size = 10) +
-  theme(plot.title = element_text(hjust = 0.5)) +
-  facet_wrap( ~ don_label, nrow = 1)
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+  facet_nested_wrap(vars(density_type, don_label), nrow = 1, scales = "fixed")
 
 # Write the plots.
-ggsave(snakemake@output[["density_1_filtered"]],
-       plot = density_1_filtered_plot, width = 6, height = 9, units = "in", scale = 1)
-ggsave(snakemake@output[["density_2_filtered"]],
-       plot = density_2_filtered_plot, width = 6, height = 9, units = "in", scale = 1)
+ggsave(snakemake@output[["density_filtered"]], plot = density_filtered_plot, width = 6, height = 3, units = "in", scale = 1)
 
 # Perform Mann-Whitney tests for density 2 with outliers removed.
 
