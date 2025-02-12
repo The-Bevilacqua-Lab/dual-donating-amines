@@ -135,15 +135,15 @@ with open(args.output_file, "w") as file:
     file.write("    cmd.delete(f'dist_{num}*')\n")
     file.write("    cmd.hide('all')\n")
     file.write("    cmd.color('grey60', 'elem C')\n")
-    file.write("    cmd.show('sticks', f'resi {amines[num-1][0][1]} and chain {amines[num-1][0][2]}')\n")
+    file.write("    cmd.show('sticks', f'resi \\\\{amines[num-1][0][1]} and chain {amines[num-1][0][2]}')\n")
     file.write("    cmd.color('cyan', 'elem C and visible')\n")
     file.write("    cmd.show('sticks', 'byres all within " + args.search_dist +
                " of (visible and sidechain)')\n")
     file.write("    for i2, pair in enumerate(amines[i1]):\n")
     file.write("        cmd.distance(f'dist_{num}_{i2}',\n"
-               "                     f'name {amines[i1][i2][0]} and resi {amines[i1][i2][1]} "
+               "                     f'name {amines[i1][i2][0]} and resi \\\\{amines[i1][i2][1]} "
                "and chain {amines[i1][i2][2]}',\n"
-               "                     f'name {amines[i1][i2][3]} and resi {amines[i1][i2][4]} "
+               "                     f'name {amines[i1][i2][3]} and resi \\\\{amines[i1][i2][4]} "
                "and chain {amines[i1][i2][5]}')\n")
     file.write("    cmd.hide('labels')\n")
     file.write("    cmd.show('dashes', f'dist_{num}*')\n")
