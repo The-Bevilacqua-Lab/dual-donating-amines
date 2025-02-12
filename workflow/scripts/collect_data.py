@@ -228,7 +228,7 @@ cmd.iterate(f'({mem_rna_chains}) and ({donors_of_interest_str})',
 # dictionary. Additionally, store the average b-factor of the heavy atoms that make up the nucleobase containing the
 # donors of interest.
 don_info_dict = {"don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "don_segi": [],
-                 "count_1": [], "count_2": [], "b_factor": [], "chi": []}
+                 "don_alt": [], "count_1": [], "count_2": [], "b_factor": [], "chi": []}
 for donor in stored.donor_list:
     # Count the number of heavy atoms belonging to organic molecules or polymers near the donor.
     count_1 = cmd.count_atoms(f'((organic or polymer) within {snakemake.config["count_dist_1"]} of index {donor[0]}) '
