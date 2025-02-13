@@ -92,5 +92,7 @@ rule create_plots:
         sasa_all_box= "results/plots/sasa_all_box.png",
         sasa_all_col= "results/plots/sasa_all_col.png",
         sasa_filtered_box = "results/plots/sasa_filtered_box.png"
+    conda:
+        "envs/general.yaml"
     script:
         "scripts/create_plots.R"
