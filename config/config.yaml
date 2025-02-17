@@ -44,10 +44,6 @@ donors_of_interest:
   - 'C.N4'
   - 'G.N2'
 
-# What donor and acceptor should be considered for the review_amines rule?
-review_donor: 'A.N6'
-review_acceptor: "N.O2'"
-
 # Should the folder with the mmCIF files fetched from the PDB be removed to save space?
 remove_original_mmcif: true
 

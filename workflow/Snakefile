@@ -8,7 +8,6 @@ eq_class_members = scripts.parse_nrlist.parse_nrlist(config["rep_set_file"], con
 
 rule all:
     input:
-        "results/review_amines/amines.py",
         "results/plots/pairs.png",
         "results/plots/pseudotorsion_all.png",
         "results/plots/pseudotorsion_out.png",
@@ -46,19 +45,6 @@ rule process_data:
         "envs/general.yaml"
     script:
         "scripts/process_data.py"
-
-rule review_amines:
-    input:
-        data = expand("results/process_data/{eq_class_member}.csv", eq_class_member=eq_class_members)
-    output:
-        script = "results/review_amines/amines.py"
-    log:
-        stdout = "results/logs/review_amines/output.stdout",
-        stderr = "results/logs/review_amines/error.stderr"
-    conda:
-        "envs/general.yaml"
-    script:
-        "scripts/review_amines.py"
 
 rule combine_data:
     input:
