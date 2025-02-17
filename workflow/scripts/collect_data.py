@@ -358,14 +358,10 @@ if not os.path.isdir(chain_pdb_dir):
 # Save PDB files for each representative chain, run NaTorsion, and create a data frame with the output.
 for idx, chain in enumerate(chain_list):
     cmd.save(f"{chain_pdb_dir}{pdb_id}_{chain}.pdb", f"chain {chain} and polymer.nucleic")
-    # Attempt to run NaTorsion and store output, abort the data collection if not successful.
-    try:
-        na_torsion_output = subprocess.run(["NaTorsion", f"{chain_pdb_dir}{pdb_id}_{chain}.pdb"],
-                                           cwd=os.path.dirname(os.path.realpath(__file__))[:-16],
-                                           capture_output=True).stdout.decode('ascii')
-    # TODO articulate explicit errors that were identified or else remove this try/except clause
-    except:
-        error(f"Error: There was an issue with running NaTorsion for {eq_class_mem_id}.")
+    # Run NaTorsion and store output
+    na_torsion_output = subprocess.run(["NaTorsion", f"{chain_pdb_dir}{pdb_id}_{chain}.pdb"],
+                                       cwd=os.path.dirname(os.path.realpath(__file__))[:-16],
+                                       capture_output=True).stdout.decode('ascii')
     # For the first chain considered, create na_torsion_df
     if idx == 0:
         na_torsion_df = pd.read_csv(StringIO(na_torsion_output), sep='\s+')
