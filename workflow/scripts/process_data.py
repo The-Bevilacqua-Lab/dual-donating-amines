@@ -156,8 +156,6 @@ def find_pairs(grp):
     return grp
 
 
-# TODO split this into two functions, one that renames acceptors and another that combines them. The function that renames acceptors should be applied to all acceptors to replace the need to do this again in the R script for the acc id plot.
-
 # Create a new column with the names of both atoms of the acceptor pair corresponding to dual H-bonding amines. Some
 # names will be changed from what is used in the PDB. For instance, both OP1 and OP2 atoms will be renamed NPO. Which
 # one of the two acceptors appears first will depend on how the two acceptors are sorted after combining into a list.
