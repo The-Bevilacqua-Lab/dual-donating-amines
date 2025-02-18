@@ -3,7 +3,7 @@ from Bio.PDB.SASA import ShrakeRupley
 
 
 def sasa(pdb_id, model, eq_class_mem_id, donor_list, original_mmcif_dir):
-    parser = MMCIFParser()
+    parser = MMCIFParser(QUIET=True)
     structure = parser.get_structure(pdb_id, f"{original_mmcif_dir}{pdb_id.lower()}.cif")
     sr = ShrakeRupley()
     sr.compute(structure)
