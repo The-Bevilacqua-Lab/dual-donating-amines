@@ -378,15 +378,14 @@ g_no <- sasa_all_df %>% filter(type == "No" & don_resn == "G")
 print(median(g_no$SASA)) # 8.748707
 
 # Specify the variables for the plots.
-ylim <- c(-8.5, 60)
-ratio <- (3/diff(ylim))*1.5
+ylim <- c(-20, 60)
+ratio <- (3/diff(ylim))*2
 
 # Create the box plots with all data (outliers included).
 sasa_all_box_plot <- sasa_all_df %>% ggplot(aes(x=type, y=SASA)) +
-  geom_violin(fill = "grey", show.legend = FALSE) +
   geom_boxplot(width = 0.2, alpha = 0, outlier.size = 1, show.legend = FALSE) +
-  geom_text(data = sasa_summary_all, aes(x=type, y=-4, label = paste("n = ", prettyNum(n, big.mark = ","), sep = "")),
-            size = 10, size.unit = "pt", vjust = 1, angle = 30) +
+  geom_text(data = sasa_summary_all, aes(x=type, y=-12, label = paste("n = ", prettyNum(n, big.mark = ","), sep = "")),
+            size = 8, size.unit = "pt", hjust = 0.5, vjust = 0.5, angle = 60) +
   coord_fixed(ratio = ratio, xlim = c(1, 3), ylim = ylim) +
   xlab("Type of Amine H-Bonding") +
   ylab("SASA (\uc5\ub2)") +
@@ -395,7 +394,7 @@ sasa_all_box_plot <- sasa_all_df %>% ggplot(aes(x=type, y=SASA)) +
   facet_wrap( ~ don_label, nrow = 1)
 
 # Write the plots.
-ggsave(snakemake@output[["sasa_all_box"]], plot = sasa_all_box_plot, width = 6.5, height = 9, units = "in", scale = 1)
+ggsave(snakemake@output[["sasa_all_box"]], plot = sasa_all_box_plot, width = 3.5, height = 4, units = "in", scale = 1)
 
 # Specify the variables for the plots.
 ylim <- c(0, 15)
