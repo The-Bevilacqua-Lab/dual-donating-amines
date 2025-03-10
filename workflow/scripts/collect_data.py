@@ -165,7 +165,7 @@ actual_model_list = retrieve_model(original_mmcif_dir, pdb_id)
 if num_models > 1:
     print(f"Note: Equivalence class member {eq_class_mem_id} has multiple models.")
     # Ensure that the list of model numbers in the mmCIF file matches the expected list of model numbers. This is
-    # important because the model variable is initially set to the value reported for the equivalence class member,
+    # important because the variable 'model' is initially set to the value reported for the equivalence class member,
     # which is retrieved from the mmCIF file by the BGSU Representative Sets of RNA 3D Structures algorithm. These
     # values from the mmCIF file could be any range of numbers. Meanwhile, the "states" in PyMOL seem to always start
     # at 1 and then increment upwards by 1 for each addition model present. Therefore, for the keyword argument
