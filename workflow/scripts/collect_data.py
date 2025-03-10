@@ -22,7 +22,7 @@ import pandas as pd
 from datetime import datetime
 import residue_library
 import eval_H_bonding
-import remove_alt_conf
+import remove_disordered_atoms
 import sasa
 from parse_mmCIF import retrieve_model
 
@@ -51,6 +51,18 @@ def error(msg):
     sys.stderr = stderr
     sys.exit(0)
 
+
+# Check whether the folder exists for PyMOL to save mmCIF files into for structures that originally had disordered
+# atoms. Structures that had disordered atoms omitted will also be saved to this folder via Biopython. If the folder
+# does not exist, create it.
+disordered_mmcif_dir = snakemake.config["disordered_mmcif_dir"]
+if not os.path.isdir(disordered_mmcif_dir):
+    try:
+        os.mkdir(disordered_mmcif_dir)
+    except FileExistsError:
+        time.sleep(5.0)
+        if not os.path.isdir(disordered_mmcif_dir):
+            os.mkdir(disordered_mmcif_dir)
 
 # Check whether the folder exists for PyMOL to save mmCIF files into from the modified structure.
 # If it does not exist, create the folder.
@@ -162,6 +174,7 @@ num_models = cmd.count_states(pdb_id)
 normal_model_list = [str(number) for number in range(1, num_models + 1)]
 # Retrieve the model numbers specified by the mmCIF file.
 actual_model_list = retrieve_model(original_mmcif_dir, pdb_id)
+object_name = f'{pdb_id}_state_{model}'
 if num_models > 1:
     print(f"Note: Equivalence class member {eq_class_mem_id} has multiple models.")
     # Ensure that the list of model numbers in the mmCIF file matches the expected list of model numbers. This is
@@ -177,7 +190,7 @@ if num_models > 1:
     # (i.e., mmCIF file) evaluated by this script exactly matches the version evaluated by the BGSU algorithm,
     # differences in model numbers may exist.
     if actual_model_list == normal_model_list:
-        cmd.create(f'{pdb_id}_state_{model}', selection=pdb_id,
+        cmd.create(object_name, selection=pdb_id,
                    source_state=model,
                    target_state=1)
         cmd.delete(pdb_id)
@@ -195,16 +208,17 @@ elif num_models == 1:
               f"representative structure is not 1, which does not match the PyMOL numbering. This model number will be "
               f"reset to 1.")
         model = "1"
-    cmd.set_name(pdb_id, f'{pdb_id}_state_{model}')
+    cmd.set_name(pdb_id, object_name)
 else:
     error("Error: An issue occurred when working with the number of models (i.e., PyMOL states) present in the "
           f"structure for {eq_class_mem_id}.")
 
-# Remove atoms representing alternative conformations.
-remove_status = remove_alt_conf.remove(eq_class_mem_id)
-successful_completion = remove_status[0]
-if not successful_completion:
-    error(remove_status[1])
+# If present, remove atoms representing alternative conformations.
+if cmd.count_atoms("not alt ''") > 0:
+    cmd.save(disordered_mmcif_dir + object_name + "_with_disorder.cif")
+    remove_disordered_atoms.remove(disordered_mmcif_dir, object_name)
+    cmd.delete('all')
+    cmd.load(disordered_mmcif_dir + object_name + "_no_disorder.cif", object_name)
 
 # Remove any hydrogens that loaded with the structure.
 cmd.remove('elem H')

@@ -3,6 +3,7 @@ rep_set_file: "resources/nrlist_<id>.csv"
 
 # Where should PyMOL save fetched mmCIF files, modified mmCIF files, and chain PDB files?
 original_mmcif_dir: "resources/original_mmCIF_files/"
+disordered_mmcif_dir: "results/disordered_mmcif_files/"
 modified_mmcif_dir: "results/modified_mmcif_files/"
 chain_pdb_dir: "results/chain_pdb_files/"
 
@@ -46,6 +47,9 @@ donors_of_interest:
 
 # Should the folder with the mmCIF files fetched from the PDB be removed to save space?
 remove_original_mmcif: true
+
+# Should the folder with the disordered mmCIF files be removed to save space?
+remove_disordered_mmcif: true
 
 # Should the mmCIF of the modified structures be saved?
 save_modified_mmcif: false

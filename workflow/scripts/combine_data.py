@@ -67,9 +67,13 @@ with open(snakemake.output.combined, "w") as csv_file:
     writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
 combined_df.to_csv(snakemake.output.combined, index=False, mode='a', na_rep='NaN')
 
-# Remove the original mmCIF if specified.
+# Remove the original mmCIF folder if specified.
 if snakemake.config["remove_original_mmcif"]:
     subprocess.run(["rm", "-r", snakemake.config["original_mmcif_dir"]])
+
+# Remove the disordered mmCIF folder if specified.
+if snakemake.config["remove_disordered_mmcif"]:
+    subprocess.run(["rm", "-r", snakemake.config["disordered_mmcif_dir"]])
 
 # Close files and reset stdout and stderr.
 stdout_file.close()
