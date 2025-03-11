@@ -238,12 +238,37 @@ stored.donor_list = []
 cmd.iterate(f'({mem_rna_chains}) and ({donors_of_interest_str})',
             'stored.donor_list.append([index, name, resn, resi, chain, segi, alt])')
 
+# List and sort the atom names of A, C, and G nucleobases.
+adenine_atoms = ['N1', 'C2', 'N3', 'C4', 'C5', 'C6', 'N6', 'N7', 'C8', 'N9']
+cytosine_atoms = ['N1', 'C2', 'O2', 'N3', 'C4', 'N4', 'C5', 'C6']
+guanine_atoms = ['N1', 'C2', 'N2', 'N3', 'C4', 'C5', 'C6', 'O6', 'N7', 'C8', 'N9']
+adenine_atoms.sort()
+cytosine_atoms.sort()
+guanine_atoms.sort()
+
+# Create a copy of the list of donors of interest. Remove all list elements where there is an issue with the
+# atoms of the corresponding nucleobase.
+donor_list_filtered = stored.donor_list.copy()
+for donor in stored.donor_list:
+    # Collect and sort the names for nucleobase atoms.
+    stored.nuc_atoms = []
+    cmd.iterate(f"resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]} and sidechain and not elem H",
+                "stored.nuc_atoms.append(name)")
+    stored.nuc_atoms.sort()
+    if ((donor[2] in ["A", "DA"] and stored.nuc_atoms != adenine_atoms) or
+            (donor[2] in ["C", "DC"] and stored.nuc_atoms != cytosine_atoms) or
+            (donor[2] in ["G", "DG"] and stored.nuc_atoms != guanine_atoms)):
+        donor_list_filtered.remove(donor)
+        print(f"Note: There is an issue with the nucleobase atoms for residue {donor[4]}.{donor[2]}.{donor[3]} in "
+              f"{eq_class_mem_id}. The amine of this residue was omitted from further consideration for this data "
+              "collection.")
+
 # Store the number of heavy atoms belonging to organic molecules or polymers near the donor of interest within a
 # dictionary. Additionally, store the average b-factor of the heavy atoms that make up the nucleobase containing the
 # donors of interest.
 don_info_dict = {"don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "don_segi": [],
                  "don_alt": [], "count_1": [], "count_2": [], "b_factor": [], "chi": []}
-for donor in stored.donor_list:
+for donor in donor_list_filtered:
     # Count the number of heavy atoms belonging to organic molecules or polymers near the donor.
     count_1 = cmd.count_atoms(f'((organic or polymer) within {snakemake.config["count_dist_1"]} of index {donor[0]}) '
                               f'and not elem H')
@@ -253,16 +278,6 @@ for donor in stored.donor_list:
     stored.b_factors = []
     cmd.iterate(f"resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]} and sidechain and not elem H",
                 "stored.b_factors.append(b)")
-    # If no b-factors were stored, exit with an error message. This would likely be due to the PyMOL sidechain selection
-    # operator not working with a particular residue.
-    if len(stored.b_factors) == 0:
-        error(f"Error: No b-factors were obtained from residue {donor[4]}.{donor[2]}.{donor[3]} in {eq_class_mem_id}.")
-    # Ensure that the correct number of b-factors were collected.
-    if ((donor[2] in ["A", "DA"] and len(stored.b_factors) != 10) or
-            (donor[2] in ["C", "DC"] and len(stored.b_factors) != 8) or
-            (donor[2] in ["G", "DG"] and len(stored.b_factors) != 11)):
-        error(f"Error: The correct number of b-factors were not obtained from residue {donor[4]}.{donor[2]}.{donor[3]} "
-              f"in {eq_class_mem_id}.")
     # Calculate the average of the b-factors.
     b_factor_avg = sum(stored.b_factors)/len(stored.b_factors)
     # Obtain the chi dihedral for later anti/syn analysis.
@@ -292,7 +307,7 @@ for donor in stored.donor_list:
         don_info_dict[key].append(value)
 
 # Calculate the SASA using Bio.PDB for each donor of interest and add it to the dictionary.
-sasa_values = sasa.sasa(pdb_id, model, eq_class_mem_id, stored.donor_list, original_mmcif_dir)
+sasa_values = sasa.sasa(pdb_id, model, eq_class_mem_id, donor_list_filtered, original_mmcif_dir)
 if type(sasa_values) is list:
     don_info_dict["SASA"] = sasa_values
 else:
@@ -306,7 +321,7 @@ don_info_df = pd.DataFrame(don_info_dict).astype("str")
 don_atom_pair_dict = {"don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "don_segi": [],
                       "don_alt": [], "acc_index": [], "acc_name": [], "acc_resn": [], "acc_resi": [], "acc_chain": [],
                       "acc_segi": [], "acc_alt": [], "don_resn_name": [], "acc_resn_name": []}
-for donor in stored.donor_list:
+for donor in donor_list_filtered:
     # Find the acceptors near the donor. Exclude the nucleobase of the donor.
     stored.acceptors = []
     cmd.iterate(f'(acceptors within {snakemake.config["search_dist"]} of index {donor[0]}) and (organic or polymer) '
