@@ -250,7 +250,16 @@ guanine_atoms.sort()
 # atoms of the corresponding nucleobase.
 donor_list_filtered = stored.donor_list.copy()
 for donor in stored.donor_list:
-    # Collect and sort the names for nucleobase atoms.
+    # Count the number of hydrogens added to the nucleobase amine. Omit the donor from further consideration if it is
+    # not bonded to exactly two hydrogens.
+    num_h = cmd.count_atoms(f"elem H and neighbor (name {donor[1]} and resn {donor[2]} and resi \\{donor[3]} and chain "
+                            f"{donor[4]})")
+    if num_h != 2:
+        donor_list_filtered.remove(donor)
+        print(f"Note: {donor[1]} of {donor[4]}.{donor[2]}.{donor[3]} in {eq_class_mem_id} is not bonded to exactly two "
+              "hydrogens. The amine of this residue was omitted from further consideration for this data collection.")
+    # Collect and sort the names for nucleobase heavy atoms. Omit the donor from further consideration if there is
+    # something odd with the atoms (e.g., missing atoms or wrong name).
     stored.nuc_atoms = []
     cmd.iterate(f"resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]} and sidechain and not elem H",
                 "stored.nuc_atoms.append(name)")
