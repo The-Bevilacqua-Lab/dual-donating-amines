@@ -2,57 +2,6 @@
 This module contains the main residue library for this repo.
 """
 
-from rdkit import Chem
-
-class Residue:
-    def __init__(self, res_let: str, flavor: int):
-        self.mol = Chem.rdmolfiles.MolFromSequence(res_let, flavor=flavor)
-        self.res_name = self.mol.GetAtomWithIdx(0).GetPDBResidueInfo().GetResidueName().strip()
-        # Give the OP2 atom of DNA/RNA a negative charge, removing its implicit hydrogen.
-        if self.res_name in ['A', 'C', 'G', 'U', 'DA', 'DC', 'DG', 'DT']:
-            for atom in self.mol.GetAtoms():
-                if atom.GetPDBResidueInfo().GetName().strip() == 'OP2':
-                    atom.SetFormalCharge(-1)
-                    atom.SetNoImplicit(True)
-        self.don_idx_list = _donors(self.mol)
-        self.acc_idx_list = _acceptors(self.mol)
-
-
-# Consider a RDKit molecule and return the indices of atoms that are hydrogen bond donors.
-def _donors(mol):
-    idx_list = []
-    for atom in mol.GetAtoms():
-        if atom.GetAtomicNum() in [7, 8, 16] and atom.GetTotalNumHs() > 0:
-            idx_list.append(atom.GetIdx())
-        else:
-            continue
-    return idx_list
-
-
-# Consider a RDKit molecule and return the indices of atoms that are hydrogen bond acceptors.
-def _acceptors(mol):
-    idx_list = []
-    for atom in mol.GetAtoms():
-        # SP3 N with 3 covalent bonds
-        if atom.GetAtomicNum() == 7 and atom.GetHybridization() == Chem.rdchem.HybridizationType.SP3 and atom.GetTotalValence() == 3:
-            idx_list.append(atom.GetIdx())
-        # SP2 N with 2 covalent bonds
-        if atom.GetAtomicNum() == 7 and atom.GetHybridization() == Chem.rdchem.HybridizationType.SP2 and atom.GetTotalValence() == 2:
-            idx_list.append(atom.GetIdx())
-        # oxygen or sulfur
-        if atom.GetAtomicNum() in [8, 16]:
-            idx_list.append(atom.GetIdx())
-        else:
-            continue
-    return idx_list
-
-# Define a list of the canonical protein and RNA/DNA residues, with details provided by the RDKit library.
-RESIDUE_LIBRARY = [Residue('R', 0), Residue('H', 0), Residue('K', 0), Residue('D', 0), Residue('E', 0), Residue('S', 0),
-                   Residue('T', 0), Residue('N', 0), Residue('Q', 0), Residue('C', 0), Residue('G', 0), Residue('P', 0),
-                   Residue('A', 0), Residue('V', 0), Residue('I', 0), Residue('L', 0), Residue('M', 0), Residue('F', 0),
-                   Residue('Y', 0), Residue('W', 0), Residue('A', 3), Residue('C', 3), Residue('G', 3), Residue('U', 3),
-                   Residue('A', 7), Residue('C', 7), Residue('G', 7), Residue('T', 7)]
-
 # Define a list of dictionaries that provides information on the canonical protein and RNA/DNA residues. The indices of
 # each donor or acceptor atom list specifies the following:
 #     0: donor/acceptor atom name
@@ -60,7 +9,7 @@ RESIDUE_LIBRARY = [Residue('R', 0), Residue('H', 0), Residue('K', 0), Residue('D
 #     2: is the donor/acceptor rotatable?
 #     3: donor/acceptor formal charge according to PyMOL
 #     4: antecedent atom of donor/acceptor
-OLD_RESIDUE_LIBRARY = [
+RESIDUE_LIBRARY = [
     {
         "res": "ALA",
         "don": [["N", "N", False, 0, "CA"]],
