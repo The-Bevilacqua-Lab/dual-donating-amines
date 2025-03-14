@@ -349,8 +349,7 @@ don_atom_pair_df = pd.DataFrame(don_atom_pair_dict)
 don_h_bonds_dict = {"don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "don_segi": [],
                     "don_alt": [], "acc_index": [], "acc_name": [], "acc_resn": [], "acc_resi": [], "acc_chain": [],
                     "acc_segi": [], "acc_alt": [], "don_resn_name": [], "acc_resn_name": [], "don_acc_distance": [],
-                    "h_acc_distance": [], "don_angle": [], "acc_angle": [], "h_angle": [], "h_dihedral": [],
-                    "h_name": []}
+                    "h_acc_distance": [], "h_angle": [], "h_dihedral": [], "h_name": []}
 for atom_pair in don_atom_pair_df.itertuples():
     # Store the donor and acceptor atom values for the dataframe row.
     don_list = [atom_pair.don_index, atom_pair.don_name, atom_pair.don_resn, atom_pair.don_resi, atom_pair.don_chain]

@@ -120,23 +120,6 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, acceptor_info, eq_class_mem
     if len(stored.don_ant) != 1:
         return [False, f"Error: The number of identified donor antecedent atoms does not equal one for {donor_atom[4]}."
                        f"{donor_atom[2]}.{donor_atom[3]}.{donor_atom[1]} of {eq_class_mem}."]
-    # Get the DA-D-A angle.
-    don_angle = cmd.get_angle(f'index {stored.don_ant[0][0]}', f'index {donor_atom[0]}', f'index {acceptor_atom[0]}')
-    # Collect information about the acceptor antecedent atom.
-    stored.acc_ant = []
-    if isinstance(acceptor_info, list):
-        cmd.iterate(f'name {acceptor_info[4]} and neighbor index {acceptor_atom[0]}',
-                    'stored.acc_ant.append((index, name, resn, resi, chain))')
-        # Issue an error message if the number of identified acceptor antecedent atoms does not equal one.
-        if len(stored.acc_ant) != 1:
-            return [False, f"Error: The number of identified acceptor antecedent atoms does not equal one for "
-                           f"{acceptor_atom[4]}.{acceptor_atom[2]}.{acceptor_atom[3]}.{acceptor_atom[1]} of "
-                           f"{eq_class_mem}."]
-        # Get the AA-A-D angle.
-        acc_angle = cmd.get_angle(f'index {stored.acc_ant[0][0]}', f'index {acceptor_atom[0]}',
-                                  f'index {donor_atom[0]}')
-    else:
-        acc_angle = pd.NA
     # If the donor is non-rotatable, use the donor hydrogen(s) locations to calculate the H-A distance(s) and angle(s).
     # Additionally, if the hydrogens belong to an RNA exocyclic amine, calculate the dihedral between the hydrogen
     # closest to the WCF nucleobase edge and the nearby endocyclic nitrogen that is part of the 6-membered ring. For
@@ -160,7 +143,7 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, acceptor_info, eq_class_mem
                 h_dihedral = [pd.NA, pd.NA]
                 h_name = [stored.hydrogen[0][1], pd.NA]
                 # Return the geometry values.
-                return [True, [[don_acc_distance, h_acc_distance[0], don_angle, acc_angle, h_angle[0], h_dihedral[0], h_name[0]]]]
+                return [True, [[don_acc_distance, h_acc_distance[0], h_angle[0], h_dihedral[0], h_name[0]]]]
             elif f"{donor_atom[2]}.{donor_atom[1]}" in dual_h_donors:
                 return [False, f"Error: The atom {donor_atom[4]}.{donor_atom[2]}.{donor_atom[3]}.{donor_atom[1]} of "
                                f"{eq_class_mem} is included within the config file's dual_h_donors but only has one "
@@ -205,8 +188,8 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, acceptor_info, eq_class_mem
                     h_dihedral = [pd.NA, pd.NA]
                 h_name = [stored.hydrogen[0][1], stored.hydrogen[1][1]]
                 # Return the geometry values.
-                return [True, [[don_acc_distance, h_acc_distance[0], don_angle, acc_angle, h_angle[0], h_dihedral[0], h_name[0]],
-                               [don_acc_distance, h_acc_distance[1], don_angle, acc_angle, h_angle[1], h_dihedral[1], h_name[1]]]]
+                return [True, [[don_acc_distance, h_acc_distance[0], h_angle[0], h_dihedral[0], h_name[0]],
+                               [don_acc_distance, h_acc_distance[1], h_angle[1], h_dihedral[1], h_name[1]]]]
             else:
                 return [False, f"Error: The atom {donor_atom[4]}.{donor_atom[2]}.{donor_atom[3]}.{donor_atom[1]} of "
                                f"{eq_class_mem} is not included within the config file's dual_h_donors."]
@@ -216,4 +199,4 @@ def calc_geom(donor_atom, acceptor_atom, donor_info, acceptor_info, eq_class_mem
                            f"{donor_atom[1]} of {eq_class_mem} has more than two hydrogens."]
     else:
         # Return the geometry values involving rotatable donors.
-        return [True, [[don_acc_distance, pd.NA, don_angle, acc_angle, pd.NA, pd.NA, pd.NA]]]
+        return [True, [[don_acc_distance, pd.NA, pd.NA, pd.NA, pd.NA]]]
