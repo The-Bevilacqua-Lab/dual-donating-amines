@@ -271,6 +271,13 @@ for donor in stored.donor_list:
         print(f"Note: There is an issue with the nucleobase atoms for residue {donor[4]}.{donor[2]}.{donor[3]} in "
               f"{eq_class_mem_id}. The amine of this residue was omitted from further consideration for this data "
               "collection.")
+    # Ensure that the sugar atoms needed for the chi analysis are present.
+    if (cmd.count_atoms(f"name O4' and resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]}") != 1 or
+            cmd.count_atoms(f"name C1' and resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]}") != 1):
+        donor_list_filtered.remove(donor)
+        print(f"Note: Residue {donor[4]}.{donor[2]}.{donor[3]} in {eq_class_mem_id} does not contain the sugar atoms "
+              f"needed for the chi calculation. The amine of this residue was omitted from further consideration for "
+              f"this data collection.")
 
 # Store the number of heavy atoms belonging to organic molecules or polymers near the donor of interest within a
 # dictionary. Additionally, store the average b-factor of the heavy atoms that make up the nucleobase containing the
@@ -295,18 +302,12 @@ for donor in donor_list_filtered:
         C1_prime = f"name C1' and resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]}"
         N9 = f"name N9 and resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]}"
         C4 = f"name C4 and resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]}"
-        if cmd.count_atoms(f"({O4_prime}) ({C1_prime}) ({N9}) ({C4})") != 4:
-            error(f"Error: Residue {donor[4]}.{donor[2]}.{donor[3]} does not contain exactly 4 atoms for the chi "
-                  f"measurement.")
         chi = cmd.get_dihedral(O4_prime, C1_prime, N9, C4)
     elif donor[2] in ["C", "DC"]:
         O4_prime = f"name O4' and resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]}"
         C1_prime = f"name C1' and resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]}"
         N1 = f"name N1 and resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]}"
         C2 = f"name C2 and resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]}"
-        if cmd.count_atoms(f"({O4_prime}) ({C1_prime}) ({N1}) ({C2})") != 4:
-            error(f"Error: Residue {donor[4]}.{donor[2]}.{donor[3]} does not contain exactly 4 atoms for the chi "
-                  f"measurement.")
         chi = cmd.get_dihedral(O4_prime, C1_prime, N1, C2)
     else:
         chi = pd.NA
