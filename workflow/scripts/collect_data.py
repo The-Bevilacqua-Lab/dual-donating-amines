@@ -194,9 +194,12 @@ if num_models > 1:
                    source_state=model,
                    target_state=1)
         cmd.delete(pdb_id)
-    else:
+    elif actual_model_list != "Error":
         error(f"Error: There are multiple models in {eq_class_mem_id}, and the model numbers in the mmCIF do not match "
-              f"how PyMOL numbers the states.")
+              "how PyMOL numbers the states.")
+    else:
+        error(f"Error: There are multiple models in {eq_class_mem_id}, and an issue occurred with retrieving the model "
+              "numbers.")
 elif num_models == 1:
     # Make note if the model number in the mmCIF differs from 1.
     if not actual_model_list == normal_model_list:

@@ -21,4 +21,6 @@ def retrieve_model(mmCIF_dir, pdb):
         return "Error"
 
     # Convert to a set to get unique model numbers then back to a list. Return this list.
-    return list(set(model_list))
+    unique_model_list = list(set(model_list))
+    unique_model_list.sort()
+    return unique_model_list
