@@ -465,24 +465,24 @@ don_id_df <- combined_df %>% filter(don_resn %in% c("A", "C", "G")) %>%
   distinct(don_index, eq_class_member, .keep_all = TRUE)
 
 # Convert donor type from numeric to string.
-don_id_df[don_id_df$type == 0, "type"] <- "No"
+don_id_df[don_id_df$type == 0, "type"] <- "Non"
 don_id_df[don_id_df$type == 1, "type"] <- "Single"
 don_id_df[don_id_df$type == 2, "type"] <- "Dual"
-don_id_df$type <- factor(don_id_df$type, levels = c("No", "Single", "Dual"))
+don_id_df$type <- factor(don_id_df$type, levels = c("Non", "Single", "Dual"))
 
 # Calculate samples sizes and merge into dataframe.
 don_id_df <- merge(don_id_df, summarise(don_id_df, n_resn = n(), .by = c(don_resn)))
 don_id_df <- merge(don_id_df, summarise(don_id_df, n_don_type = n(), .by = c(don_resn, type)))
 
-# Create a column that contains the donor atom and residue names along with the number of occurrences.
-don_id_df <- don_id_df %>% mutate(don_label = paste(don_resn, "(", don_name, ")", ", n = ",
-                                                    prettyNum(n_resn, big.mark = ","), sep = ""))
-
 # Only keep one row for each donor residue and donor type combination.
-don_id_df <- don_id_df %>% distinct(don_label, type, .keep_all = TRUE)
+don_id_df <- don_id_df %>% distinct(don_resn, type, .keep_all = TRUE)
 
 # Add a column that specifies the percent occurrence for each category.
 don_id_df <-don_id_df %>% mutate(occurance = n_don_type/sum(n_don_type)*100)
+
+# Create a column that contains the donor atom and residue names along with the number of occurrences.
+don_id_df <- don_id_df %>% mutate(don_label = paste(don_resn, "(", don_name, ")", ", n = ",
+                                                    prettyNum(n_resn, big.mark = ","), sep = ""))
 
 # Create the plot.
 don_id_plot <- don_id_df %>% ggplot(aes(x=type, y=occurance)) +
