@@ -470,12 +470,13 @@ don_id_df[don_id_df$type == 1, "type"] <- "Single"
 don_id_df[don_id_df$type == 2, "type"] <- "Dual"
 don_id_df$type <- factor(don_id_df$type, levels = c("No", "Single", "Dual"))
 
-# Create a column that contains the donor atom name along with the donor residue name.
-don_id_df <- don_id_df %>% mutate(don_label = paste(don_resn, "(", don_name, ")", sep = ""))
-
 # Calculate samples sizes and merge into dataframe.
-don_id_df <- merge(don_id_df, summarise(don_id_df, n_resn = n(), .by = c(don_label)))
-don_id_df <- merge(don_id_df, summarise(don_id_df, n_don_type = n(), .by = c(don_label, type)))
+don_id_df <- merge(don_id_df, summarise(don_id_df, n_resn = n(), .by = c(don_resn)))
+don_id_df <- merge(don_id_df, summarise(don_id_df, n_don_type = n(), .by = c(don_resn, type)))
+
+# Create a column that contains the donor atom and residue names along with the number of occurrences.
+don_id_df <- don_id_df %>% mutate(don_label = paste(don_resn, "(", don_name, ")", ", n = ",
+                                                    prettyNum(n_resn, big.mark = ","), sep = ""))
 
 # Only keep one row for each donor residue and donor type combination.
 don_id_df <- don_id_df %>% distinct(don_label, type, .keep_all = TRUE)
@@ -487,12 +488,14 @@ don_id_df <-don_id_df %>% mutate(occurance = n_don_type/sum(n_don_type)*100)
 don_id_plot <- don_id_df %>% ggplot(aes(x=type, y=occurance)) +
   geom_col(width = 0.8, linewidth = 0.3, color = "black", fill = "grey", show.legend = FALSE) +
   geom_text(aes(x=type, y=occurance+max(occurance)*0.05, label=paste(round(occurance, digits = 1), "%", sep = "")),
-            vjust = 0, inherit.aes = FALSE) +
+            size = 10, size.unit = "pt", vjust = 0, inherit.aes = FALSE) +
+  geom_text(aes(x=type, y=-5, label = paste("n = ", prettyNum(n_don_type, big.mark = ","), sep = "")),
+            size = 8, size.unit = "pt", hjust = 0.5, vjust = 0.5, angle = 30) +
   xlab("Type of Amine H-Bonding") +
   ylab("Occurrence (%)") +
-  scale_y_continuous(limits = c(0, 27)) +
+  scale_y_continuous(limits = c(-8, 27)) +
   theme_bw(base_size = 10) +
-  theme(aspect.ratio = 1) +
+  theme(aspect.ratio = 1, panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank()) +
   facet_wrap( ~ don_label, nrow = 1)
 
 # Write the plots.
@@ -531,9 +534,13 @@ acc_pair_id_df[which(!is.na(acc_pair_id_df$n_resn_pair_same)), "fraction_label"]
   paste(acc_pair_id_df[which(!is.na(acc_pair_id_df$n_resn_pair_same)), "n_resn_pair_same"], "/",
         acc_pair_id_df[which(!is.na(acc_pair_id_df$n_resn_pair_same)), "n_resn_pair"], sep = " ")
 
+# Create a column that contains the combined acceptor pair divided by a forward slash instead of a comma.
+acc_pair_id_df <- acc_pair_id_df %>%
+  mutate(acc_pair_combined_reformat = gsub(", ", "/", acc_pair_combined, fixed = TRUE))
+
 # Create the plot.
 acc_pair_id_plot <- acc_pair_id_df %>%
-  ggplot(aes(x=reorder_within(acc_pair_combined, n_resn_pair, don_label), y=n_resn_pair)) +
+  ggplot(aes(x=reorder_within(acc_pair_combined_reformat, n_resn_pair, don_label), y=n_resn_pair)) +
   geom_col(width = 0.8, color = "black", fill = "grey", show.legend = FALSE) +
   geom_col_pattern(aes(y=n_resn_pair_same),
                    width = 0.8, color = "black", fill = "grey", pattern = "stripe", pattern_fill = "black",
@@ -545,8 +552,8 @@ acc_pair_id_plot <- acc_pair_id_df %>%
   scale_x_reordered(limits = function(x) rev(x)[1:10]) +
   scale_y_continuous(limits = c(0, 2100)) +
   theme_bw(base_size = 10) +
-  theme(aspect.ratio = 1) +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+  theme(aspect.ratio = 1, axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
+        panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank()) +
   facet_wrap( ~ don_label, nrow = 1, scales = "free_x")
 
 # Write the plots.
