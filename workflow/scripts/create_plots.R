@@ -188,10 +188,10 @@ density_all_df <- combined_df %>% filter(don_resn %in% c("A", "C", "G")) %>%
   distinct(don_index, eq_class_member, .keep_all = TRUE)
 
 # Convert donor type from numeric to string.
-density_all_df[density_all_df$type == 0, "type"] <- "No"
+density_all_df[density_all_df$type == 0, "type"] <- "Non"
 density_all_df[density_all_df$type == 1, "type"] <- "Single"
 density_all_df[density_all_df$type == 2, "type"] <- "Dual"
-density_all_df$type <- factor(density_all_df$type, levels = c("No", "Single", "Dual"))
+density_all_df$type <- factor(density_all_df$type, levels = c("Non", "Single", "Dual"))
 
 # Create a column that contains the donor atom name along with the donor residue name.
 density_all_df <- density_all_df %>% mutate(don_label = paste(don_resn, "(", don_name, ")", sep = ""))
@@ -215,6 +215,12 @@ density_all_pivot_df[density_all_pivot_df$density_type == "density_2", "density_
 density_summary_all <- density_all_pivot_df %>%
   summarise(n = n(), den_med = median(density_values), .by = c(type, don_label, density_type))
 
+# Create the labels for sample sizes. Labels for ROI 2 will be blank to match how sample sizes are displayed in the
+# filtered plots created below. The sample sizes for ROI 2 are the same as those for ROI 1.
+density_summary_all <- density_summary_all %>%
+  mutate(sample_label_all = paste("n = ", prettyNum(n, big.mark = ","), sep = ""))
+density_summary_all[density_summary_all$density_type == "ROI 2", "sample_label_all"] <- ""
+
 # Color Palette: black, orange, sky blue, bluish green, yellow, blue, vermilion, reddish purple
 # Colors from DOI 10.1038/nmeth.1618
 color_palette <- c(rgb(0/255, 0/255, 0/255), rgb(230/255, 159/255, 0/255), rgb(86/255, 180/255, 233/255),
@@ -230,7 +236,7 @@ density_all_plot <- density_all_pivot_df %>% ggplot(aes(x=type, y=density_values
   geom_violin(show.legend = FALSE) +
   geom_boxplot(width = 0.2, alpha = 0, show.legend = FALSE) +
   geom_text(data = density_summary_all,
-            aes(x=type, y=-45, label = paste("n = ", prettyNum(n, big.mark = ","), sep = "")),
+            aes(x=type, y=-45, label = sample_label_all),
             size = 8, size.unit = "pt", hjust = 0.5, vjust = 0.5, angle = 60) +
   coord_fixed(ratio = ratio, xlim = c(1, 3), ylim = ylim) +
   scale_fill_manual(values = c(color_palette[3], color_palette[6])) +
@@ -258,6 +264,8 @@ avg_iqr_1_s <- sum(density_quantiles[density_quantiles$type == "Single",]$iqr_1)
 avg_iqr_1_d <- sum(density_quantiles[density_quantiles$type == "Dual",]$iqr_1)/3 # 0.007922379
 n_d_1_drop <- ((avg_iqr_1_n-avg_iqr_1_d)/avg_iqr_1_n)*100 # 48.78049 %
 s_d_1_drop <- ((avg_iqr_1_s-avg_iqr_1_d)/avg_iqr_1_s)*100 # 14.28571 %
+d_n_1_perc <- (avg_iqr_1_d/avg_iqr_1_n)*100 # 51.21951 %
+d_s_1_perc <- (avg_iqr_1_d/avg_iqr_1_s)*100 # 85.71429 %
 
 # Calculate some stats on the IQR for density 2.
 avg_iqr_2_n <- sum(density_quantiles[density_quantiles$type == "No",]$iqr_2)/3 # 0.01392768
@@ -265,6 +273,8 @@ avg_iqr_2_s <- sum(density_quantiles[density_quantiles$type == "Single",]$iqr_2)
 avg_iqr_2_d <- sum(density_quantiles[density_quantiles$type == "Dual",]$iqr_2)/3 # 0.008782754
 n_d_2_drop <- ((avg_iqr_2_n-avg_iqr_2_d)/avg_iqr_2_n)*100 # 36.9403 %
 s_d_2_drop <- ((avg_iqr_2_s-avg_iqr_2_d)/avg_iqr_2_s)*100 # 24.55357 %
+d_n_2_perc <- (avg_iqr_2_d/avg_iqr_2_n)*100 # 63.0597 %
+d_s_2_perc <- (avg_iqr_2_d/avg_iqr_2_s)*100 # 75.44643 %
 
 # Create a data frame with outliers for both densities filtered out.
 density_filtered_df <- merge(density_all_df, density_quantiles) %>%
@@ -286,8 +296,8 @@ density_summary_filtered <- density_filtered_pivot_df %>%
 # Create the labels for sample sizes. Labels for ROI 2 will be blank to save room on the plots. The sample sizes for
 # ROI 2 are the same as those for ROI 1.
 density_summary_filtered <- density_summary_filtered %>%
-  mutate(sample_label = paste("n = ", prettyNum(n, big.mark = ","), sep = ""))
-density_summary_filtered[density_summary_filtered$density_type == "ROI 2", "sample_label"] <- ""
+  mutate(sample_label_filtered = paste("n = ", prettyNum(n, big.mark = ","), sep = ""))
+density_summary_filtered[density_summary_filtered$density_type == "ROI 2", "sample_label_filtered"] <- ""
 
 # Specify the variables for the plots.
 ylim <- c(-15, 80)
@@ -298,7 +308,7 @@ density_filtered_plot <- density_filtered_pivot_df %>% ggplot(aes(x=type, y=dens
   geom_violin(show.legend = FALSE) +
   geom_boxplot(width = 0.2, alpha = 0, show.legend = FALSE) +
   geom_text(data = density_summary_filtered,
-            aes(x=type, y=-4, label = sample_label),
+            aes(x=type, y=-4, label = sample_label_filtered),
             size = 8, size.unit = "pt", hjust = 0.5, vjust = 0.5, angle = 60) +
   coord_fixed(ratio = ratio, xlim = c(1, 3), ylim = ylim) +
   scale_fill_manual(values = c(color_palette[3], color_palette[6])) +
