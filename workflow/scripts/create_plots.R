@@ -369,10 +369,10 @@ sasa_all_df <- combined_df %>% filter(don_resn %in% c("A", "C", "G")) %>%
   distinct(don_index, eq_class_member, .keep_all = TRUE)
 
 # Convert donor type from numeric to string.
-sasa_all_df[sasa_all_df$type == 0, "type"] <- "No"
+sasa_all_df[sasa_all_df$type == 0, "type"] <- "Non"
 sasa_all_df[sasa_all_df$type == 1, "type"] <- "Single"
 sasa_all_df[sasa_all_df$type == 2, "type"] <- "Dual"
-sasa_all_df$type <- factor(sasa_all_df$type, levels = c("No", "Single", "Dual"))
+sasa_all_df$type <- factor(sasa_all_df$type, levels = c("Non", "Single", "Dual"))
 
 # Create a column that contains the donor atom name along with the donor residue name.
 sasa_all_df <- sasa_all_df %>% mutate(don_label = paste(don_resn, "(", don_name, ")", sep = ""))
@@ -384,7 +384,7 @@ sasa_summary_all <- sasa_all_df %>%
 # Check the median values for C single donating amines and G no donating amines.
 c_single <- sasa_all_df %>% filter(type == "Single" & don_resn == "C")
 print(median(c_single$SASA)) # 8.748707
-g_no <- sasa_all_df %>% filter(type == "No" & don_resn == "G")
+g_no <- sasa_all_df %>% filter(type == "Non" & don_resn == "G")
 print(median(g_no$SASA)) # 8.748707
 
 # Specify the variables for the plots.
@@ -406,11 +406,11 @@ sasa_all_box_plot <- sasa_all_df %>% ggplot(aes(x=type, y=SASA)) +
 # Write the plots.
 ggsave(snakemake@output[["sasa_all_box"]], plot = sasa_all_box_plot, width = 3.5, height = 4, units = "in", scale = 1)
 
-# Specify the variables for the plots.
+# Specify the variables for the column plots.
 ylim <- c(0, 15)
 ratio <- (3/diff(ylim))*2
 
-# Create the column plot with all data (outliers included).
+# Create the column plots with all data (outliers included).
 sasa_all_col_plot <- sasa_summary_all %>% ggplot(aes(x=type, y=sasa_med)) +
   geom_col(width = 0.8, linewidth = 0.3, color = "black", fill = "grey", show.legend = FALSE) +
   geom_text(aes(x=type, y=sasa_med+max(sasa_med)*0.05, label=round(sasa_med, digits = 1)),
@@ -425,7 +425,7 @@ sasa_all_col_plot <- sasa_summary_all %>% ggplot(aes(x=type, y=sasa_med)) +
 # Write the plots.
 ggsave(snakemake@output[["sasa_all_col"]], plot = sasa_all_col_plot, width = 3.5, height = 4, units = "in", scale = 1)
 
-# Calculate quantile values for both densities.
+# Calculate quantile values.
 sasa_quantiles <- sasa_all_df %>% summarise(iqr = IQR(SASA),
                                             q1 = quantile(SASA, 0.25),
                                             q3 = quantile(SASA, 0.75),
@@ -437,36 +437,6 @@ avg_iqr_s <- sum(sasa_quantiles[sasa_quantiles$type == "Single",]$iqr)/3 # 9.842
 avg_iqr_d <- sum(sasa_quantiles[sasa_quantiles$type == "Dual",]$iqr)/3 # 0.3645295
 n_d_drop <- ((avg_iqr_n-avg_iqr_d)/avg_iqr_n)*100 # 98.03922 %
 s_d_drop <- ((avg_iqr_s-avg_iqr_d)/avg_iqr_s)*100 # 96.2963 %
-
-# Create a data frame with outliers for both densities filtered out.
-sasa_filtered_df <- merge(sasa_all_df, sasa_quantiles) %>%
-  filter(SASA >= q1 - 2 * iqr & SASA <= q3 + 2 * iqr)
-
-# Calculate sample sizes from the filtered data set.
-sasa_summary_filtered <- sasa_filtered_df %>%
-  summarise(n = n(), sasa_med = median(SASA), .by = c(type, don_label))
-
-# Specify the variables for the plots.
-ylim <- c(-8.5, 60)
-ratio <- (3/diff(ylim))*1.5
-
-# Create the box plots with outliers filtered out.
-sasa_filtered_box_plot <- sasa_filtered_df %>% ggplot(aes(x=type, y=SASA)) +
-  geom_violin(fill = "grey", show.legend = FALSE) +
-  geom_boxplot(width = 0.2, alpha = 0, outlier.size = 1, show.legend = FALSE) +
-  geom_text(data = sasa_summary_filtered, aes(x=type, y=-4,
-                                              label = paste("n = ", prettyNum(n, big.mark = ","), sep = "")),
-            size = 10, size.unit = "pt", vjust = 1, angle = 30) +
-  coord_fixed(ratio = ratio, xlim = c(1, 3), ylim = ylim) +
-  xlab("Type of Amine H-Bonding") +
-  ylab("SASA (\uc5\ub2)") +
-  theme_bw(base_size = 10) +
-  theme(plot.title = element_text(hjust = 0.5)) +
-  facet_wrap( ~ don_label, nrow = 1)
-
-# Write the plots.
-ggsave(snakemake@output[["sasa_filtered_box"]], plot = sasa_filtered_box_plot, width = 6.5, height = 9, units = "in",
-       scale = 1)
 
 #### DONOR IDENTITY PLOT ####
 
