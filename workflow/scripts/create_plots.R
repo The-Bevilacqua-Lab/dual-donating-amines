@@ -147,8 +147,8 @@ pair_2_df <- pair_2_df %>%
   mutate(acc_pair_combined_reformat = gsub(", ", "/", acc_pair_combined, fixed = TRUE))
 
 # Combine the data frames.
-pair_1_df["region"] <- "Region 1"
-pair_2_df["region"] <- "Region 2"
+pair_1_df["region"] <- "Location 1"
+pair_2_df["region"] <- "Location 2"
 combined_region_df <- rbind(pair_1_df, pair_2_df)
 
 # Create the plots.
