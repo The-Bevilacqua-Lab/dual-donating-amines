@@ -6,6 +6,8 @@ library(tidyr)
 library(tidytext)
 library(ggh4x)
 library(ggpattern)
+library(scales)
+library(cowplot)
 
 #### H-BONDING MEASUREMENT PLOTS ####
 
@@ -46,7 +48,123 @@ pairs <- pairs_df %>% ggplot(aes(x = h_angle, y = h_acc_distance)) +
 # Write the plot.
 ggsave(snakemake@output[["pairs"]], plot = pairs, width = 3.25, height = 3.75, units = "in", scale = 1)
 
-#### PSEUDOTORSION PLOTS ####
+#### PSEUDOTORSION AND CORRESPONDING ACCEPTOR PAIR PLOTS ####
+
+# Extract the rows from the combined data frame relevant for these plots.
+pair_1_df <- combined_df %>% filter(don_resn %in% c("A", "C", "G") & type == 2) %>%
+  distinct(don_index, eq_class_member, .keep_all = TRUE)
+
+# Translate the pseudotorsions to range from 0 to 360 degrees.
+pair_1_df[which(pair_1_df$eta >= 0), "eta_translated"] <- pair_1_df[which(pair_1_df$eta >= 0), "eta"]
+pair_1_df[which(pair_1_df$eta < 0), "eta_translated"] <- pair_1_df[which(pair_1_df$eta < 0), "eta"] + 360
+pair_1_df[which(pair_1_df$theta >= 0), "theta_translated"] <- pair_1_df[which(pair_1_df$theta >= 0), "theta"]
+pair_1_df[which(pair_1_df$theta < 0), "theta_translated"] <- pair_1_df[which(pair_1_df$theta < 0), "theta"] + 360
+
+# Filter for region 2.
+pair_1_df <- pair_1_df %>% filter(eta_translated >= 50.4-7.2 & eta_translated < 64.8+7.2 &
+                                    theta_translated >= 158.4-7.2 & theta_translated < 172.8+7.2)
+
+# Create a column that contains the donor atom name along with the donor residue name.
+pair_1_df <- pair_1_df %>% mutate(don_label = paste(don_resn, "(", don_name, ")", sep = ""))
+
+# Create a data frame with just acceptor pairs that belong to the same residue.
+pair_1_same_df <- pair_1_df %>% filter(same_resi == "True")
+
+# Calculate samples sizes and merge into the data frames.
+pair_1_df <- merge(pair_1_df, summarise(pair_1_df, n_resn_pair = n(),
+                                                  .by = c(don_label, acc_pair_combined)))
+pair_1_same_df <- merge(pair_1_same_df, summarise(pair_1_same_df, n_resn_pair_same = n(),
+                                                            .by = c(don_label, acc_pair_combined)))
+
+# Only keep one row for each donor resn and acceptor pair combination.
+pair_1_df <- pair_1_df %>% distinct(don_label, acc_pair_combined, .keep_all = TRUE)
+pair_1_same_df <- pair_1_same_df %>% distinct(don_label, acc_pair_combined, .keep_all = TRUE)
+
+# Add a column specifying the sample sizes for acceptor pairs that belong to the same residue.
+pair_1_df <- merge(pair_1_df, pair_1_same_df[,c("don_label", "acc_pair_combined", "n_resn_pair_same")],
+                        all.x = TRUE)
+
+# Create a column that indicates the fraction of acceptor pairs that belong to the same residue. Fractions that would
+# be 0 will be given a value of NA.
+pair_1_df <- pair_1_df %>% mutate(fraction_label = NA)
+pair_1_df[which(!is.na(pair_1_df$n_resn_pair_same)), "fraction_label"] <-
+  paste(pair_1_df[which(!is.na(pair_1_df$n_resn_pair_same)), "n_resn_pair_same"], "/",
+        pair_1_df[which(!is.na(pair_1_df$n_resn_pair_same)), "n_resn_pair"], sep = " ")
+
+# Color Palette: black, orange, sky blue, bluish green, yellow, blue, vermilion, reddish purple
+# Colors from DOI 10.1038/nmeth.1618
+color_palette <- c(rgb(0/255, 0/255, 0/255), rgb(230/255, 159/255, 0/255), rgb(86/255, 180/255, 233/255),
+                   rgb(0/255, 158/255, 115/255), rgb(240/255, 228/255, 66/255), rgb(0/255, 114/255, 178/255),
+                   rgb(213/255, 94/255, 0/255), rgb(204/255, 121/255, 167/255))
+
+# Create a column that contains the combined acceptor pair divided by a forward slash instead of a comma.
+pair_1_df <- pair_1_df %>%
+  mutate(acc_pair_combined_reformat = gsub(", ", "/", acc_pair_combined, fixed = TRUE))
+
+# Extract the rows from the combined data frame relevant for these plots.
+pair_2_df <- combined_df %>% filter(don_resn %in% c("A", "C", "G") & type == 2) %>%
+  distinct(don_index, eq_class_member, .keep_all = TRUE)
+
+# Translate the pseudotorsions to range from 0 to 360 degrees.
+pair_2_df[which(pair_2_df$eta >= 0), "eta_translated"] <- pair_2_df[which(pair_2_df$eta >= 0), "eta"]
+pair_2_df[which(pair_2_df$eta < 0), "eta_translated"] <- pair_2_df[which(pair_2_df$eta < 0), "eta"] + 360
+pair_2_df[which(pair_2_df$theta >= 0), "theta_translated"] <- pair_2_df[which(pair_2_df$theta >= 0), "theta"]
+pair_2_df[which(pair_2_df$theta < 0), "theta_translated"] <- pair_2_df[which(pair_2_df$theta < 0), "theta"] + 360
+
+# Filter for region 3.
+pair_2_df <- pair_2_df %>% filter(eta_translated >= 302.4-7.2 & eta_translated < 316.8+7.2 &
+                                    theta_translated >= 21.6-7.2 & theta_translated < 36+7.2)
+
+# Create a column that contains the donor atom name along with the donor residue name.
+pair_2_df <- pair_2_df %>% mutate(don_label = paste(don_resn, "(", don_name, ")", sep = ""))
+
+# Create a data frame with just acceptor pairs that belong to the same residue.
+pair_2_same_df <- pair_2_df %>% filter(same_resi == "True")
+
+# Calculate samples sizes and merge into the data frames.
+pair_2_df <- merge(pair_2_df, summarise(pair_2_df, n_resn_pair = n(),
+                                        .by = c(don_label, acc_pair_combined)))
+pair_2_same_df <- merge(pair_2_same_df, summarise(pair_2_same_df, n_resn_pair_same = n(),
+                                                  .by = c(don_label, acc_pair_combined)))
+
+# Only keep one row for each donor resn and acceptor pair combination.
+pair_2_df <- pair_2_df %>% distinct(don_label, acc_pair_combined, .keep_all = TRUE)
+pair_2_same_df <- pair_2_same_df %>% distinct(don_label, acc_pair_combined, .keep_all = TRUE)
+
+# Add a column specifying the sample sizes for acceptor pairs that belong to the same residue.
+pair_2_df <- merge(pair_2_df, pair_2_same_df[,c("don_label", "acc_pair_combined", "n_resn_pair_same")],
+                   all.x = TRUE)
+
+# Create a column that indicates the fraction of acceptor pairs that belong to the same residue. Fractions that would
+# be 0 will be given a value of NA.
+pair_2_df <- pair_2_df %>% mutate(fraction_label = NA)
+pair_2_df[which(!is.na(pair_2_df$n_resn_pair_same)), "fraction_label"] <-
+  paste(pair_2_df[which(!is.na(pair_2_df$n_resn_pair_same)), "n_resn_pair_same"], "/",
+        pair_2_df[which(!is.na(pair_2_df$n_resn_pair_same)), "n_resn_pair"], sep = " ")
+
+# Create a column that contains the combined acceptor pair divided by a forward slash instead of a comma.
+pair_2_df <- pair_2_df %>%
+  mutate(acc_pair_combined_reformat = gsub(", ", "/", acc_pair_combined, fixed = TRUE))
+
+# Combine the data frames.
+pair_1_df["region"] <- "Region 1"
+pair_2_df["region"] <- "Region 2"
+combined_region_df <- rbind(pair_1_df, pair_2_df)
+
+# Create the plots.
+combined_region_plot <- combined_region_df %>%
+  ggplot(aes(x=reorder_within(acc_pair_combined_reformat, n_resn_pair, region), y=n_resn_pair, fill = don_label)) +
+  geom_col(width = 0.8, color = "black") +
+  xlab("Pair of Acceptor Atoms") +
+  ylab("Count") +
+  scale_fill_manual(values = c(color_palette[3], color_palette[8], color_palette[4]), name = "Donor") +
+  scale_x_reordered(limits = function(x) rev(x)[1:5]) +
+  scale_y_continuous(limits = c(0, 200)) +
+  theme_bw(base_size = 10) +
+  theme(aspect.ratio = 1.5) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1), legend.key.size = unit(0.15, "in"),
+        legend.key.spacing.y = unit(2, "pt")) +
+  facet_wrap( ~ region, nrow = 1, scales = "free_x")
 
 # Extract the rows from the combined data frame relevant for these plots.
 pt_df <- combined_df %>%
@@ -54,10 +172,10 @@ pt_df <- combined_df %>%
   distinct(don_index, eq_class_member, .keep_all = TRUE)
 
 # Convert donor type from numeric to string.
-pt_df[pt_df$type == 0, "type"] <- "No"
+pt_df[pt_df$type == 0, "type"] <- "Non"
 pt_df[pt_df$type == 1, "type"] <- "Single"
 pt_df[pt_df$type == 2, "type"] <- "Dual"
-pt_df$type <- factor(pt_df$type, levels = c("No", "Single", "Dual"))
+pt_df$type <- factor(pt_df$type, levels = c("Non", "Single", "Dual"))
 
 # Translate the pseudotorsions to range from 0 to 360 degrees.
 pt_df[which(pt_df$eta >= 0), "eta_translated"] <- pt_df[which(pt_df$eta >= 0), "eta"]
@@ -65,14 +183,14 @@ pt_df[which(pt_df$eta < 0), "eta_translated"] <- pt_df[which(pt_df$eta < 0), "et
 pt_df[which(pt_df$theta >= 0), "theta_translated"] <- pt_df[which(pt_df$theta >= 0), "theta"]
 pt_df[which(pt_df$theta < 0), "theta_translated"] <- pt_df[which(pt_df$theta < 0), "theta"] + 360
 
-# Set the width of the square bin.
-bin_w <- 360/100
-
 # Set the boundaries of the central region.
-eta_min <- 90+bin_w*16
-eta_max <- 180+bin_w*2
-theta_min <- 90+bin_w*21
-theta_max <- 180+bin_w*24
+eta_min <- 90+(360/100)*16
+eta_max <- 180+(360/100)*2
+theta_min <- 90+(360/100)*21
+theta_max <- 180+(360/100)*24
+
+# Set the width of the square bin.
+bin_w <- 360/50
 
 # Prepare a data frame with pseudotorsions outside the central region.
 pt_df_out <- pt_df %>%
@@ -81,105 +199,197 @@ pt_df_out <- pt_df %>%
            ((theta_translated < theta_min | theta_translated > theta_max) &
               (eta_translated > eta_min | eta_translated < eta_max)))
 
-# Create the plot with all eta theta values and a red-dashed box outlining the central region.
-pt_no_all <- pt_df[which(pt_df$type == "No"),] %>%
-  ggplot(aes(x = eta_translated, y = theta_translated)) +
-  geom_bin_2d(binwidth = c(360/100, 360/100)) +
-  geom_rect(xmin = eta_min, xmax = eta_max, ymin = theta_min, ymax = theta_max,
-            linewidth=0.1, linetype=2, colour="Red", fill=NA) +
-  scale_fill_viridis(name = "Count") +
-  ggtitle("No") +
-  xlab("Eta (\ub0)") +
-  ylab("Theta (\ub0)") +
-  coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
-  scale_x_continuous(breaks = seq(0, 360, 90)) +
-  scale_y_continuous(breaks = seq(0, 360, 90)) +
-  theme_classic(base_size = 10) +
-  theme(plot.title = element_text(hjust = 0.5),
-        legend.key.width = unit(0.125, "in"),
-        legend.key.height = unit(0.2, "in"))
-pt_single_all <- pt_df[which(pt_df$type == "Single"),] %>%
-  ggplot(aes(x = eta_translated, y = theta_translated)) +
-  geom_bin_2d(binwidth = c(360/100, 360/100)) +
-  geom_rect(xmin = eta_min, xmax = eta_max, ymin = theta_min, ymax = theta_max,
-            linewidth=0.1, linetype=2, colour="Red", fill=NA) +
-  scale_fill_viridis(name = "Count") +
-  ggtitle("Single") +
-  xlab("Eta (\ub0)") +
-  ylab("Theta (\ub0)") +
-  coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
-  scale_x_continuous(breaks = seq(0, 360, 90)) +
-  scale_y_continuous(breaks = seq(0, 360, 90)) +
-  theme_classic(base_size = 10) +
-  theme(plot.title = element_text(hjust = 0.5),
-        legend.key.width = unit(0.125, "in"),
-        legend.key.height = unit(0.2, "in"))
-pt_dual_all <- pt_df[which(pt_df$type == "Dual"),] %>%
-  ggplot(aes(x = eta_translated, y = theta_translated)) +
-  geom_bin_2d(binwidth = c(360/100, 360/100)) +
-  geom_rect(xmin = eta_min, xmax = eta_max, ymin = theta_min, ymax = theta_max,
-            linewidth=0.1, linetype=2, colour="Red", fill=NA) +
-  scale_fill_viridis(name = "Count") +
-  ggtitle("Dual") +
-  xlab("Eta (\ub0)") +
-  ylab("Theta (\ub0)") +
-  coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
-  scale_x_continuous(breaks = seq(0, 360, 90)) +
-  scale_y_continuous(breaks = seq(0, 360, 90)) +
-  theme_classic(base_size = 10) +
-  theme(plot.title = element_text(hjust = 0.5),
-        legend.key.width = unit(0.125, "in"),
-        legend.key.height = unit(0.2, "in"))
-pt_plot_all <- grid.arrange(pt_no_all, pt_single_all, pt_dual_all, nrow = 3)
+# The code for preparing the following three plots is a bit more tedious because I wanted the plots to be the same size
+# despite the legends having different widths due to the differing lengths of numbers in the legend keys.
+
+# Set the relative widths for the plots and legends.
+grid_rel_w = c(5, 2)
 
 # Create the plot with eta theta values outside the central region.
-pt_no_out <- pt_df_out[which(pt_df_out$type == "No"),] %>%
+pt_no_out_plot_legend <- pt_df_out[which(pt_df_out$type == "Non"),] %>%
   ggplot(aes(x = eta_translated, y = theta_translated)) +
-  geom_bin_2d(binwidth = c(360/100, 360/100)) +
-  scale_fill_viridis(name = "Count") +
-  ggtitle("No") +
+  geom_bin_2d(binwidth = c(bin_w, bin_w)) +
+  geom_rect(xmin = 50.4-7.2, xmax = 64.8+7.2, ymin = 158.4-7.2, ymax = 172.8+7.2,
+            linewidth=0.4, linetype=1, colour="red", fill=NA) + # region 2, expanded
+  geom_rect(xmin = 302.4-7.2, xmax = 316.8+7.2, ymin = 21.6-7.2, ymax = 36+7.2,
+            linewidth=0.4, linetype=1, colour="red", fill=NA) + # region 3, expanded
+  scale_fill_viridis(labels = comma, name = "Count") +
+  ggtitle("Non Donating Amines") +
   xlab("Eta (\ub0)") +
   ylab("Theta (\ub0)") +
   coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
   scale_x_continuous(breaks = seq(0, 360, 90)) +
   scale_y_continuous(breaks = seq(0, 360, 90)) +
   theme_classic(base_size = 10) +
-  theme(plot.title = element_text(hjust = 0.5),
-        legend.key.width = unit(0.125, "in"),
-        legend.key.height = unit(0.2, "in"))
-pt_single_out <- pt_df_out[which(pt_df_out$type == "Single"),] %>%
+  theme(legend.key.width = unit(0.1, "in"), legend.key.height = unit(0.2, "in"),
+        legend.margin = margin(t = 5, r = 5, b = 20, l = 0, unit = "pt"),
+        plot.margin = margin(t = 5, r = 0, b = 5, l = 5, unit = "pt"),
+        plot.title = element_text(vjust = 1, hjust = 0.5))
+pt_single_out_plot_legend <- pt_df_out[which(pt_df_out$type == "Single"),] %>%
   ggplot(aes(x = eta_translated, y = theta_translated)) +
-  geom_bin_2d(binwidth = c(360/100, 360/100)) +
-  scale_fill_viridis(name = "Count") +
-  ggtitle("Single") +
+  geom_bin_2d(binwidth = c(bin_w, bin_w)) +
+  geom_rect(xmin = 50.4-7.2, xmax = 64.8+7.2, ymin = 158.4-7.2, ymax = 172.8+7.2,
+            linewidth=0.4, linetype=1, colour="red", fill=NA) + # region 2, expanded
+  geom_rect(xmin = 302.4-7.2, xmax = 316.8+7.2, ymin = 21.6-7.2, ymax = 36+7.2,
+            linewidth=0.4, linetype=1, colour="red", fill=NA) + # region 3, expanded
+  scale_fill_viridis(labels = comma, name = "Count") +
+  ggtitle("Single Donating Amines") +
   xlab("Eta (\ub0)") +
   ylab("Theta (\ub0)") +
   coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
   scale_x_continuous(breaks = seq(0, 360, 90)) +
   scale_y_continuous(breaks = seq(0, 360, 90)) +
   theme_classic(base_size = 10) +
-  theme(plot.title = element_text(hjust = 0.5),
-        legend.key.width = unit(0.125, "in"),
-        legend.key.height = unit(0.2, "in"))
-pt_dual_out <- pt_df_out[which(pt_df_out$type == "Dual"),] %>%
+  theme(legend.key.width = unit(0.1, "in"), legend.key.height = unit(0.2, "in"),
+        legend.margin = margin(t = 5, r = 5, b = 20, l = 0, unit = "pt"),
+        plot.margin = margin(t = 5, r = 0, b = 5, l = 5, unit = "pt"),
+        plot.title = element_text(vjust = 1, hjust = 0.5))
+pt_dual_out_plot_legend <- pt_df_out[which(pt_df_out$type == "Dual"),] %>%
   ggplot(aes(x = eta_translated, y = theta_translated)) +
-  geom_bin_2d(binwidth = c(360/100, 360/100)) +
-  scale_fill_viridis(name = "Count") +
-  ggtitle("Dual") +
+  geom_bin_2d(binwidth = c(bin_w, bin_w)) +
+  geom_rect(xmin = 50.4-7.2, xmax = 64.8+7.2, ymin = 158.4-7.2, ymax = 172.8+7.2,
+            linewidth=0.4, linetype=1, colour="red", fill=NA) + # region 2, expanded
+  geom_rect(xmin = 302.4-7.2, xmax = 316.8+7.2, ymin = 21.6-7.2, ymax = 36+7.2,
+            linewidth=0.4, linetype=1, colour="red", fill=NA) + # region 3, expanded
+  scale_fill_viridis(labels = comma, name = "Count") +
+  ggtitle("Dual Donating Amines") +
   xlab("Eta (\ub0)") +
   ylab("Theta (\ub0)") +
   coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
   scale_x_continuous(breaks = seq(0, 360, 90)) +
   scale_y_continuous(breaks = seq(0, 360, 90)) +
   theme_classic(base_size = 10) +
-  theme(plot.title = element_text(hjust = 0.5),
-        legend.key.width = unit(0.125, "in"),
-        legend.key.height = unit(0.2, "in"))
-pt_plot_out <- grid.arrange(pt_no_out, pt_single_out, pt_dual_out, nrow = 3)
+  theme(legend.key.width = unit(0.1, "in"), legend.key.height = unit(0.2, "in"),
+        legend.margin = margin(t = 5, r = 5, b = 20, l = 0, unit = "pt"),
+        plot.margin = margin(t = 5, r = 0, b = 5, l = 5, unit = "pt"),
+        plot.title = element_text(vjust = 1, hjust = 0.5))
 
-# Write the plot.
-ggsave(snakemake@output[["pseudotorsion_all"]], plot = pt_plot_all, width = 3.25, height = 6, units = "in", scale = 1)
-ggsave(snakemake@output[["pseudotorsion_out"]], plot = pt_plot_out, width = 3.25, height = 6, units = "in", scale = 1)
+# Extract the legends.
+pt_no_out_legend <- get_legend(pt_no_out_plot_legend)
+pt_single_out_legend <- get_legend(pt_single_out_plot_legend)
+pt_dual_out_legend <- get_legend(pt_dual_out_plot_legend)
+
+# Extract the plots.
+pt_no_out_plot <- pt_no_out_plot_legend + theme(legend.position = "none")
+pt_single_out_plot <- pt_single_out_plot_legend + theme(legend.position = "none")
+pt_dual_out_plot <- pt_dual_out_plot_legend + theme(legend.position = "none")
+
+# Combine the plots and legends.
+pt_no_out_grid <- plot_grid(pt_no_out_plot, pt_no_out_legend, rel_widths = grid_rel_w)
+pt_single_out_grid <- plot_grid(pt_single_out_plot, pt_single_out_legend, rel_widths = grid_rel_w)
+pt_dual_out_grid <- plot_grid(pt_dual_out_plot, pt_dual_out_legend, rel_widths = grid_rel_w)
+
+# Combine the plots.
+pt_1_plots <- plot_grid(pt_no_out_grid, pt_single_out_grid, pt_dual_out_grid, combined_region_plot, nrow = 2) +
+  theme(plot.background = element_rect(fill = "white", color = NA))
+
+# Create the plot with all eta theta values and a red-dashed box outlining the central region.
+pt_no_all_plot <- pt_df[which(pt_df$type == "Non"),] %>%
+  ggplot(aes(x = eta_translated, y = theta_translated)) +
+  geom_bin_2d(binwidth = c(bin_w, bin_w)) +
+  geom_rect(xmin = eta_min, xmax = eta_max, ymin = theta_min, ymax = theta_max,
+            linewidth=0.4, linetype=3, colour="red", fill=NA) +
+  scale_fill_viridis(labels = comma, name = "Count") +
+  xlab("Eta (\ub0)") +
+  ylab("Theta (\ub0)") +
+  coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
+  scale_x_continuous(breaks = seq(0, 360, 90)) +
+  scale_y_continuous(breaks = seq(0, 360, 90)) +
+  theme_classic(base_size = 10) +
+  theme(legend.key.width = unit(0.1, "in"), legend.key.height = unit(0.25, "in"))
+pt_single_all_plot <- pt_df[which(pt_df$type == "Single"),] %>%
+  ggplot(aes(x = eta_translated, y = theta_translated)) +
+  geom_bin_2d(binwidth = c(bin_w, bin_w)) +
+  geom_rect(xmin = eta_min, xmax = eta_max, ymin = theta_min, ymax = theta_max,
+            linewidth=0.4, linetype=3, colour="red", fill=NA) +
+  scale_fill_viridis(labels = comma, name = "Count") +
+  xlab("Eta (\ub0)") +
+  ylab("Theta (\ub0)") +
+  coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
+  scale_x_continuous(breaks = seq(0, 360, 90)) +
+  scale_y_continuous(breaks = seq(0, 360, 90)) +
+  theme_classic(base_size = 10) +
+  theme(legend.key.width = unit(0.1, "in"), legend.key.height = unit(0.25, "in"))
+pt_dual_all_plot <- pt_df[which(pt_df$type == "Dual"),] %>%
+  ggplot(aes(x = eta_translated, y = theta_translated)) +
+  geom_bin_2d(binwidth = c(bin_w, bin_w)) +
+  geom_rect(xmin = eta_min, xmax = eta_max, ymin = theta_min, ymax = theta_max,
+            linewidth=0.4, linetype=3, colour="red", fill=NA) +
+  scale_fill_viridis(labels = comma, name = "Count") +
+  xlab("Eta (\ub0)") +
+  ylab("Theta (\ub0)") +
+  coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
+  scale_x_continuous(breaks = seq(0, 360, 90)) +
+  scale_y_continuous(breaks = seq(0, 360, 90)) +
+  theme_classic(base_size = 10) +
+  theme(legend.key.width = unit(0.1, "in"), legend.key.height = unit(0.25, "in"))
+
+# Find the maximum fill value corresponding to the dual donating plot with the central region omitted.
+pt_dual_out_minimal_plot <- pt_df_out[which(pt_df_out$type == "Dual"),] %>%
+  ggplot(aes(x = eta_translated, y = theta_translated)) + geom_bin_2d(binwidth = c(bin_w, bin_w))
+max_value <- max(ggplot_build(pt_dual_out_minimal_plot)$data[[1]]$value)
+
+# Create the plot with eta theta values outside the central region and count maximums capped to dual donating plot.
+pt_no_out_capped_plot <- pt_df_out[which(pt_df_out$type == "Non"),] %>%
+  ggplot(aes(x = eta_translated, y = theta_translated)) +
+  geom_bin_2d(binwidth = c(bin_w, bin_w)) +
+  geom_rect(xmin = 50.4-7.2, xmax = 64.8+7.2, ymin = 158.4-7.2, ymax = 172.8+7.2,
+            linewidth=0.4, linetype=1, colour="red", fill=NA) + # region 2, expanded
+  geom_rect(xmin = 302.4-7.2, xmax = 316.8+7.2, ymin = 21.6-7.2, ymax = 36+7.2,
+            linewidth=0.4, linetype=1, colour="red", fill=NA) + # region 3, expanded
+  scale_fill_viridis(labels = comma, name = "Count", limits = c(1, max_value)) +
+  xlab("Eta (\ub0)") +
+  ylab("Theta (\ub0)") +
+  coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
+  scale_x_continuous(breaks = seq(0, 360, 90)) +
+  scale_y_continuous(breaks = seq(0, 360, 90)) +
+  theme_classic(base_size = 10) +
+  theme(legend.key.width = unit(0.1, "in"), legend.key.height = unit(0.25, "in"))
+pt_single_out_capped_plot <- pt_df_out[which(pt_df_out$type == "Single"),] %>%
+  ggplot(aes(x = eta_translated, y = theta_translated)) +
+  geom_bin_2d(binwidth = c(bin_w, bin_w)) +
+  geom_rect(xmin = 50.4-7.2, xmax = 64.8+7.2, ymin = 158.4-7.2, ymax = 172.8+7.2,
+            linewidth=0.4, linetype=1, colour="red", fill=NA) + # region 2, expanded
+  geom_rect(xmin = 302.4-7.2, xmax = 316.8+7.2, ymin = 21.6-7.2, ymax = 36+7.2,
+            linewidth=0.4, linetype=1, colour="red", fill=NA) + # region 3, expanded
+  scale_fill_viridis(labels = comma, name = "Count", limits = c(1, max_value)) +
+  xlab("Eta (\ub0)") +
+  ylab("Theta (\ub0)") +
+  coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
+  scale_x_continuous(breaks = seq(0, 360, 90)) +
+  scale_y_continuous(breaks = seq(0, 360, 90)) +
+  theme_classic(base_size = 10) +
+  theme(legend.key.width = unit(0.1, "in"), legend.key.height = unit(0.25, "in"))
+pt_dual_out_capped_plot <- pt_df_out[which(pt_df_out$type == "Dual"),] %>%
+  ggplot(aes(x = eta_translated, y = theta_translated)) +
+  geom_bin_2d(binwidth = c(bin_w, bin_w)) +
+  geom_rect(xmin = 50.4-7.2, xmax = 64.8+7.2, ymin = 158.4-7.2, ymax = 172.8+7.2,
+            linewidth=0.4, linetype=1, colour="red", fill=NA) + # region 2, expanded
+  geom_rect(xmin = 302.4-7.2, xmax = 316.8+7.2, ymin = 21.6-7.2, ymax = 36+7.2,
+            linewidth=0.4, linetype=1, colour="red", fill=NA) + # region 3, expanded
+  scale_fill_viridis(labels = comma, name = "Count", limits = c(1, max_value)) +
+  xlab("Eta (\ub0)") +
+  ylab("Theta (\ub0)") +
+  coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
+  scale_x_continuous(breaks = seq(0, 360, 90)) +
+  scale_y_continuous(breaks = seq(0, 360, 90)) +
+  theme_classic(base_size = 10) +
+  theme(legend.key.width = unit(0.1, "in"), legend.key.height = unit(0.25, "in"))
+
+# Make and combine the graphical objects.
+pt_no_all_grob <- ggplotGrob(pt_no_all_plot)
+pt_single_all_grob <- ggplotGrob(pt_single_all_plot)
+pt_dual_all_grob <- ggplotGrob(pt_dual_all_plot)
+pt_no_out_capped_grob <- ggplotGrob(pt_no_out_capped_plot)
+pt_single_out_capped_grob <- ggplotGrob(pt_single_out_capped_plot)
+pt_dual_out_capped_grob <- ggplotGrob(pt_dual_out_capped_plot)
+pt_2_plots <- rbind(cbind(pt_no_all_grob, pt_no_out_capped_grob),
+                    cbind(pt_single_all_grob, pt_single_out_capped_grob),
+                    cbind(pt_dual_all_grob, pt_dual_out_capped_grob))
+
+# Write the plots.
+ggsave(snakemake@output[["pt_1"]], plot = pt_1_plots, width = 6.5, height = 5.5, units = "in")
+ggsave(snakemake@output[["pt_2"]], plot = pt_2_plots, width = 6, height = 6.5, units = "in")
 
 #### HEAVY ATOM DENSITY PLOTS ####
 
