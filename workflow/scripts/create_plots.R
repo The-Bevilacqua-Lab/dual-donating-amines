@@ -162,8 +162,9 @@ combined_region_plot <- combined_region_df %>%
   scale_y_continuous(limits = c(0, 200)) +
   theme_bw(base_size = 10) +
   theme(aspect.ratio = 1.5) +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1), legend.key.size = unit(0.15, "in"),
-        legend.key.spacing.y = unit(2, "pt")) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
+        panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank(),
+        legend.key.size = unit(0.15, "in"), legend.key.spacing.y = unit(2, "pt")) +
   facet_wrap( ~ region, nrow = 1, scales = "free_x")
 
 # Extract the rows from the combined data frame relevant for these plots.
