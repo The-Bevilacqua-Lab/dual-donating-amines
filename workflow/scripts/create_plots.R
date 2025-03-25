@@ -9,10 +9,18 @@ library(ggpattern)
 library(scales)
 library(cowplot)
 
-#### H-BONDING MEASUREMENT PLOTS ####
+#### SET INITIAL VARIABLES ####
 
 # Creates data frames from the combined data.
 combined_df <- read.csv(snakemake@input[["combined"]], header = TRUE, na.strings = "NaN", comment.char = "#")
+
+# Color Palette: black, orange, sky blue, bluish green, yellow, blue, vermilion, reddish purple
+# Colors from DOI 10.1038/nmeth.1618
+color_palette <- c(rgb(0/255, 0/255, 0/255), rgb(230/255, 159/255, 0/255), rgb(86/255, 180/255, 233/255),
+                   rgb(0/255, 158/255, 115/255), rgb(240/255, 228/255, 66/255), rgb(0/255, 114/255, 178/255),
+                   rgb(213/255, 94/255, 0/255), rgb(204/255, 121/255, 167/255))
+
+#### H-BONDING MEASUREMENT PLOTS ####
 
 # Extract the rows from the combined data frame relevant for these plots.
 pairs_df <- combined_df %>% filter(geom == 1 & don_resn %in% c("A", "C", "G")) %>% 
@@ -432,12 +440,6 @@ density_summary_all <- density_summary_all %>%
   mutate(sample_label_all = paste("n = ", prettyNum(n, big.mark = ","), sep = ""))
 density_summary_all[density_summary_all$density_type == "ROI 2", "sample_label_all"] <- ""
 
-# Color Palette: black, orange, sky blue, bluish green, yellow, blue, vermilion, reddish purple
-# Colors from DOI 10.1038/nmeth.1618
-color_palette <- c(rgb(0/255, 0/255, 0/255), rgb(230/255, 159/255, 0/255), rgb(86/255, 180/255, 233/255),
-                   rgb(0/255, 158/255, 115/255), rgb(240/255, 228/255, 66/255), rgb(0/255, 114/255, 178/255),
-                   rgb(213/255, 94/255, 0/255), rgb(204/255, 121/255, 167/255))
-
 # Specify the variables for the plots.
 ylim <- c(-80, 200)
 ratio <- (3/diff(ylim))*2
@@ -451,7 +453,7 @@ density_all_plot <- density_all_pivot_df %>% ggplot(aes(x=type, y=density_values
             size = 8, size.unit = "pt", hjust = 0.5, vjust = 0.5, angle = 60) +
   coord_fixed(ratio = ratio, xlim = c(1, 3), ylim = ylim) +
   scale_fill_manual(values = c(color_palette[3], color_palette[6])) +
-  xlab("Type of Amine H-Bonding") +
+  xlab("Type of Donating Amine") +
   ylab("Density (heavy-atoms/nm\ub3)") +
   theme_bw(base_size = 10) +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
@@ -523,7 +525,7 @@ density_filtered_plot <- density_filtered_pivot_df %>% ggplot(aes(x=type, y=dens
             size = 8, size.unit = "pt", hjust = 0.5, vjust = 0.5, angle = 60) +
   coord_fixed(ratio = ratio, xlim = c(1, 3), ylim = ylim) +
   scale_fill_manual(values = c(color_palette[3], color_palette[6])) +
-  xlab("Type of Amine H-Bonding") +
+  xlab("Type of Donating Amine") +
   ylab("Density (heavy-atoms/nm\ub3)") +
   theme_bw(base_size = 10) +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
@@ -608,7 +610,7 @@ sasa_all_box_plot <- sasa_all_df %>% ggplot(aes(x=type, y=SASA)) +
   geom_text(data = sasa_summary_all, aes(x=type, y=-12, label = paste("n = ", prettyNum(n, big.mark = ","), sep = "")),
             size = 8, size.unit = "pt", hjust = 0.5, vjust = 0.5, angle = 60) +
   coord_fixed(ratio = ratio, xlim = c(1, 3), ylim = ylim) +
-  xlab("Type of Amine H-Bonding") +
+  xlab("Type of Donating Amine") +
   ylab("SASA (\uc5\ub2)") +
   theme_bw(base_size = 10) +
   theme(plot.title = element_text(hjust = 0.5)) +
@@ -627,7 +629,7 @@ sasa_all_col_plot <- sasa_summary_all %>% ggplot(aes(x=type, y=sasa_med)) +
   geom_text(aes(x=type, y=sasa_med+max(sasa_med)*0.05, label=round(sasa_med, digits = 1)),
             size = 10, size.unit = "pt", vjust = 0, inherit.aes = FALSE) +
   coord_fixed(ratio = ratio, xlim = c(1, 3), ylim = ylim) +
-  xlab("Type of Amine H-Bonding") +
+  xlab("Type of Donating Amine") +
   ylab("Median SASA (\uc5\ub2)") +
   theme_bw(base_size = 10) +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
@@ -682,7 +684,7 @@ don_id_plot <- don_id_df %>% ggplot(aes(x=type, y=occurance)) +
             size = 10, size.unit = "pt", vjust = 0, inherit.aes = FALSE) +
   geom_text(aes(x=type, y=-5, label = paste("n = ", prettyNum(n_don_type, big.mark = ","), sep = "")),
             size = 8, size.unit = "pt", hjust = 0.5, vjust = 0.5, angle = 30) +
-  xlab("Type of Amine H-Bonding") +
+  xlab("Type of Donating Amine") +
   ylab("Occurrence (%)") +
   scale_y_continuous(limits = c(-8, 27)) +
   theme_bw(base_size = 10) +
@@ -750,7 +752,7 @@ acc_pair_id_plot <- acc_pair_id_df %>%
 # Write the plots.
 ggsave(snakemake@output[["acc_pair_id"]], plot = acc_pair_id_plot, width = 6, height = 5, units = "in", scale = 1)
 
-### CHI PLOT ###
+### CHI PLOTS ###
 
 # Extract the rows from the combined data frame relevant for these plots.
 chi_df <- combined_df %>% filter(don_resn %in% c("A", "C", "G")) %>%
