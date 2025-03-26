@@ -1,10 +1,10 @@
-# Dual H-Bonding Nucleobases
+# Dual Donating Amines
 
 These scripts make up a computational pipeline to identify nucleobases in structured nucleic acids that donate two hydrogen bonds via their exocyclic amines along with other possible noncovalent interactions.
 
 ## Dependencies
 
-PyMOL==2.5.0
+PyMOL==3.0.0
 
 ## Notes
 
