@@ -13,14 +13,13 @@ rule all:
         "results/plots/pt_2.png",
         "results/plots/don_id.png",
         "results/plots/acc_pair_id.png",
-        "results/plots/chi_partial.png",
-        "results/plots/chi_partial_y.png",
-        "results/plots/chi_combined.png",
         "results/plots/density_all.png",
         "results/plots/density_filtered.png",
         "results/plots/sasa_all_box.png",
         "results/plots/sasa_all_col.png",
-        "results/plots/sasa_filtered_box.png"
+        "results/plots/sasa_filtered_box.png",
+        "results/plots/full_plots.png",
+        "results/plots/partial_plots_combined.png"
 
 rule collect_data:
     output:
@@ -68,14 +67,12 @@ rule create_plots:
         pt_2 = "results/plots/pt_2.png",
         don_id = "results/plots/don_id.png",
         acc_pair_id = "results/plots/acc_pair_id.png",
-        chi_partial = "results/plots/chi_partial.png",
-        chi_partial_y = "results/plots/chi_partial_y.png",
-        chi_combined = "results/plots/chi_combined.png",
         density_all = "results/plots/density_all.png",
         density_filtered = "results/plots/density_filtered.png",
         sasa_all_box= "results/plots/sasa_all_box.png",
         sasa_all_col= "results/plots/sasa_all_col.png",
-        sasa_filtered_box = "results/plots/sasa_filtered_box.png"
+        full_plots = "results/plots/full_plots.png",
+        partial_plots_combined = "results/plots/partial_plots_combined.png"
     conda:
         "envs/general.yaml"
     script:

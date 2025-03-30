@@ -6,6 +6,7 @@ library(tidyr)
 library(tidytext)
 library(ggh4x)
 library(ggpattern)
+library(shadowtext)
 library(scales)
 library(cowplot)
 
@@ -532,7 +533,8 @@ density_filtered_plot <- density_filtered_pivot_df %>% ggplot(aes(x=type, y=dens
   facet_nested_wrap(vars(density_type, don_label), nrow = 1, scales = "fixed")
 
 # Write the plots.
-ggsave(snakemake@output[["density_filtered"]], plot = density_filtered_plot, width = 6, height = 3, units = "in", scale = 1)
+ggsave(snakemake@output[["density_filtered"]],
+       plot = density_filtered_plot, width = 6, height = 3, units = "in", scale = 1)
 
 # Perform Mann-Whitney tests for density 2 with outliers removed.
 
@@ -759,19 +761,14 @@ chi_df <- combined_df %>% filter(don_resn %in% c("A", "C", "G")) %>%
   distinct(don_index, eq_class_member, .keep_all = TRUE)
 
 # Convert donor type from numeric to string.
-chi_df[chi_df$type == 0, "type"] <- "No"
+chi_df[chi_df$type == 0, "type"] <- "Non"
 chi_df[chi_df$type == 1, "type"] <- "Single"
 chi_df[chi_df$type == 2, "type"] <- "Dual"
-chi_df$type <- factor(chi_df$type, levels = c("No", "Single", "Dual"))
+chi_df$type <- factor(chi_df$type, levels = c("Non", "Single", "Dual"))
 
 # Adjust the chi dihedrals such that values of -180 are instead 180.
 chi_df <- chi_df %>% mutate(chi_adjusted = chi)
 chi_df[which(chi_df$chi_adjusted == -180), "chi_adjusted"] <- 180
-
-# Write out the full names of the nucleobases.
-chi_df[which(chi_df$don_resn == "A"), "don_resn"] <- "Adenine"
-chi_df[which(chi_df$don_resn == "C"), "don_resn"] <- "Cytosine"
-chi_df[which(chi_df$don_resn == "G"), "don_resn"] <- "Guanine"
 
 # Split the chi_df into groups based on don_resn and type.
 chi_split <- split(chi_df, ~ don_resn + type)
@@ -791,58 +788,368 @@ for (split_idx in seq_along(chi_split)) {
   }
 }
 
-# Factor the type column in chi_bins.
-chi_bins$type <- factor(chi_bins$type, levels = c("No", "Single", "Dual"))
+# Create the plots of the full 360 range for each don_resn and type combination.
 
-# Create the plots of a segment of the 360 range.
-chi_plot_partial <- chi_bins %>% ggplot(aes(x=mids, y=density)) +
-  geom_col(fill = "grey", show.legend = FALSE) +
-  coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi/8, end = pi*3/4) +
-  scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) +
-  scale_y_continuous(limits = c(0, 0.0018)) +
-  xlab("\u03c7 (\ub0)") +
-  ylab(element_blank()) +
-  theme_bw(base_size = 10) +
-  theme(plot.margin = margin(t = 0, r = 0.1, b = 0, l = 0.3, "in"),
-        panel.border = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank(),
-        strip.background = element_blank(),
-        strip.text = element_text(size = 10)) +
-  facet_nested_wrap(vars(don_resn, type), nrow = 3, scales = "fixed")
+# Find the maximum density for the full range.
+max_full <- ceiling(max(chi_bins$density)*10^4)
 
-# Create the plots of a segment of the 360 range with the y-axis displayed.
-chi_plot_partial_y <- chi_bins %>% ggplot(aes(x=mids, y=density)) +
-  geom_col(fill = "grey", show.legend = FALSE) +
-  coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi/8, end = pi*3/4) +
-  scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) +
-  scale_y_continuous(limits = c(0, 0.0018)) +
-  xlab("\u03c7 (\ub0)") +
-  ylab(element_blank()) +
-  theme_bw(base_size = 10) +
-  theme(plot.margin = margin(t = 0, r = 0.1, b = 0, l = 0.3, "in"),
-        panel.border = element_blank(),
-        strip.background = element_blank(),
-        strip.text = element_text(size = 10)) +
-  facet_nested_wrap(vars(don_resn, type), nrow = 3, scales = "fixed")
+# Adenine
+chi_plot_full_1 <- chi_bins[which(chi_bins$don_resn == "A" & chi_bins$type == "Non"),] %>%
+  ggplot(aes(x=mids, y=density*10^4)) +
+  annotate("rect", linetype = "blank", fill = color_palette[6], alpha = 0.3,
+           xmin = -90, xmax = 90, ymin = 0, ymax = max_full) +
+  annotate("shadowtext", x = 75, y = 300,
+           label = 'syn', size = 3, fontface = "bold.italic", color = color_palette[6], bg.color = "white") +
+  annotate("shadowtext", x = 105, y = 300,
+           label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
+  geom_col(fill = "grey35") + ggtitle("Non") +
+  coord_radial(inner.radius = 0.3, expand = FALSE, start = pi) +
+  scale_x_continuous(breaks = seq(-180, 180, 30)) + scale_y_continuous(limits = c(0, max_full)) +
+  xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
+  theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
+        plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
+chi_plot_full_2 <- chi_bins[which(chi_bins$don_resn == "A" & chi_bins$type == "Single"),] %>%
+  ggplot(aes(x=mids, y=density*10^4)) +
+  annotate("rect", linetype = "blank", fill = color_palette[6], alpha = 0.3,
+           xmin = -90, xmax = 90, ymin = 0, ymax = max_full) +
+  annotate("shadowtext", x = 75, y = 300,
+           label = 'syn', size = 3, fontface = "bold.italic", color = color_palette[6], bg.color = "white") +
+  annotate("shadowtext", x = 105, y = 300,
+           label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
+  geom_col(fill = "grey35") + ggtitle("Single") +
+  coord_radial(inner.radius = 0.3, expand = FALSE, start = pi) +
+  scale_x_continuous(breaks = seq(-180, 180, 30)) + scale_y_continuous(limits = c(0, max_full)) +
+  xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
+  theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
+        plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
+chi_plot_full_3 <- chi_bins[which(chi_bins$don_resn == "A" & chi_bins$type == "Dual"),] %>%
+  ggplot(aes(x=mids, y=density*10^4)) +
+  annotate("rect", linetype = "blank", fill = color_palette[6], alpha = 0.3,
+           xmin = -90, xmax = 90, ymin = 0, ymax = max_full) +
+  annotate("shadowtext", x = 75, y = 300,
+           label = 'syn', size = 3, fontface = "bold.italic", color = color_palette[6], bg.color = "white") +
+  annotate("shadowtext", x = 105, y = 300,
+           label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
+  geom_col(fill = "grey35") + ggtitle("Dual") +
+  coord_radial(inner.radius = 0.3, expand = FALSE, start = pi) +
+  scale_x_continuous(breaks = seq(-180, 180, 30)) + scale_y_continuous(limits = c(0, max_full)) +
+  xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
+  theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
+        plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
+
+# Cytosine
+chi_plot_full_4 <- chi_bins[which(chi_bins$don_resn == "C" & chi_bins$type == "Non"),] %>%
+  ggplot(aes(x=mids, y=density*10^4)) +
+  annotate("rect", linetype = "blank", fill = color_palette[6], alpha = 0.3,
+           xmin = -90, xmax = 90, ymin = 0, ymax = max_full) +
+  annotate("shadowtext", x = 75, y = 300,
+           label = 'syn', size = 3, fontface = "bold.italic", color = color_palette[6], bg.color = "white") +
+  annotate("shadowtext", x = 105, y = 300,
+           label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
+  geom_col(fill = "grey35") + ggtitle("Non") +
+  coord_radial(inner.radius = 0.3, expand = FALSE, start = pi) +
+  scale_x_continuous(breaks = seq(-180, 180, 30)) + scale_y_continuous(limits = c(0, max_full)) +
+  xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
+  theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
+        plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
+chi_plot_full_5 <- chi_bins[which(chi_bins$don_resn == "C" & chi_bins$type == "Single"),] %>%
+  ggplot(aes(x=mids, y=density*10^4)) +
+  annotate("rect", linetype = "blank", fill = color_palette[6], alpha = 0.3,
+           xmin = -90, xmax = 90, ymin = 0, ymax = max_full) +
+  annotate("shadowtext", x = 75, y = 300,
+           label = 'syn', size = 3, fontface = "bold.italic", color = color_palette[6], bg.color = "white") +
+  annotate("shadowtext", x = 105, y = 300,
+           label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
+  geom_col(fill = "grey35") + ggtitle("Single") +
+  coord_radial(inner.radius = 0.3, expand = FALSE, start = pi) +
+  scale_x_continuous(breaks = seq(-180, 180, 30)) + scale_y_continuous(limits = c(0, max_full)) +
+  xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
+  theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
+        plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
+chi_plot_full_6 <- chi_bins[which(chi_bins$don_resn == "C" & chi_bins$type == "Dual"),] %>%
+  ggplot(aes(x=mids, y=density*10^4)) +
+  annotate("rect", linetype = "blank", fill = color_palette[6], alpha = 0.3,
+           xmin = -90, xmax = 90, ymin = 0, ymax = max_full) +
+  annotate("shadowtext", x = 75, y = 300,
+           label = 'syn', size = 3, fontface = "bold.italic", color = color_palette[6], bg.color = "white") +
+  annotate("shadowtext", x = 105, y = 300,
+           label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
+  geom_col(fill = "grey35") + ggtitle("Dual") +
+  coord_radial(inner.radius = 0.3, expand = FALSE, start = pi) +
+  scale_x_continuous(breaks = seq(-180, 180, 30)) + scale_y_continuous(limits = c(0, max_full)) +
+  xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
+  theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
+        plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
+
+# Guanine
+chi_plot_full_7 <- chi_bins[which(chi_bins$don_resn == "G" & chi_bins$type == "Non"),] %>%
+  ggplot(aes(x=mids, y=density*10^4)) +
+  annotate("rect", linetype = "blank", fill = color_palette[6], alpha = 0.3,
+           xmin = -90, xmax = 90, ymin = 0, ymax = max_full) +
+  annotate("shadowtext", x = 75, y = 300,
+           label = 'syn', size = 3, fontface = "bold.italic", color = color_palette[6], bg.color = "white") +
+  annotate("shadowtext", x = 105, y = 300,
+           label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
+  geom_col(fill = "grey35") + ggtitle("Non") +
+  coord_radial(inner.radius = 0.3, expand = FALSE, start = pi) +
+  scale_x_continuous(breaks = seq(-180, 180, 30)) + scale_y_continuous(limits = c(0, max_full)) +
+  xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
+  theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
+        plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
+chi_plot_full_8 <- chi_bins[which(chi_bins$don_resn == "G" & chi_bins$type == "Single"),] %>%
+  ggplot(aes(x=mids, y=density*10^4)) +
+  annotate("rect", linetype = "blank", fill = color_palette[6], alpha = 0.3,
+           xmin = -90, xmax = 90, ymin = 0, ymax = max_full) +
+  annotate("shadowtext", x = 75, y = 300,
+           label = 'syn', size = 3, fontface = "bold.italic", color = color_palette[6], bg.color = "white") +
+  annotate("shadowtext", x = 105, y = 300,
+           label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
+  geom_col(fill = "grey35") + ggtitle("Single") +
+  coord_radial(inner.radius = 0.3, expand = FALSE, start = pi) +
+  scale_x_continuous(breaks = seq(-180, 180, 30)) + scale_y_continuous(limits = c(0, max_full)) +
+  xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
+  theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
+        plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
+chi_plot_full_9 <- chi_bins[which(chi_bins$don_resn == "G" & chi_bins$type == "Dual"),] %>%
+  ggplot(aes(x=mids, y=density*10^4)) +
+  annotate("rect", linetype = "blank", fill = color_palette[6], alpha = 0.3,
+           xmin = -90, xmax = 90, ymin = 0, ymax = max_full) +
+  annotate("shadowtext", x = 75, y = 300,
+           label = 'syn', size = 3, fontface = "bold.italic", color = color_palette[6], bg.color = "white") +
+  annotate("shadowtext", x = 105, y = 300,
+           label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
+  geom_col(fill = "grey35") + ggtitle("Dual") +
+  coord_radial(inner.radius = 0.3, expand = FALSE, start = pi) +
+  scale_x_continuous(breaks = seq(-180, 180, 30)) + scale_y_continuous(limits = c(0, max_full)) +
+  xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
+  theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
+        plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
+
+# Convert the full plots into graphical objects.
+grob_full_1 <- ggplotGrob(chi_plot_full_1)
+grob_full_2 <- ggplotGrob(chi_plot_full_2)
+grob_full_3 <- ggplotGrob(chi_plot_full_3)
+grob_full_4 <- ggplotGrob(chi_plot_full_4)
+grob_full_5 <- ggplotGrob(chi_plot_full_5)
+grob_full_6 <- ggplotGrob(chi_plot_full_6)
+grob_full_7 <- ggplotGrob(chi_plot_full_7)
+grob_full_8 <- ggplotGrob(chi_plot_full_8)
+grob_full_9 <- ggplotGrob(chi_plot_full_9)
+
+# Combine the full plot grobs for each nucleobase type.
+adenine_full <- cbind(grob_full_1, grob_full_2, grob_full_3)
+cytosine_full <- cbind(grob_full_4, grob_full_5, grob_full_6)
+guanine_full <- cbind(grob_full_7, grob_full_8, grob_full_9)
+
+# Add x-axis, y-axis, and nucleobase type titles.
+adenine_title <- ggdraw() + draw_label(expression(underline("Adenine")), size = 10)
+cytosine_title <- ggdraw() + draw_label(expression(underline("Cytosine")), size = 10)
+guanine_title <- ggdraw() + draw_label(expression(underline("Guanine")), size = 10)
+x_title <- ggdraw() + draw_label("\u03c7 (\ub0)", size = 10)
+y_title <- ggdraw() + draw_label(paste("Density (\ud7", "10\u207B\u2074)"), size = 10, angle = 90)
+
+# Combine the rest of the grobs to create the completed set of plots.
+full_no_y <- plot_grid(adenine_title, adenine_full, cytosine_title, cytosine_full, guanine_title, guanine_full,
+                          x_title, ncol = 1, rel_heights = c(0.15, 1, 0.15, 1, 0.15, 1, 0.15))
+full_plots <- plot_grid(y_title, full_no_y, nrow = 1, rel_widths = c(0.05, 1)) +
+  theme(plot.background = element_rect(fill = "white", color = NA))
+
+# Create a plot showing the combined counts over all amine donating and nucleobase types.
+
+# Establish the cutoffs for the major and minor populations. They must be divisible by 10.
+lower_cut <- -20
+upper_cut <- 130
+
+# Prepare a vector that contains the fill colors for the 36 bins in the resulting histograms.
+chi_bin_colors <- c(rep("grey35", abs(-180-lower_cut)/10),
+                    rep(color_palette[2], (upper_cut-lower_cut)/10),
+                    rep("grey35", (180-upper_cut)/10))
 
 # Create a plot showing all data combined.
-chi_plot_combined <- chi_df %>% ggplot(aes(x=chi_adjusted)) +
-  geom_histogram(aes(y=after_stat(count)), binwidth = 10, center = 5, show.legend = FALSE) +
-  annotate("segment", color = "red", linetype = "dashed", x = -20, y = 1, xend = -20, yend = 10^5) +
-  annotate("segment", color = "red", linetype = "dashed", x = 130, y = 1, xend = 130, yend = 10^5) +
-  annotate("segment", color = "red", linetype = "dashed", x = -20, y = 1, xend = 130, yend = 1) +
-  annotate("segment", color = "red", linetype = "dashed", x = -20, y = 10^5, xend = 130, yend = 10^5) +
+chi_plot_combined <- chi_df %>% ggplot(aes(x = chi_adjusted)) +
+  annotate("rect", linetype = "blank", fill = color_palette[6], alpha = 0.3,
+           xmin = -90, xmax = 90, ymin = 1, ymax = 10^5) +
+  annotate("shadowtext", x = -120, y = 3*10^4,
+           fontface = "bold.italic", label = 'anti', color = "white", bg.color = "black", bg.r = 0.075) +
+  annotate("shadowtext", x = 0, y = 3*10^4,
+           fontface = "bold.italic", label = 'syn', color = color_palette[6], bg.color = "white") +
+  annotate("shadowtext", x = 135, y = 3*10^4,
+           fontface = "bold.italic", label = 'anti', color = "white", bg.color = "black", bg.r = 0.075) +
+  geom_histogram(aes(y=after_stat(count)), fill = chi_bin_colors, binwidth = 10, center = 5, show.legend = FALSE) +
+  annotate("text", x = -105, y = 1*10^1, size = 4, label = 'major', fontface = "bold", color = "white") +
+  annotate("text", x = 60, y = 1*10^1, size = 4, label = 'minor', fontface = "bold", color = "white") +
   scale_x_continuous(limits = c(-180, 180), breaks = seq(-180, 180, 45)) +
   scale_y_continuous(transform = "log10", name = "Count") +
   xlab("\u03c7 (\ub0)") +
   theme_bw(base_size = 10) +
-  theme(aspect.ratio = 0.25)
+  theme(aspect.ratio = 0.4, plot.margin = margin(t = 5, r = 15, b = 5, l = 15, unit = "pt"))
 
-# Write the plots.
-ggsave(snakemake@output[["chi_partial"]], plot = chi_plot_partial, width = 3, height = 9, units = "in", scale = 1)
-ggsave(snakemake@output[["chi_partial_y"]], plot = chi_plot_partial_y, width = 3, height = 9, units = "in", scale = 1)
-ggsave(snakemake@output[["chi_combined"]], plot = chi_plot_combined, width = 6.5, height = 9, units = "in", scale = 1)
+# Convert the combined plot into a graphical object.
+grob_combined <- ggplotGrob(chi_plot_combined)
+
+# Create the plots of a segment of the 360 range for each don_resn and type combination.
+
+# Find the maximum density for the partial range.
+max_partial <- ceiling(max(chi_bins[which(chi_bins$mids > -20 & chi_bins$mids < 130),]$density)*10^4)
+
+# Adenine
+chi_plot_partial_1 <- chi_bins[which(chi_bins$don_resn == "A" & chi_bins$type == "Non"),] %>%
+  ggplot(aes(x=mids, y=density*10^4)) +
+  annotate("rect", linetype = "blank", fill = color_palette[6], alpha = 0.3,
+           xmin = -20, xmax = 90, ymin = 0, ymax = max_partial) +
+  annotate("shadowtext", x = 0, y = 12,
+           label = 'syn', size = 3, fontface = "bold.italic", color = color_palette[6], bg.color = "white") +
+  annotate("shadowtext", x = 110, y = 10,
+           label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
+  geom_col(fill = color_palette[2]) + ggtitle("Non") +
+  coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi/8, end = pi*3/4) +
+  scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) + scale_y_continuous(limits = c(0, max_partial)) +
+  xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
+  theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
+        plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
+chi_plot_partial_2 <- chi_bins[which(chi_bins$don_resn == "A" & chi_bins$type == "Single"),] %>%
+  ggplot(aes(x=mids, y=density*10^4)) +
+  annotate("rect", linetype = "blank", fill = color_palette[6], alpha = 0.3,
+           xmin = -20, xmax = 90, ymin = 0, ymax = max_partial) +
+  annotate("shadowtext", x = 0, y = 12,
+           label = 'syn', size = 3, fontface = "bold.italic", color = color_palette[6], bg.color = "white") +
+  annotate("shadowtext", x = 110, y = 10,
+           label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
+  geom_col(fill = color_palette[2]) + ggtitle("Single") +
+  coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi/8, end = pi*3/4) +
+  scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) + scale_y_continuous(limits = c(0, max_partial)) +
+  xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
+  theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
+        plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
+chi_plot_partial_3 <- chi_bins[which(chi_bins$don_resn == "A" & chi_bins$type == "Dual"),] %>%
+  ggplot(aes(x=mids, y=density*10^4)) +
+  annotate("rect", linetype = "blank", fill = color_palette[6], alpha = 0.3,
+           xmin = -20, xmax = 90, ymin = 0, ymax = max_partial) +
+  annotate("shadowtext", x = 0, y = 12,
+           label = 'syn', size = 3, fontface = "bold.italic", color = color_palette[6], bg.color = "white") +
+  annotate("shadowtext", x = 110, y = 10,
+           label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
+  geom_col(fill = color_palette[2]) + ggtitle("Dual") +
+  coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi/8, end = pi*3/4) +
+  scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) + scale_y_continuous(limits = c(0, max_partial)) +
+  xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
+  theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
+        plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
+
+# Cytosine
+chi_plot_partial_4 <- chi_bins[which(chi_bins$don_resn == "C" & chi_bins$type == "Non"),] %>%
+  ggplot(aes(x=mids, y=density*10^4)) +
+  annotate("rect", linetype = "blank", fill = color_palette[6], alpha = 0.3,
+           xmin = -20, xmax = 90, ymin = 0, ymax = max_partial) +
+  annotate("shadowtext", x = 0, y = 12,
+           label = 'syn', size = 3, fontface = "bold.italic", color = color_palette[6], bg.color = "white") +
+  annotate("shadowtext", x = 110, y = 10,
+           label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
+  geom_col(fill = color_palette[2]) + ggtitle("Non") +
+  coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi/8, end = pi*3/4) +
+  scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) + scale_y_continuous(limits = c(0, max_partial)) +
+  xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
+  theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
+        plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
+chi_plot_partial_5 <- chi_bins[which(chi_bins$don_resn == "C" & chi_bins$type == "Single"),] %>%
+  ggplot(aes(x=mids, y=density*10^4)) +
+  annotate("rect", linetype = "blank", fill = color_palette[6], alpha = 0.3,
+           xmin = -20, xmax = 90, ymin = 0, ymax = max_partial) +
+  annotate("shadowtext", x = 0, y = 12,
+           label = 'syn', size = 3, fontface = "bold.italic", color = color_palette[6], bg.color = "white") +
+  annotate("shadowtext", x = 110, y = 10,
+           label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
+  geom_col(fill = color_palette[2]) + ggtitle("Single") +
+  coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi/8, end = pi*3/4) +
+  scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) + scale_y_continuous(limits = c(0, max_partial)) +
+  xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
+  theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
+        plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
+chi_plot_partial_6 <- chi_bins[which(chi_bins$don_resn == "C" & chi_bins$type == "Dual"),] %>%
+  ggplot(aes(x=mids, y=density*10^4)) +
+  annotate("rect", linetype = "blank", fill = color_palette[6], alpha = 0.3,
+           xmin = -20, xmax = 90, ymin = 0, ymax = max_partial) +
+  annotate("shadowtext", x = 0, y = 12,
+           label = 'syn', size = 3, fontface = "bold.italic", color = color_palette[6], bg.color = "white") +
+  annotate("shadowtext", x = 110, y = 10,
+           label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
+  geom_col(fill = color_palette[2]) + ggtitle("Dual") +
+  coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi/8, end = pi*3/4) +
+  scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) + scale_y_continuous(limits = c(0, max_partial)) +
+  xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
+  theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
+        plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
+
+# Guanine
+chi_plot_partial_7 <- chi_bins[which(chi_bins$don_resn == "G" & chi_bins$type == "Non"),] %>%
+  ggplot(aes(x=mids, y=density*10^4)) +
+  annotate("rect", linetype = "blank", fill = color_palette[6], alpha = 0.3,
+           xmin = -20, xmax = 90, ymin = 0, ymax = max_partial) +
+  annotate("shadowtext", x = 0, y = 12,
+           label = 'syn', size = 3, fontface = "bold.italic", color = color_palette[6], bg.color = "white") +
+  annotate("shadowtext", x = 110, y = 10,
+           label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
+  geom_col(fill = color_palette[2]) + ggtitle("Non") +
+  coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi/8, end = pi*3/4) +
+  scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) + scale_y_continuous(limits = c(0, max_partial)) +
+  xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
+  theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
+        plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
+chi_plot_partial_8 <- chi_bins[which(chi_bins$don_resn == "G" & chi_bins$type == "Single"),] %>%
+  ggplot(aes(x=mids, y=density*10^4)) +
+  annotate("rect", linetype = "blank", fill = color_palette[6], alpha = 0.3,
+           xmin = -20, xmax = 90, ymin = 0, ymax = max_partial) +
+  annotate("shadowtext", x = 0, y = 12,
+           label = 'syn', size = 3, fontface = "bold.italic", color = color_palette[6], bg.color = "white") +
+  annotate("shadowtext", x = 110, y = 10,
+           label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
+  geom_col(fill = color_palette[2]) + ggtitle("Single") +
+  coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi/8, end = pi*3/4) +
+  scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) + scale_y_continuous(limits = c(0, max_partial)) +
+  xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
+  theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
+        plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
+chi_plot_partial_9 <- chi_bins[which(chi_bins$don_resn == "G" & chi_bins$type == "Dual"),] %>%
+  ggplot(aes(x=mids, y=density*10^4)) +
+  annotate("rect", linetype = "blank", fill = color_palette[6], alpha = 0.3,
+           xmin = -20, xmax = 90, ymin = 0, ymax = max_partial) +
+  annotate("shadowtext", x = 0, y = 12,
+           label = 'syn', size = 3, fontface = "bold.italic", color = color_palette[6], bg.color = "white") +
+  annotate("shadowtext", x = 110, y = 10,
+           label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
+  geom_col(fill = color_palette[2]) + ggtitle("Dual") +
+  coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi/8, end = pi*3/4) +
+  scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) + scale_y_continuous(limits = c(0, max_partial)) +
+  xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
+  theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
+        plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
+
+# Convert the partial plots into graphical objects.
+grob_part_1 <- ggplotGrob(chi_plot_partial_1)
+grob_part_2 <- ggplotGrob(chi_plot_partial_2)
+grob_part_3 <- ggplotGrob(chi_plot_partial_3)
+grob_part_4 <- ggplotGrob(chi_plot_partial_4)
+grob_part_5 <- ggplotGrob(chi_plot_partial_5)
+grob_part_6 <- ggplotGrob(chi_plot_partial_6)
+grob_part_7 <- ggplotGrob(chi_plot_partial_7)
+grob_part_8 <- ggplotGrob(chi_plot_partial_8)
+grob_part_9 <- ggplotGrob(chi_plot_partial_9)
+
+# Combine the partial plot grobs.
+adenine_partial <- cbind(grob_part_1, grob_part_2, grob_part_3)
+cytosine_partial <- cbind(grob_part_4, grob_part_5, grob_part_6)
+guanine_partial <- cbind(grob_part_7, grob_part_8, grob_part_9)
+partial_no_y <- plot_grid(adenine_title, adenine_partial, cytosine_title, cytosine_partial,
+                          guanine_title, guanine_partial, x_title,
+                          ncol = 1, rel_heights = c(0.15, 1, 0.15, 1, 0.15, 1, 0.15))
+partial_plots <- plot_grid(y_title, partial_no_y, nrow = 1, rel_widths = c(0.1, 1))
+partial_plots_combined <- plot_grid(grob_combined, partial_plots, ncol = 1, rel_heights = c(1.9, 5.7)) +
+  theme(plot.background = element_rect(fill = "white", color = NA))
+
+# Create the plots.
+ggsave(snakemake@output[["full_plots"]], plot = full_plots, width = 6.5, height = 7, units = "in", scale = 1)
+ggsave(snakemake@output[["partial_plots_combined"]],
+       plot = partial_plots_combined, width = 4, height = 7.6, units = "in", scale = 1)
 
 # Remove the default Rplots.pdf generated.
 file.remove('Rplots.pdf')
