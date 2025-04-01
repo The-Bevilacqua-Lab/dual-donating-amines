@@ -224,7 +224,7 @@ pt_no_out_plot_legend <- pt_df_out[which(pt_df_out$type == "Non"),] %>%
   geom_rect(xmin = 302.4-7.2, xmax = 316.8+7.2, ymin = 21.6-7.2, ymax = 36+7.2,
             linewidth=0.4, linetype=1, colour="red", fill=NA) + # region 3, expanded
   scale_fill_viridis(labels = comma, name = "Count") +
-  ggtitle("Non Donating Amines") +
+  ggtitle("Non-Donating Amines") +
   xlab("Eta (\ub0)") +
   ylab("Theta (\ub0)") +
   coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
@@ -243,7 +243,7 @@ pt_single_out_plot_legend <- pt_df_out[which(pt_df_out$type == "Single"),] %>%
   geom_rect(xmin = 302.4-7.2, xmax = 316.8+7.2, ymin = 21.6-7.2, ymax = 36+7.2,
             linewidth=0.4, linetype=1, colour="red", fill=NA) + # region 3, expanded
   scale_fill_viridis(labels = comma, name = "Count") +
-  ggtitle("Single Donating Amines") +
+  ggtitle("Single-Donating Amines") +
   xlab("Eta (\ub0)") +
   ylab("Theta (\ub0)") +
   coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
@@ -262,7 +262,7 @@ pt_dual_out_plot_legend <- pt_df_out[which(pt_df_out$type == "Dual"),] %>%
   geom_rect(xmin = 302.4-7.2, xmax = 316.8+7.2, ymin = 21.6-7.2, ymax = 36+7.2,
             linewidth=0.4, linetype=1, colour="red", fill=NA) + # region 3, expanded
   scale_fill_viridis(labels = comma, name = "Count") +
-  ggtitle("Dual Donating Amines") +
+  ggtitle("Dual-Donating Amines") +
   xlab("Eta (\ub0)") +
   ylab("Theta (\ub0)") +
   coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
