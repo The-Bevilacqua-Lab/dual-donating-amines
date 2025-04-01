@@ -261,6 +261,7 @@ for donor in stored.donor_list:
         donor_list_filtered.remove(donor)
         print(f"Note: {donor[1]} of {donor[4]}.{donor[2]}.{donor[3]} in {eq_class_mem_id} is not bonded to exactly two "
               "hydrogens. The amine of this residue was omitted from further consideration for this data collection.")
+        continue
     # Collect and sort the names for nucleobase heavy atoms. Omit the donor from further consideration if there is
     # something odd with the atoms (e.g., missing atoms or wrong name).
     stored.nuc_atoms = []
@@ -274,6 +275,7 @@ for donor in stored.donor_list:
         print(f"Note: There is an issue with the nucleobase atoms for residue {donor[4]}.{donor[2]}.{donor[3]} in "
               f"{eq_class_mem_id}. The amine of this residue was omitted from further consideration for this data "
               "collection.")
+        continue
     # Ensure that the sugar atoms needed for the chi analysis are present.
     if (cmd.count_atoms(f"name O4' and resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]}") != 1 or
             cmd.count_atoms(f"name C1' and resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]}") != 1):
