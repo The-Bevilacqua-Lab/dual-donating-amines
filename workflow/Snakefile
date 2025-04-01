@@ -17,7 +17,6 @@ rule all:
         "results/plots/density_filtered.png",
         "results/plots/sasa_all_box.png",
         "results/plots/sasa_all_col.png",
-        "results/plots/sasa_filtered_box.png",
         "results/plots/full_plots.png",
         "results/plots/partial_plots_combined.png"
 
