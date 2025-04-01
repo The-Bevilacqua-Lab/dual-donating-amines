@@ -804,7 +804,7 @@ chi_plot_full_1 <- chi_bins[which(chi_bins$don_resn == "A" & chi_bins$type == "N
            label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
   geom_col(fill = "grey35") + ggtitle("Non") +
   coord_radial(inner.radius = 0.3, expand = FALSE, start = pi) +
-  scale_x_continuous(breaks = seq(-180, 180, 30)) + scale_y_continuous(limits = c(0, max_full)) +
+  scale_x_continuous(breaks = seq(-150, 180, 30), limits = c(-180, 180)) + scale_y_continuous(limits = c(0, max_full)) +
   xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
   theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
         plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
@@ -818,7 +818,7 @@ chi_plot_full_2 <- chi_bins[which(chi_bins$don_resn == "A" & chi_bins$type == "S
            label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
   geom_col(fill = "grey35") + ggtitle("Single") +
   coord_radial(inner.radius = 0.3, expand = FALSE, start = pi) +
-  scale_x_continuous(breaks = seq(-180, 180, 30)) + scale_y_continuous(limits = c(0, max_full)) +
+  scale_x_continuous(breaks = seq(-150, 180, 30), limits = c(-180, 180)) + scale_y_continuous(limits = c(0, max_full)) +
   xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
   theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
         plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
@@ -832,7 +832,7 @@ chi_plot_full_3 <- chi_bins[which(chi_bins$don_resn == "A" & chi_bins$type == "D
            label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
   geom_col(fill = "grey35") + ggtitle("Dual") +
   coord_radial(inner.radius = 0.3, expand = FALSE, start = pi) +
-  scale_x_continuous(breaks = seq(-180, 180, 30)) + scale_y_continuous(limits = c(0, max_full)) +
+  scale_x_continuous(breaks = seq(-150, 180, 30), limits = c(-180, 180)) + scale_y_continuous(limits = c(0, max_full)) +
   xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
   theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
         plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
@@ -848,7 +848,7 @@ chi_plot_full_4 <- chi_bins[which(chi_bins$don_resn == "C" & chi_bins$type == "N
            label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
   geom_col(fill = "grey35") + ggtitle("Non") +
   coord_radial(inner.radius = 0.3, expand = FALSE, start = pi) +
-  scale_x_continuous(breaks = seq(-180, 180, 30)) + scale_y_continuous(limits = c(0, max_full)) +
+  scale_x_continuous(breaks = seq(-150, 180, 30), limits = c(-180, 180)) + scale_y_continuous(limits = c(0, max_full)) +
   xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
   theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
         plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
@@ -862,7 +862,7 @@ chi_plot_full_5 <- chi_bins[which(chi_bins$don_resn == "C" & chi_bins$type == "S
            label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
   geom_col(fill = "grey35") + ggtitle("Single") +
   coord_radial(inner.radius = 0.3, expand = FALSE, start = pi) +
-  scale_x_continuous(breaks = seq(-180, 180, 30)) + scale_y_continuous(limits = c(0, max_full)) +
+  scale_x_continuous(breaks = seq(-150, 180, 30), limits = c(-180, 180)) + scale_y_continuous(limits = c(0, max_full)) +
   xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
   theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
         plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
@@ -876,7 +876,7 @@ chi_plot_full_6 <- chi_bins[which(chi_bins$don_resn == "C" & chi_bins$type == "D
            label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
   geom_col(fill = "grey35") + ggtitle("Dual") +
   coord_radial(inner.radius = 0.3, expand = FALSE, start = pi) +
-  scale_x_continuous(breaks = seq(-180, 180, 30)) + scale_y_continuous(limits = c(0, max_full)) +
+  scale_x_continuous(breaks = seq(-150, 180, 30), limits = c(-180, 180)) + scale_y_continuous(limits = c(0, max_full)) +
   xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
   theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
         plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
@@ -892,7 +892,7 @@ chi_plot_full_7 <- chi_bins[which(chi_bins$don_resn == "G" & chi_bins$type == "N
            label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
   geom_col(fill = "grey35") + ggtitle("Non") +
   coord_radial(inner.radius = 0.3, expand = FALSE, start = pi) +
-  scale_x_continuous(breaks = seq(-180, 180, 30)) + scale_y_continuous(limits = c(0, max_full)) +
+  scale_x_continuous(breaks = seq(-150, 180, 30), limits = c(-180, 180)) + scale_y_continuous(limits = c(0, max_full)) +
   xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
   theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
         plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
@@ -906,7 +906,7 @@ chi_plot_full_8 <- chi_bins[which(chi_bins$don_resn == "G" & chi_bins$type == "S
            label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
   geom_col(fill = "grey35") + ggtitle("Single") +
   coord_radial(inner.radius = 0.3, expand = FALSE, start = pi) +
-  scale_x_continuous(breaks = seq(-180, 180, 30)) + scale_y_continuous(limits = c(0, max_full)) +
+  scale_x_continuous(breaks = seq(-150, 180, 30), limits = c(-180, 180)) + scale_y_continuous(limits = c(0, max_full)) +
   xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
   theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
         plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
@@ -920,7 +920,7 @@ chi_plot_full_9 <- chi_bins[which(chi_bins$don_resn == "G" & chi_bins$type == "D
            label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
   geom_col(fill = "grey35") + ggtitle("Dual") +
   coord_radial(inner.radius = 0.3, expand = FALSE, start = pi) +
-  scale_x_continuous(breaks = seq(-180, 180, 30)) + scale_y_continuous(limits = c(0, max_full)) +
+  scale_x_continuous(breaks = seq(-150, 180, 30), limits = c(-180, 180)) + scale_y_continuous(limits = c(0, max_full)) +
   xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
   theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
         plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
@@ -942,10 +942,10 @@ cytosine_full <- cbind(grob_full_4, grob_full_5, grob_full_6)
 guanine_full <- cbind(grob_full_7, grob_full_8, grob_full_9)
 
 # Add x-axis, y-axis, and nucleobase type titles.
-adenine_title <- ggdraw() + draw_label(expression(underline("Adenine")), size = 10)
-cytosine_title <- ggdraw() + draw_label(expression(underline("Cytosine")), size = 10)
-guanine_title <- ggdraw() + draw_label(expression(underline("Guanine")), size = 10)
-x_title <- ggdraw() + draw_label("\u03c7 (\ub0)", size = 10)
+adenine_title <- ggdraw() + draw_label(expression(underline("Adenine")), size = 10, x = 0.53)
+cytosine_title <- ggdraw() + draw_label(expression(underline("Cytosine")), size = 10, x = 0.53)
+guanine_title <- ggdraw() + draw_label(expression(underline("Guanine")), size = 10, x = 0.53)
+x_title <- ggdraw() + draw_label("\u03c7 (\ub0)", size = 10, x = 0.53)
 y_title <- ggdraw() + draw_label(paste("Density (\ud7", "10\u207B\u2074)"), size = 10, angle = 90)
 
 # Combine the rest of the grobs to create the completed set of plots.
@@ -1002,7 +1002,7 @@ chi_plot_partial_1 <- chi_bins[which(chi_bins$don_resn == "A" & chi_bins$type ==
   annotate("shadowtext", x = 110, y = 10,
            label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
   geom_col(fill = color_palette[2]) + ggtitle("Non") +
-  coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi/8, end = pi*3/4) +
+  coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi*(20/180), end = pi*(130/180)) +
   scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) + scale_y_continuous(limits = c(0, max_partial)) +
   xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
   theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
@@ -1016,7 +1016,7 @@ chi_plot_partial_2 <- chi_bins[which(chi_bins$don_resn == "A" & chi_bins$type ==
   annotate("shadowtext", x = 110, y = 10,
            label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
   geom_col(fill = color_palette[2]) + ggtitle("Single") +
-  coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi/8, end = pi*3/4) +
+  coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi*(20/180), end = pi*(130/180)) +
   scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) + scale_y_continuous(limits = c(0, max_partial)) +
   xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
   theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
@@ -1030,7 +1030,7 @@ chi_plot_partial_3 <- chi_bins[which(chi_bins$don_resn == "A" & chi_bins$type ==
   annotate("shadowtext", x = 110, y = 10,
            label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
   geom_col(fill = color_palette[2]) + ggtitle("Dual") +
-  coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi/8, end = pi*3/4) +
+  coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi*(20/180), end = pi*(130/180)) +
   scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) + scale_y_continuous(limits = c(0, max_partial)) +
   xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
   theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
@@ -1046,7 +1046,7 @@ chi_plot_partial_4 <- chi_bins[which(chi_bins$don_resn == "C" & chi_bins$type ==
   annotate("shadowtext", x = 110, y = 10,
            label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
   geom_col(fill = color_palette[2]) + ggtitle("Non") +
-  coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi/8, end = pi*3/4) +
+  coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi*(20/180), end = pi*(130/180)) +
   scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) + scale_y_continuous(limits = c(0, max_partial)) +
   xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
   theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
@@ -1060,7 +1060,7 @@ chi_plot_partial_5 <- chi_bins[which(chi_bins$don_resn == "C" & chi_bins$type ==
   annotate("shadowtext", x = 110, y = 10,
            label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
   geom_col(fill = color_palette[2]) + ggtitle("Single") +
-  coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi/8, end = pi*3/4) +
+  coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi*(20/180), end = pi*(130/180)) +
   scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) + scale_y_continuous(limits = c(0, max_partial)) +
   xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
   theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
@@ -1074,7 +1074,7 @@ chi_plot_partial_6 <- chi_bins[which(chi_bins$don_resn == "C" & chi_bins$type ==
   annotate("shadowtext", x = 110, y = 10,
            label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
   geom_col(fill = color_palette[2]) + ggtitle("Dual") +
-  coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi/8, end = pi*3/4) +
+  coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi*(20/180), end = pi*(130/180)) +
   scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) + scale_y_continuous(limits = c(0, max_partial)) +
   xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
   theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
@@ -1090,7 +1090,7 @@ chi_plot_partial_7 <- chi_bins[which(chi_bins$don_resn == "G" & chi_bins$type ==
   annotate("shadowtext", x = 110, y = 10,
            label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
   geom_col(fill = color_palette[2]) + ggtitle("Non") +
-  coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi/8, end = pi*3/4) +
+  coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi*(20/180), end = pi*(130/180)) +
   scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) + scale_y_continuous(limits = c(0, max_partial)) +
   xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
   theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
@@ -1104,7 +1104,7 @@ chi_plot_partial_8 <- chi_bins[which(chi_bins$don_resn == "G" & chi_bins$type ==
   annotate("shadowtext", x = 110, y = 10,
            label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
   geom_col(fill = color_palette[2]) + ggtitle("Single") +
-  coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi/8, end = pi*3/4) +
+  coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi*(20/180), end = pi*(130/180)) +
   scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) + scale_y_continuous(limits = c(0, max_partial)) +
   xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
   theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
@@ -1118,7 +1118,7 @@ chi_plot_partial_9 <- chi_bins[which(chi_bins$don_resn == "G" & chi_bins$type ==
   annotate("shadowtext", x = 110, y = 10,
            label = 'anti', size = 3, fontface = "bold.italic", color = "white", bg.color = "black", bg.r = 0.075) +
   geom_col(fill = color_palette[2]) + ggtitle("Dual") +
-  coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi/8, end = pi*3/4) +
+  coord_radial(inner.radius = 0.3, expand = FALSE, start = -pi*(20/180), end = pi*(130/180)) +
   scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) + scale_y_continuous(limits = c(0, max_partial)) +
   xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
   theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
