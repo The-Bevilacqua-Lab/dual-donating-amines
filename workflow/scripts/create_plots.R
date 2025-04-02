@@ -420,8 +420,8 @@ density_all_df <- density_all_df %>% mutate(don_label = paste(don_resn, "(", don
 volume_1 <- (4/3)*pi*snakemake@config[["count_dist_1"]]**3
 volume_2 <- (4/3)*pi*snakemake@config[["count_dist_2"]]**3
 volume_diff <- volume_2 - volume_1
-density_df$density_1 <- density_df$count_1/volume_1
-density_df$density_2 <- (density_df$count_2-density_df$count_1)/volume_diff
+density_all_df$density_1 <- density_all_df$count_1/volume_1
+density_all_df$density_2 <- (density_all_df$count_2-density_all_df$count_1)/volume_diff
 
 # Pivot the density_1 and density_2 columns to place the values in a single column.
 density_all_pivot_df <- density_all_df %>%
@@ -535,47 +535,6 @@ density_filtered_plot <- density_filtered_pivot_df %>% ggplot(aes(x=type, y=dens
 # Write the plots.
 ggsave(snakemake@output[["density_filtered"]],
        plot = density_filtered_plot, width = 6, height = 3, units = "in", scale = 1)
-
-# Perform Mann-Whitney tests for density 2 with outliers removed.
-
-# I do not think the distributions being compared are fully independent from one another, an assumption of the
-# Mann-Whitney test. I may want to consider this further before confidently relying on these p-values.
-
-# Adenine
-adenine <- density_filtered_df[(density_filtered_df$don_resn == "A"),]
-a_no <- adenine[adenine$type == "No", "density_2"]
-a_single <- adenine[adenine$type == "Single", "density_2"]
-a_dual <- adenine[adenine$type == "Dual", "density_2"]
-# A - No to A - Single
-cat("\nA - No to A - Single Mann-Whitney test for density 2 with outliers removed\n\n")
-print(wilcox.test(a_no, a_single)) # W = 352982486, p-value < 2.2e-16
-# A - Single to A - Dual
-cat("\nA - Single to A - Dual Mann-Whitney test for density 2 with outliers removed\n\n")
-print(wilcox.test(a_single, a_dual)) # W = 47115675, p-value < 2.2e-16
-
-# Cytosine
-cytosine <- density_filtered_df[(density_filtered_df$don_resn == "C"),]
-c_no <- cytosine[cytosine$type == "No", "density_2"]
-c_single <- cytosine[cytosine$type == "Single", "density_2"]
-c_dual <- cytosine[cytosine$type == "Dual", "density_2"]
-# C - No to C - Single
-cat("\nC - No to C - Single Mann-Whitney test for density 2 with outliers removed\n\n")
-print(wilcox.test(c_no, c_single)) # W = 218199061, p-value < 2.2e-16
-# C - Single to C - Dual
-cat("\nC - Single to C - Dual Mann-Whitney test for density 2 with outliers removed\n\n")
-print(wilcox.test(c_single, c_dual)) # W = 35739526, p-value < 2.2e-16
-
-# Guanine
-guanine <- density_filtered_df[(density_filtered_df$don_resn == "G"),]
-g_no <- guanine[guanine$type == "No", "density_2"]
-g_single <- guanine[guanine$type == "Single", "density_2"]
-g_dual <- guanine[guanine$type == "Dual", "density_2"]
-# G - No to G - Single
-cat("\nG - No to G - Single Mann-Whitney test for density 2 with outliers removed\n\n")
-print(wilcox.test(g_no, g_single)) # W = 400955757, p-value = 2.059e-06
-# G - Single to G - Dual
-cat("\nG - Single to G - Dual Mann-Whitney test for density 2 with outliers removed\n\n")
-print(wilcox.test(g_single, g_dual)) # W = 124882421, p-value < 2.2e-16
 
 #### SASA PLOTS ####
 
