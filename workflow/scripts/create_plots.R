@@ -158,39 +158,37 @@ acc_pair_id_plot <- acc_pair_id_df %>%
 # Write the plots.
 ggsave(snakemake@output[["acc_pair_id"]], plot = acc_pair_id_plot, width = 6, height = 5, units = "in", scale = 1)
 
+# Write key data to a csv file.
+acc_pair_id_df_csv <- acc_pair_id_df[c("don_label", "acc_pair_combined_reformat", "n_resn_pair", "n_resn_pair_same")]
+write.csv(acc_pair_id_df_csv, file = snakemake@output[["acc_pair_id_csv"]], row.names = FALSE)
+
 #### SASA PLOTS ####
 
 # Extract the rows from the combined data frame relevant for these plots.
-sasa_all_df <- combined_df %>% filter(don_resn %in% c("A", "C", "G")) %>%
+sasa_df <- combined_df %>% filter(don_resn %in% c("A", "C", "G")) %>%
   distinct(don_index, eq_class_member, .keep_all = TRUE)
 
 # Convert donor type from numeric to string.
-sasa_all_df[sasa_all_df$type == 0, "type"] <- "Non"
-sasa_all_df[sasa_all_df$type == 1, "type"] <- "Single"
-sasa_all_df[sasa_all_df$type == 2, "type"] <- "Dual"
-sasa_all_df$type <- factor(sasa_all_df$type, levels = c("Non", "Single", "Dual"))
+sasa_df[sasa_df$type == 0, "type"] <- "Non"
+sasa_df[sasa_df$type == 1, "type"] <- "Single"
+sasa_df[sasa_df$type == 2, "type"] <- "Dual"
+sasa_df$type <- factor(sasa_df$type, levels = c("Non", "Single", "Dual"))
 
 # Create a column that contains the donor atom name along with the donor residue name.
-sasa_all_df <- sasa_all_df %>% mutate(don_label = paste(don_resn, "(", don_name, ")", sep = ""))
+sasa_df <- sasa_df %>% mutate(don_label = paste(don_resn, "(", don_name, ")", sep = ""))
 
 # Calculate sample sizes from the non-filtered data set.
-sasa_summary_all <- sasa_all_df %>%
+sasa_summary <- sasa_df %>%
   summarise(n = n(), sasa_med = median(SASA), .by = c(type, don_label))
-
-# Check the median values for C single donating amines and G no donating amines.
-c_single <- sasa_all_df %>% filter(type == "Single" & don_resn == "C")
-print(median(c_single$SASA)) # 8.748707
-g_no <- sasa_all_df %>% filter(type == "Non" & don_resn == "G")
-print(median(g_no$SASA)) # 8.748707
 
 # Specify the variables for the plots.
 ylim <- c(-20, 60)
 ratio <- (3/diff(ylim))*2
 
 # Create the box plots with all data (outliers included).
-sasa_all_box_plot <- sasa_all_df %>% ggplot(aes(x=type, y=SASA)) +
+sasa_box_plot <- sasa_df %>% ggplot(aes(x=type, y=SASA)) +
   geom_boxplot(width = 0.2, alpha = 0, outlier.size = 1, show.legend = FALSE) +
-  geom_text(data = sasa_summary_all, aes(x=type, y=-12, label = paste("n = ", prettyNum(n, big.mark = ","), sep = "")),
+  geom_text(data = sasa_summary, aes(x=type, y=-12, label = paste("n = ", prettyNum(n, big.mark = ","), sep = "")),
             size = 8, size.unit = "pt", hjust = 0.5, vjust = 0.5, angle = 60) +
   coord_fixed(ratio = ratio, xlim = c(1, 3), ylim = ylim) +
   xlab("Type of Donating Amine") +
@@ -200,14 +198,14 @@ sasa_all_box_plot <- sasa_all_df %>% ggplot(aes(x=type, y=SASA)) +
   facet_wrap( ~ don_label, nrow = 1)
 
 # Write the plots.
-ggsave(snakemake@output[["sasa_all_box"]], plot = sasa_all_box_plot, width = 3.5, height = 4, units = "in", scale = 1)
+ggsave(snakemake@output[["sasa_box"]], plot = sasa_box_plot, width = 3.5, height = 4, units = "in", scale = 1)
 
 # Specify the variables for the column plots.
 ylim <- c(0, 15)
 ratio <- (3/diff(ylim))*2
 
 # Create the column plots with all data (outliers included).
-sasa_all_col_plot <- sasa_summary_all %>% ggplot(aes(x=type, y=sasa_med)) +
+sasa_col_plot <- sasa_summary %>% ggplot(aes(x=type, y=sasa_med)) +
   geom_col(width = 0.8, linewidth = 0.3, color = "black", fill = "grey", show.legend = FALSE) +
   geom_text(aes(x=type, y=sasa_med+max(sasa_med)*0.05, label=round(sasa_med, digits = 1)),
             size = 10, size.unit = "pt", vjust = 0, inherit.aes = FALSE) +
@@ -219,20 +217,17 @@ sasa_all_col_plot <- sasa_summary_all %>% ggplot(aes(x=type, y=sasa_med)) +
   facet_wrap( ~ don_label, nrow = 1)
 
 # Write the plots.
-ggsave(snakemake@output[["sasa_all_col"]], plot = sasa_all_col_plot, width = 3.5, height = 4, units = "in", scale = 1)
+ggsave(snakemake@output[["sasa_col"]], plot = sasa_col_plot, width = 3.5, height = 4, units = "in", scale = 1)
 
 # Calculate quantile values.
-sasa_quantiles <- sasa_all_df %>% summarise(iqr = IQR(SASA),
+sasa_quantiles <- sasa_df %>% summarise(iqr = IQR(SASA),
                                             q1 = quantile(SASA, 0.25),
                                             q3 = quantile(SASA, 0.75),
                                             .by = c(type, don_label))
 
-# Calculate some stats on the IQRs.
-avg_iqr_n <- sum(sasa_quantiles[sasa_quantiles$type == "No",]$iqr)/3 # 18.591
-avg_iqr_s <- sum(sasa_quantiles[sasa_quantiles$type == "Single",]$iqr)/3 # 9.842296
-avg_iqr_d <- sum(sasa_quantiles[sasa_quantiles$type == "Dual",]$iqr)/3 # 0.3645295
-n_d_drop <- ((avg_iqr_n-avg_iqr_d)/avg_iqr_n)*100 # 98.03922 %
-s_d_drop <- ((avg_iqr_s-avg_iqr_d)/avg_iqr_s)*100 # 96.2963 %
+# Write SASA statistics to a csv file.
+sasa_stats <- merge(sasa_summary, sasa_quantiles)
+write.csv(sasa_stats, file = snakemake@output[["sasa_stats"]], row.names = FALSE)
 
 #### HEAVY ATOM DENSITY PLOTS ####
 
@@ -297,44 +292,14 @@ density_all_plot <- density_all_pivot_df %>% ggplot(aes(x=type, y=density_values
 ggsave(snakemake@output[["density_all"]], plot = density_all_plot, width = 6, height = 3, units = "in", scale = 1)
 
 # Calculate quantile values for both densities.
-density_quantiles <- density_all_df %>% summarise(iqr_1 = IQR(density_1),
-                                                  q1_1 = quantile(density_1, 0.25),
-                                                  q3_1 = quantile(density_1, 0.75),
-                                                  iqr_2 = IQR(density_2),
-                                                  q1_2 = quantile(density_2, 0.25),
-                                                  q3_2 = quantile(density_2, 0.75),
-                                                  .by = c(type, don_label))
-
-# Calculate some stats on the IQR for density 1.
-avg_iqr_1_n <- sum(density_quantiles[density_quantiles$type == "No",]$iqr_1)/3 # 0.0154675
-avg_iqr_1_s <- sum(density_quantiles[density_quantiles$type == "Single",]$iqr_1)/3 # 0.009242776
-avg_iqr_1_d <- sum(density_quantiles[density_quantiles$type == "Dual",]$iqr_1)/3 # 0.007922379
-n_d_1_drop <- ((avg_iqr_1_n-avg_iqr_1_d)/avg_iqr_1_n)*100 # 48.78049 %
-s_d_1_drop <- ((avg_iqr_1_s-avg_iqr_1_d)/avg_iqr_1_s)*100 # 14.28571 %
-d_n_1_perc <- (avg_iqr_1_d/avg_iqr_1_n)*100 # 51.21951 %
-d_s_1_perc <- (avg_iqr_1_d/avg_iqr_1_s)*100 # 85.71429 %
-
-# Calculate some stats on the IQR for density 2.
-avg_iqr_2_n <- sum(density_quantiles[density_quantiles$type == "No",]$iqr_2)/3 # 0.01392768
-avg_iqr_2_s <- sum(density_quantiles[density_quantiles$type == "Single",]$iqr_2)/3 # 0.01164105
-avg_iqr_2_d <- sum(density_quantiles[density_quantiles$type == "Dual",]$iqr_2)/3 # 0.008782754
-n_d_2_drop <- ((avg_iqr_2_n-avg_iqr_2_d)/avg_iqr_2_n)*100 # 36.9403 %
-s_d_2_drop <- ((avg_iqr_2_s-avg_iqr_2_d)/avg_iqr_2_s)*100 # 24.55357 %
-d_n_2_perc <- (avg_iqr_2_d/avg_iqr_2_n)*100 # 63.0597 %
-d_s_2_perc <- (avg_iqr_2_d/avg_iqr_2_s)*100 # 75.44643 %
+density_quantiles <- density_all_pivot_df %>% summarise(iqr = IQR(density_values),
+                                                        q1 = quantile(density_values, 0.25),
+                                                        q3 = quantile(density_values, 0.75),
+                                                        .by = c(type, don_label, density_type))
 
 # Create a data frame with outliers for both densities filtered out.
-density_filtered_df <- merge(density_all_df, density_quantiles) %>%
-  filter(density_1 >= q1_1 - 2 * iqr_1 & density_1 <= q3_1 + 2 * iqr_1) %>%
-  filter(density_2 >= q1_2 - 2 * iqr_2 & density_2 <= q3_2 + 2 * iqr_2)
-
-# Pivot the density_1 and density_2 columns to place the values in a single column.
-density_filtered_pivot_df <- density_filtered_df %>%
-  pivot_longer(cols = c(density_1, density_2), names_to = "density_type", values_to = "density_values")
-
-# Change the density_type naming.
-density_filtered_pivot_df[density_filtered_pivot_df$density_type == "density_1", "density_type"] <- "ROI 1"
-density_filtered_pivot_df[density_filtered_pivot_df$density_type == "density_2", "density_type"] <- "ROI 2"
+density_filtered_pivot_df <- merge(density_all_pivot_df, density_quantiles) %>%
+  filter(density_values >= q1 - 2 * iqr & density_values <= q3 + 2 * iqr)
 
 # Calculate sample sizes from the filtered data set.
 density_summary_filtered <- density_filtered_pivot_df %>%
@@ -368,6 +333,14 @@ density_filtered_plot <- density_filtered_pivot_df %>% ggplot(aes(x=type, y=dens
 # Write the plots.
 ggsave(snakemake@output[["density_filtered"]],
        plot = density_filtered_plot, width = 6, height = 3, units = "in", scale = 1)
+
+# Write density statistics to a csv file.
+density_all_stats <- density_summary_all[-6]
+density_all_stats["filtered"] <- 0
+density_filtered_stats <- density_summary_filtered[-6]
+density_filtered_stats["filtered"] <- 1
+density_stats <- merge(rbind(density_all_stats, density_filtered_stats), density_quantiles)
+write.csv(density_stats, file = snakemake@output[["density_stats"]], row.names = FALSE)
 
 #### PSEUDOTORSION AND CORRESPONDING ACCEPTOR PAIR PLOTS ####
 
@@ -411,12 +384,6 @@ pair_1_df <- pair_1_df %>% mutate(fraction_label = NA)
 pair_1_df[which(!is.na(pair_1_df$n_resn_pair_same)), "fraction_label"] <-
   paste(pair_1_df[which(!is.na(pair_1_df$n_resn_pair_same)), "n_resn_pair_same"], "/",
         pair_1_df[which(!is.na(pair_1_df$n_resn_pair_same)), "n_resn_pair"], sep = " ")
-
-# Color Palette: black, orange, sky blue, bluish green, yellow, blue, vermilion, reddish purple
-# Colors from DOI 10.1038/nmeth.1618
-color_palette <- c(rgb(0/255, 0/255, 0/255), rgb(230/255, 159/255, 0/255), rgb(86/255, 180/255, 233/255),
-                   rgb(0/255, 158/255, 115/255), rgb(240/255, 228/255, 66/255), rgb(0/255, 114/255, 178/255),
-                   rgb(213/255, 94/255, 0/255), rgb(204/255, 121/255, 167/255))
 
 # Create a column that contains the combined acceptor pair divided by a forward slash instead of a comma.
 pair_1_df <- pair_1_df %>%
@@ -712,6 +679,11 @@ pt_2_plots <- rbind(cbind(pt_no_all_grob, pt_no_out_capped_grob),
 # Write the plots.
 ggsave(snakemake@output[["pt_1"]], plot = pt_1_plots, width = 6.5, height = 5.5, units = "in")
 ggsave(snakemake@output[["pt_2"]], plot = pt_2_plots, width = 6, height = 6.5, units = "in")
+
+# Write key data to a csv file.
+pt_acc_pairs_df <-
+  combined_region_df[c("region", "don_label", "acc_pair_combined_reformat", "n_resn_pair", "n_resn_pair_same")]
+write.csv(pt_acc_pairs_df, file = snakemake@output[["pt_acc_pairs"]], row.names = FALSE)
 
 #### CHI PLOTS ####
 
