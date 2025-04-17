@@ -586,39 +586,45 @@ pt_no_all_plot <- pt_df[which(pt_df$type == "Non"),] %>%
   geom_rect(xmin = eta_min, xmax = eta_max, ymin = theta_min, ymax = theta_max,
             linewidth=0.4, linetype=3, colour="red", fill=NA) + # helical region
   scale_fill_viridis(labels = comma, name = "Count") +
+  ggtitle("Non-Donating Amines") +
   xlab("Eta (\ub0)") +
   ylab("Theta (\ub0)") +
   coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
   scale_x_continuous(breaks = seq(0, 360, 90)) +
   scale_y_continuous(breaks = seq(0, 360, 90)) +
   theme_classic(base_size = 10) +
-  theme(legend.key.width = unit(0.1, "in"), legend.key.height = unit(0.25, "in"))
+  theme(legend.key.width = unit(0.1, "in"), legend.key.height = unit(0.25, "in"),
+        plot.title = element_text(vjust = 1, hjust = 0.5))
 pt_single_all_plot <- pt_df[which(pt_df$type == "Single"),] %>%
   ggplot(aes(x = eta_translated, y = theta_translated)) +
   geom_bin_2d(binwidth = c(bin_w, bin_w)) +
   geom_rect(xmin = eta_min, xmax = eta_max, ymin = theta_min, ymax = theta_max,
             linewidth=0.4, linetype=3, colour="red", fill=NA) + # helical region
   scale_fill_viridis(labels = comma, name = "Count") +
+  ggtitle("Single-Donating Amines") +
   xlab("Eta (\ub0)") +
   ylab("Theta (\ub0)") +
   coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
   scale_x_continuous(breaks = seq(0, 360, 90)) +
   scale_y_continuous(breaks = seq(0, 360, 90)) +
   theme_classic(base_size = 10) +
-  theme(legend.key.width = unit(0.1, "in"), legend.key.height = unit(0.25, "in"))
+  theme(legend.key.width = unit(0.1, "in"), legend.key.height = unit(0.25, "in"),
+        plot.title = element_text(vjust = 1, hjust = 0.5))
 pt_dual_all_plot <- pt_df[which(pt_df$type == "Dual"),] %>%
   ggplot(aes(x = eta_translated, y = theta_translated)) +
   geom_bin_2d(binwidth = c(bin_w, bin_w)) +
   geom_rect(xmin = eta_min, xmax = eta_max, ymin = theta_min, ymax = theta_max,
             linewidth=0.4, linetype=3, colour="red", fill=NA) + # helical region
   scale_fill_viridis(labels = comma, name = "Count") +
+  ggtitle("Dual-Donating Amines") +
   xlab("Eta (\ub0)") +
   ylab("Theta (\ub0)") +
   coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
   scale_x_continuous(breaks = seq(0, 360, 90)) +
   scale_y_continuous(breaks = seq(0, 360, 90)) +
   theme_classic(base_size = 10) +
-  theme(legend.key.width = unit(0.1, "in"), legend.key.height = unit(0.25, "in"))
+  theme(legend.key.width = unit(0.1, "in"), legend.key.height = unit(0.25, "in"),
+        plot.title = element_text(vjust = 1, hjust = 0.5))
 
 # Make and combine the graphical objects.
 pt_no_all_grob <- ggplotGrob(pt_no_all_plot)
