@@ -63,8 +63,12 @@ if snakemake.config["commit_hash"]:
 
 # Define a function to determine whether a donor/acceptor atom pair meets the H-bonding criteria.
 def h_bonding(row):
+    # Return 0 for the h_bond column if no acceptor atom exists.
+    if pd.isna(row["acc_resi"]):
+        row["h_bond"] = 0
+        return row
     # Issue an error message if the needed H-bonding measurements are NaN.
-    if pd.isna(row["h_acc_distance"]) or pd.isna(row["h_angle"]):
+    elif pd.isna(row["h_acc_distance"]) or pd.isna(row["h_angle"]):
         error(f"Error: The needed H-bonding measurements are NaN for a donor/acceptor atom pair in {eq_class_mem_id}.")
     # If both measurements exist, evaluate them against the criteria.
     else:
