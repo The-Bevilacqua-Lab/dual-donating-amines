@@ -284,16 +284,15 @@ for donor in stored.donor_list:
               f"needed for the chi calculation. The amine of this residue was omitted from further consideration for "
               f"this data collection.")
 
-# Store the number of heavy atoms belonging to organic molecules or polymers near the donor of interest within a
-# dictionary. Additionally, store the average b-factor of the heavy atoms that make up the nucleobase containing the
-# donors of interest.
+# Store the number of heavy atoms belonging to polymers near the donor of interest within a dictionary. Additionally,
+# store the average b-factor of the heavy atoms that make up the nucleobase containing the donors of interest.
 don_info_dict = {"don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "don_segi": [],
                  "don_alt": [], "count_1": [], "count_2": [], "b_factor": [], "chi": []}
 for donor in donor_list_filtered:
-    # Count the number of heavy atoms belonging to organic molecules or polymers near the donor.
-    count_1 = cmd.count_atoms(f'((organic or polymer) within {snakemake.config["count_dist_1"]} of index {donor[0]}) '
+    # Count the number of heavy atoms belonging to polymers near the donor.
+    count_1 = cmd.count_atoms(f'(polymer within {snakemake.config["count_dist_1"]} of index {donor[0]}) '
                               f'and not elem H')
-    count_2 = cmd.count_atoms(f'((organic or polymer) within {snakemake.config["count_dist_2"]} of index {donor[0]}) '
+    count_2 = cmd.count_atoms(f'(polymer within {snakemake.config["count_dist_2"]} of index {donor[0]}) '
                               f'and not elem H')
     # Collect the b-factors for side chain atoms.
     stored.b_factors = []
@@ -339,7 +338,7 @@ don_atom_pair_dict = {"don_index": [], "don_name": [], "don_resn": [], "don_resi
 for donor in donor_list_filtered:
     # Find the acceptors near the donor. Exclude the nucleobase of the donor.
     stored.acceptors = []
-    cmd.iterate(f'(acceptors within {snakemake.config["search_dist"]} of index {donor[0]}) and (organic or polymer) '
+    cmd.iterate(f'(acceptors within {snakemake.config["search_dist"]} of index {donor[0]}) and polymer '
                 f'and not (sidechain and byres index {donor[0]})',
                 'stored.acceptors.append([index, name, resn, resi, chain, segi, alt])')
     # Add the acceptors to the atom pair dictionary.
