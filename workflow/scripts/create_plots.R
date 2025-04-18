@@ -443,6 +443,11 @@ combined_region_df <- rbind(pair_1_df, pair_2_df)
 combined_region_plot <- combined_region_df %>%
   ggplot(aes(x=reorder_within(acc_pair_combined_reformat, n_resn_pair, region), y=n_resn_pair, fill = don_label)) +
   geom_col(width = 0.8, color = "black") +
+  geom_col_pattern(aes(y=n_resn_pair_same),
+                   width = 0.8, color = "black", pattern = "stripe", pattern_fill = "black",
+                   pattern_size = 0, pattern_angle = 45, pattern_spacing = 0.02, show.legend = FALSE) +
+  geom_text(aes(y=n_resn_pair+max(n_resn_pair)*0.025, label=fraction_label),
+            size = 8, size.unit = "pt", hjust = 0, vjust = 0, angle = 45) +
   xlab("Pair of Acceptor Atoms") +
   ylab("Count") +
   scale_fill_manual(values = c(color_palette[3], color_palette[8], color_palette[4]), name = "Donor") +
