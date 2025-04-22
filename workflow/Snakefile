@@ -22,7 +22,18 @@ rule all:
         "results/tables/density_stats.csv",
         "results/plots/full_plots.png",
         "results/plots/partial_plots_combined.png",
-        "results/tables/pt_acc_pairs.csv"
+        "results/tables/pt_acc_pairs.csv",
+        "results/acc_pair_examples/acc_pair_5A.csv",
+        "results/acc_pair_examples/acc_pair_5B_1.csv",
+        "results/acc_pair_examples/acc_pair_5B_2.csv",
+        "results/acc_pair_examples/acc_pair_5B_3.csv",
+        "results/acc_pair_examples/acc_pair_5B_4.csv",
+        "results/acc_pair_examples/acc_pair_5C.csv",
+        "results/acc_pair_examples/acc_pair_5D.csv",
+        "results/acc_pair_examples/acc_pair_5E.csv",
+        "results/acc_pair_examples/acc_pair_5F.csv",
+        "results/acc_pair_examples/acc_pair_S3A.csv",
+        "results/acc_pair_examples/acc_pair_S3B.csv"
 
 rule collect_data:
     output:
@@ -84,3 +95,23 @@ rule create_plots:
         "envs/general.yaml"
     script:
         "scripts/create_plots.R"
+
+rule list_examples:
+    input:
+        combined = "results/combine_data/combined.csv"
+    output:
+        acc_pair_5A = "results/acc_pair_examples/acc_pair_5A.csv",
+        acc_pair_5B_1 = "results/acc_pair_examples/acc_pair_5B_1.csv",
+        acc_pair_5B_2 = "results/acc_pair_examples/acc_pair_5B_2.csv",
+        acc_pair_5B_3 = "results/acc_pair_examples/acc_pair_5B_3.csv",
+        acc_pair_5B_4 = "results/acc_pair_examples/acc_pair_5B_4.csv",
+        acc_pair_5C = "results/acc_pair_examples/acc_pair_5C.csv",
+        acc_pair_5D = "results/acc_pair_examples/acc_pair_5D.csv",
+        acc_pair_5E = "results/acc_pair_examples/acc_pair_5E.csv",
+        acc_pair_5F = "results/acc_pair_examples/acc_pair_5F.csv",
+        acc_pair_S3A = "results/acc_pair_examples/acc_pair_S3A.csv",
+        acc_pair_S3B = "results/acc_pair_examples/acc_pair_S3B.csv"
+    conda:
+        "envs/general.yaml"
+    script:
+        "scripts/acc_pair_examples.R"
