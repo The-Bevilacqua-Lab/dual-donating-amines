@@ -16,31 +16,8 @@ count_dist_2: 12.5
 h_dist_max: 2.5
 h_ang_min: 140.0
 
-# What are the residue and atom names of the donors that are to be considered, categorized by how many hydrogens they
-# have?
-single_h_donors:
-  - "G.N1"
-  - "U.N3"
-  - "DG.N1"
-  - "DT.N3"
-  - "A.O2'"
-  - "C.O2'"
-  - "G.O2'"
-  - "U.O2'"
-  - "DA.O2'"
-  - "DC.O2'"
-  - "DG.O2'"
-  - "DT.O2'"
+# What are the residue and atom names of the donors that are to be considered?
 dual_h_donors:
-  - 'A.N6'
-  - 'C.N4'
-  - 'G.N2'
-  - 'DA.N6'
-  - 'DC.N4'
-  - 'DG.N2'
-
-# What are the residue and atom names of the donors of interest?
-donors_of_interest:
   - 'A.N6'
   - 'C.N4'
   - 'G.N2'

@@ -150,12 +150,12 @@ cmd.set('fetch_path', cmd.exp_path(original_mmcif_dir))
 # Construct a list of strings containing residue and atom names that describe donor atoms of particular interest.
 # Additionally, construct a string that can be used with PyMOL to select all possible donor atoms of particular
 # interest.
-donors_of_interest = []
-donors_of_interest_str = ''
-for atom in snakemake.config["donors_of_interest"]:
-    donors_of_interest.append(atom)
-    donors_of_interest_str += f'(resn {atom.split(".")[0]} and name {atom.split(".")[1]}) '
-donors_of_interest_str = donors_of_interest_str[:-1]
+dual_h_donors = []
+dual_h_donors_str = ''
+for atom in snakemake.config["dual_h_donors"]:
+    dual_h_donors.append(atom)
+    dual_h_donors_str += f'(resn {atom.split(".")[0]} and name {atom.split(".")[1]}) '
+dual_h_donors_str = dual_h_donors_str[:-1]
 
 # Prepare a string that can be used with PyMOL to identify the chains of all the equivalence class member RNAs.
 mem_rna_chains = " ".join(["chain " + chain for chain in chain_list])
@@ -227,7 +227,7 @@ if cmd.count_atoms("not alt ''") > 0:
 cmd.remove('elem H')
 
 # Add hydrogens to donors of interest that belong to the representative RNA chains.
-cmd.h_add(f'({donors_of_interest_str}) and ({mem_rna_chains})')
+cmd.h_add(f'({dual_h_donors_str}) and ({mem_rna_chains})')
 
 # Randomly sample 100 atom indices in the structure and record the info of the associated atoms for later comparison.
 num_atoms = cmd.count_atoms('all')
@@ -238,7 +238,7 @@ for index in indices:
 
 # Store a list of donors of interest from the equivalence class member RNA chains.
 stored.donor_list = []
-cmd.iterate(f'({mem_rna_chains}) and ({donors_of_interest_str})',
+cmd.iterate(f'({mem_rna_chains}) and ({dual_h_donors_str})',
             'stored.donor_list.append([index, name, resn, resi, chain, segi, alt])')
 
 # List and sort the atom names of A, C, and G nucleobases.
@@ -361,7 +361,7 @@ for atom_pair in don_atom_pair_df.itertuples():
     acc_list = [atom_pair.acc_index, atom_pair.acc_name, atom_pair.acc_resn, atom_pair.acc_resi, atom_pair.acc_chain]
     # Retrieve the H-bond measurements for the atom pair.
     h_bond_list = eval_H_bonding.evaluate(don_list, acc_list, eq_class_mem_id, residue_library.RESIDUE_LIBRARY,
-                                          snakemake.config["single_h_donors"], snakemake.config["dual_h_donors"])
+                                          snakemake.config["dual_h_donors"])
     # If the H-bond evaluation is not successful, print the error message(s) and exit.
     successful_completion = h_bond_list[0]
     if not successful_completion:
