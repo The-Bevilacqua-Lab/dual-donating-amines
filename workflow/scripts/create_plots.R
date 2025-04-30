@@ -516,8 +516,8 @@ pt_no_out_plot_legend <- pt_df[which(pt_df$type == "Non"),] %>%
             linewidth=0.4, linetype=1, colour="red", fill=NA) + # region 3, expanded
   scale_fill_viridis(labels = comma, name = "Count", limits = c(1, max_helical_value_no/13)) +
   ggtitle("Non-Donating Amines") +
-  xlab("Eta (\ub0)") +
-  ylab("Theta (\ub0)") +
+  xlab("\u03B7 (\ub0)") +
+  ylab("\u03B8 (\ub0)") +
   coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
   scale_x_continuous(breaks = seq(0, 360, 90)) +
   scale_y_continuous(breaks = seq(0, 360, 90)) +
@@ -535,8 +535,8 @@ pt_single_out_plot_legend <- pt_df[which(pt_df$type == "Single"),] %>%
             linewidth=0.4, linetype=1, colour="red", fill=NA) + # region 3, expanded
   scale_fill_viridis(labels = comma, name = "Count", limits = c(1, max_helical_value_single/13)) +
   ggtitle("Single-Donating Amines") +
-  xlab("Eta (\ub0)") +
-  ylab("Theta (\ub0)") +
+  xlab("\u03B7 (\ub0)") +
+  ylab("\u03B8 (\ub0)") +
   coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
   scale_x_continuous(breaks = seq(0, 360, 90)) +
   scale_y_continuous(breaks = seq(0, 360, 90)) +
@@ -554,8 +554,8 @@ pt_dual_out_plot_legend <- pt_df[which(pt_df$type == "Dual"),] %>%
             linewidth=0.4, linetype=1, colour="red", fill=NA) + # region 3, expanded
   scale_fill_viridis(labels = comma, name = "Count", limits = c(1, max_helical_value_dual/13)) +
   ggtitle("Dual-Donating Amines") +
-  xlab("Eta (\ub0)") +
-  ylab("Theta (\ub0)") +
+  xlab("\u03B7 (\ub0)") +
+  ylab("\u03B8 (\ub0)") +
   coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
   scale_x_continuous(breaks = seq(0, 360, 90)) +
   scale_y_continuous(breaks = seq(0, 360, 90)) +
@@ -592,8 +592,8 @@ pt_no_all_plot <- pt_df[which(pt_df$type == "Non"),] %>%
             linewidth=0.4, linetype=3, colour="red", fill=NA) + # helical region
   scale_fill_viridis(labels = comma, name = "Count") +
   ggtitle("Non-Donating Amines") +
-  xlab("Eta (\ub0)") +
-  ylab("Theta (\ub0)") +
+  xlab("\u03B7 (\ub0)") +
+  ylab("\u03B8 (\ub0)") +
   coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
   scale_x_continuous(breaks = seq(0, 360, 90)) +
   scale_y_continuous(breaks = seq(0, 360, 90)) +
@@ -607,8 +607,8 @@ pt_single_all_plot <- pt_df[which(pt_df$type == "Single"),] %>%
             linewidth=0.4, linetype=3, colour="red", fill=NA) + # helical region
   scale_fill_viridis(labels = comma, name = "Count") +
   ggtitle("Single-Donating Amines") +
-  xlab("Eta (\ub0)") +
-  ylab("Theta (\ub0)") +
+  xlab("\u03B7 (\ub0)") +
+  ylab("\u03B8 (\ub0)") +
   coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
   scale_x_continuous(breaks = seq(0, 360, 90)) +
   scale_y_continuous(breaks = seq(0, 360, 90)) +
@@ -622,8 +622,8 @@ pt_dual_all_plot <- pt_df[which(pt_df$type == "Dual"),] %>%
             linewidth=0.4, linetype=3, colour="red", fill=NA) + # helical region
   scale_fill_viridis(labels = comma, name = "Count") +
   ggtitle("Dual-Donating Amines") +
-  xlab("Eta (\ub0)") +
-  ylab("Theta (\ub0)") +
+  xlab("\u03B7 (\ub0)") +
+  ylab("\u03B8 (\ub0)") +
   coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
   scale_x_continuous(breaks = seq(0, 360, 90)) +
   scale_y_continuous(breaks = seq(0, 360, 90)) +
