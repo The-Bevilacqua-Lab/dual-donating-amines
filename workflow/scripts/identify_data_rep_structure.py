@@ -605,6 +605,7 @@ best_cutoff_db = round(cutoffs[np.nanargmax(db_scores)], 2)
 
 
 # generating dendrogram with the RMSD cut-off best by the Slihouette score (default) or other matric defined by the user
+plt.figure()
 dend = dendrogram(Z, color_threshold= best_cutoff_sil, labels=D1.index, above_threshold_color='lightgray', leaf_rotation=0, orientation='left', leaf_font_size=5, no_plot= True)
 
 color_list_counter=  dict(Counter(dend['color_list']))
