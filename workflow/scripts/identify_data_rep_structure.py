@@ -653,7 +653,12 @@ for i, dcoord in enumerate(dend['dcoord']):
 for leaf, leaf_color in zip(plt.gca().get_yticklabels(), dend["leaves_color_list"]):
     leaf.set_color(leaf_color)
 
-plt.axvline(x=best_cutoff_sil, color='green', linestyle='--', alpha= 0.8,  linewidth=2)
+if val_mat in ['0', '1']:
+    plt.axvline(x=best_cutoff_sil, color='green', linestyle='--', alpha= 0.8,  linewidth=2)
+elif val_mat=='2':
+    plt.axvline(x=best_cutoff_ch, color='green', linestyle='--', alpha= 0.8,  linewidth=2)
+elif val_mat=='3':
+    plt.axvline(x=best_cutoff_db, color='green', linestyle='--', alpha= 0.8,  linewidth=2)
 
 plt.savefig("all_structure_dendrogram.pdf", format="pdf", bbox_inches="tight", dpi = 4000)
 #need to turn off the leaves labeling
