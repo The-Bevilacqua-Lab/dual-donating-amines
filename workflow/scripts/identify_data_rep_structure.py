@@ -509,6 +509,7 @@ optparser = OptionParser()
 (options, args) = optparser.parse_args()
 csvfile = args[0]
 DF1= pd.read_csv(csvfile) #this will be referred as the 'MAIN DATAFRAME'
+DF1['str_ID'] = DF1[['pdb', 'chain_A', 'resi_A_1']].astype(str).agg('_'.join, axis=1)
 
 
 # step 2: generate structures with clipped motifs
