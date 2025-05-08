@@ -364,7 +364,7 @@ def min_max_normalize(arr):
     return (arr - min_val) / (max_val - min_val) if max_val > min_val else np.zeros_like(arr)
 
 #this function will plot different validation scores against the RMSD cut-off ranges
-def plot_validation_scores(cutoffs, sil_scores, ch_scores, db_scores):
+def plot_validation_scores(cutoffs, sil_scores, ch_scores, db_scores, fstring):
     plt.figure(figsize=(12, 6))
     plt.rcParams['font.family'] = 'Arial'
 
@@ -421,7 +421,7 @@ def plot_validation_scores(cutoffs, sil_scores, ch_scores, db_scores):
     plt.yticks(rotation=0,fontsize=15)
     
     plt.tight_layout()
-    plt.savefig("val_score_vs_RMSD_cutoff_normalized.png", format="png", bbox_inches="tight", dpi=2000)
+    plt.savefig(fstring+"_val_score_vs_RMSD_cutoff_normalized.png", format="png", bbox_inches="tight", dpi=2000)
     plt.show()
 
 
@@ -545,20 +545,21 @@ def align_avg(avg, strs):
 optparser = OptionParser()
 (options, args) = optparser.parse_args()
 csvfile = args[0]
+FSTRING= args[1]
 DF1= pd.read_csv(csvfile) #this will be referred as the 'MAIN DATAFRAME'
-DF1['str_ID'] = DF1[['pdb', 'chain_A', 'resi_A_1']].astype(str).agg('_'.join, axis=1)
+DF1['str_ID'] = FSTRING+ '_'+ DF1[['pdb', 'chain_A', 'resi_A_1']].astype(str).agg('_'.join, axis=1)
 
 
 # step 2: generate structures with clipped motifs
-usr_dir= args[1]
+usr_dir= args[2]
 
-work_path= os.path.join(usr_dir, 'identifying_data_rep_structures')
+work_path= os.path.join(usr_dir, FSTRING+'_identifying_data_rep_structures')
 os.makedirs(work_path, exist_ok=True)
 
-clip_path= os.path.join(work_path, 'all_clipped_structures') #all clipped structures will be stored here
+clip_path= os.path.join(work_path, FSTRING+'_all_clipped_structures') #all clipped structures will be stored here
 os.makedirs(clip_path, exist_ok=True)
 
-result_path= os.path.join(work_path, 'result_rep_structures') #result of alignment and clustering will be stored here
+result_path= os.path.join(work_path, FSTRING+'_result_rep_structures') #result of alignment and clustering will be stored here
 os.makedirs(result_path, exist_ok=True)
 
 os.chdir(clip_path)
@@ -593,7 +594,7 @@ for ind, pid in enumerate(DF1['pdb']):
     ###c_ids= list(set([i.split('.')[0] for i in list_residue])) #list of chain_IDs
     ###r_1= [res_ind.split('.')[1] for res_ind in list_residue if res_ind.split('.')[0]== c_ids[0]] #list of residue indeces
 
-    F= pid+'_'+list_residue[0].rstrip('_*') + '.cif' #filename for the output/clipped structure files
+    F= FSTRING+'_'+pid+'_'+list_residue[0].rstrip('_*') + '.cif' #filename for the output/clipped structure files
     print (F)
 
     clip(pid, list_residue, 'N', F)
@@ -602,7 +603,7 @@ for ind, pid in enumerate(DF1['pdb']):
 os.chdir(result_path)
 
 rmsd_df= align_all_against_all(clip_path)
-rmsd_df.to_csv('all_against_all_RMSD.csv', index= False)
+rmsd_df.to_csv(FSTRING+'_all_against_all_RMSD.csv', index= False)
 
 #step 4: clustering
 cl_names= [j.rstrip('.cif').replace('-', '_') for i,j in enumerate(list(rmsd_df.columns)[1:])]
@@ -633,8 +634,8 @@ cutoff_range = np.linspace(min_rmsd, pre_max, 50)
 cutoffs, sil_scores, ch_scores, db_scores, validation_df = compute_validation_scores(D1, Z, cutoff_range)
 
 # visualizing validation matrics at different RMSD cut-off
-plot_validation_scores(cutoffs, sil_scores, ch_scores, db_scores)
-validation_df.to_csv('val_score_vs_RMSD_cutoff.csv', index= False)
+plot_validation_scores(cutoffs, sil_scores, ch_scores, db_scores, FSTRING)
+validation_df.to_csv(FSTRING+'_val_score_vs_RMSD_cutoff.csv', index= False)
 
 # extracting best RMSD cut-off defined by different validation matrics
 best_cutoff_sil = round(cutoffs[np.nanargmax(sil_scores)], 2)
@@ -644,7 +645,7 @@ best_cutoff_db = round(cutoffs[np.nanargmax(db_scores)], 2)
 
 # generating dendrogram with the RMSD cut-off best by the Slihouette score (default) or other matric defined by the user
 plt.figure()
-val_mat= args[2]
+val_mat= args[3]
 if val_mat in ['0', '1']:
     dend = dendrogram(Z, color_threshold= best_cutoff_sil, labels=D1.index, above_threshold_color='lightgray', leaf_rotation=0, orientation='left', leaf_font_size=5, no_plot= True)
 elif val_mat == '2':
@@ -681,7 +682,7 @@ for i, ls in enumerate(dend['leaves_color_list']):
 dend["color_list"]= color_list_n #updated branch color list is assigned to the original dendrogram
 dend["leaves_color_list"]= leaves_color_list_n #updated leaves color list is assigned to the original dendrogram
 
-leaf_lab= args[3]
+leaf_lab= args[4]
 if leaf_lab== '0': #this means user does not want leaves labeling 
     dend1 = dendrogram(Z, color_threshold= best_cutoff_sil, labels=D1.index, above_threshold_color='lightgray', leaf_rotation=0, orientation='left', leaf_font_size=5, no_labels=True)
 elif leaf_lab== '1': #this means user wants the leaves labeling
@@ -706,7 +707,7 @@ elif val_mat=='2':
 elif val_mat=='3':
     plt.axvline(x=best_cutoff_db, color='green', linestyle='--', alpha= 0.8,  linewidth=2)
 
-plt.savefig("all_structure_dendrogram.png", format="png", bbox_inches="tight", dpi = 2000)
+plt.savefig(FSTRING+"_all_structure_dendrogram.png", format="png", bbox_inches="tight", dpi = 2000)
 #need to turn off the leaves labeling
 
 cl_dict={}
@@ -786,7 +787,7 @@ max_key = max(cl_dict, key=lambda k: len(cl_dict[k]))
 # identifying data representative structure which is the representative structure for the major cluster
 # major cluster is the cluster with the highest number of members
 DF1['rep_data'] = ((DF1['cluster'] == max_key) & (DF1['rep_cls'] == 1)).astype(int)
-DF1.to_csv('alignment_n_clustering_results.csv', index= False)
+DF1.to_csv(FSTRING+'_alignment_n_clustering_results.csv', index= False)
 
 #  storing the data representative structure to the result_path
 data_rep_str= DF1[DF1['rep_data']==1]['str_ID'].to_list()[0]
