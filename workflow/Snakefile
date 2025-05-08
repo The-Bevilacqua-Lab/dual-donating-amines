@@ -10,6 +10,8 @@ rule all:
     input:
         "results/plots/pairs.png",
         "results/plots/pt.png",
+        "results/tables/location_1_residues.csv",
+        "results/tables/location_2_residues.csv",
         "results/plots/don_id.png",
         "results/plots/acc_pair_id.png",
         "results/tables/acc_pair_id.csv",
@@ -77,6 +79,8 @@ rule create_plots:
     output:
         pairs = "results/plots/pairs.png",
         pt = "results/plots/pt.png",
+        location_1_residues = "results/tables/location_1_residues.csv",
+        location_2_residues= "results/tables/location_2_residues.csv",
         don_id = "results/plots/don_id.png",
         acc_pair_id = "results/plots/acc_pair_id.png",
         acc_pair_id_csv = "results/tables/acc_pair_id.csv",
