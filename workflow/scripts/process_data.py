@@ -272,9 +272,9 @@ df.loc[df["acc_resn_name"].isin(can_neut), "acc_charge"] = "can_neut"
 df = df.assign(geom=0)
 don_acc_grp = ["don_index", "acc_index"]
 (df.loc[
-    # For a given donor-acceptor pair, only include the hydrogen with the smaller D-H...A distance.
-    (df.groupby(don_acc_grp)["h_acc_distance"]
-     .transform(lambda grp: [mem == grp.min() for mem in grp])) &
+    # For a given donor-acceptor pair, only include the hydrogen with the greater D-H...A angle.
+    (df.groupby(don_acc_grp)["h_angle"]
+     .transform(lambda grp: [mem == grp.max() for mem in grp])) &
     # Do not consider A(N6)-U(O4), C(N4)-G(O6), G(N2)-C(O2), or G(N2)-C(N3) atom pairs.
     (~df[["don_resn", "don_name", "acc_resn", "acc_name"]].eq(["A", "N6", "U", "O4"])
      .all(axis='columns')) &
