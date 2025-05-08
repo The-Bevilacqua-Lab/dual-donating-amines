@@ -1,12 +1,12 @@
 """
-This script reads information from the equivalence class file created by parse_nrlist.py and specified by the Snakefile.
-It works with PyMOL to save an mmCIF file of the original structure to a location specified in the Snakemake
-configuration file. Alternative conformations are removed, hydrogens are added, and the modified structure is saved to
-an mmCIF file specified by the Snakefile. The script collects data from the modified structure on potential hydrogen
-bonds involving atoms of interest and nucleobase atom b-factors in the equivalence class member RNA chains. It writes
-this data to a csv file specified by the Snakefile. If commit_hash is set to true in the Snakemake configuration file,
-the commit hash of the repo will also be written within a commented line to the csv file if no uncommitted changes
-have been made to the repo.
+This script reads information from an equivalence class member provided by the representative set file. It works with
+PyMOL to save an mmCIF file of the original structure to a location specified in the Snakemake configuration file.
+Alternative conformations are removed, hydrogens are added, and the modified structure is saved to an mmCIF file
+specified by the Snakefile. The script collects data from the modified structure on potential hydrogen bonds involving
+amines of A's, C's, and G's and nucleobase atom b-factors in the equivalence class member RNA chains. Other data is
+also collected, such as the number of heavy atoms around each amine. It writes this data to a csv file specified by the
+Snakefile. If commit_hash is set to true in the Snakemake configuration file, the commit hash of the repo will also be
+written within a commented line to the csv file if no uncommitted changes have been made to the repo.
 """
 
 import sys
