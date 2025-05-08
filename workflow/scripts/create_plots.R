@@ -354,9 +354,9 @@ pair_1_df[which(pair_1_df$eta < 0), "eta_translated"] <- pair_1_df[which(pair_1_
 pair_1_df[which(pair_1_df$theta >= 0), "theta_translated"] <- pair_1_df[which(pair_1_df$theta >= 0), "theta"]
 pair_1_df[which(pair_1_df$theta < 0), "theta_translated"] <- pair_1_df[which(pair_1_df$theta < 0), "theta"] + 360
 
-# Filter for region 2.
-pair_1_df <- pair_1_df %>% filter(eta_translated >= 50.4-7.2 & eta_translated < 64.8+7.2 &
-                                    theta_translated >= 158.4-7.2 & theta_translated < 172.8+7.2)
+# Filter for location 1.
+pair_1_df <- pair_1_df %>% filter(eta_translated >= 43.2 & eta_translated < 72 &
+                                    theta_translated >= 151.2 & theta_translated < 180)
 
 # Create a column that contains the donor atom name along with the donor residue name.
 pair_1_df <- pair_1_df %>% mutate(don_label = paste(don_resn, "(", don_name, ")", sep = ""))
@@ -399,9 +399,9 @@ pair_2_df[which(pair_2_df$eta < 0), "eta_translated"] <- pair_2_df[which(pair_2_
 pair_2_df[which(pair_2_df$theta >= 0), "theta_translated"] <- pair_2_df[which(pair_2_df$theta >= 0), "theta"]
 pair_2_df[which(pair_2_df$theta < 0), "theta_translated"] <- pair_2_df[which(pair_2_df$theta < 0), "theta"] + 360
 
-# Filter for region 3.
-pair_2_df <- pair_2_df %>% filter(eta_translated >= 302.4-7.2 & eta_translated < 316.8+7.2 &
-                                    theta_translated >= 21.6-7.2 & theta_translated < 36+7.2)
+# Filter for location 2.
+pair_2_df <- pair_2_df %>% filter(eta_translated >= 295.2 & eta_translated < 324 &
+                                    theta_translated >= 14.4 & theta_translated < 43.2)
 
 # Create a column that contains the donor atom name along with the donor residue name.
 pair_2_df <- pair_2_df %>% mutate(don_label = paste(don_resn, "(", don_name, ")", sep = ""))
@@ -435,13 +435,13 @@ pair_2_df <- pair_2_df %>%
   mutate(acc_pair_combined_reformat = gsub(", ", "/", acc_pair_combined, fixed = TRUE))
 
 # Combine the data frames.
-pair_1_df["region"] <- "Location 1"
-pair_2_df["region"] <- "Location 2"
-combined_region_df <- rbind(pair_1_df, pair_2_df)
+pair_1_df["location"] <- "Location 1"
+pair_2_df["location"] <- "Location 2"
+combined_location_df <- rbind(pair_1_df, pair_2_df)
 
 # Create the plots.
-combined_region_plot <- combined_region_df %>%
-  ggplot(aes(x=reorder_within(acc_pair_combined_reformat, n_resn_pair, region), y=n_resn_pair, fill = don_label)) +
+combined_location_plot <- combined_location_df %>%
+  ggplot(aes(x=reorder_within(acc_pair_combined_reformat, n_resn_pair, location), y=n_resn_pair, fill = don_label)) +
   geom_col(width = 0.8, color = "black") +
   geom_col_pattern(aes(y=n_resn_pair_same),
                    width = 0.8, color = "black", pattern = "stripe", pattern_fill = "black",
@@ -458,7 +458,7 @@ combined_region_plot <- combined_region_df %>%
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
         panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank(),
         legend.key.size = unit(0.15, "in"), legend.key.spacing.y = unit(2, "pt")) +
-  facet_wrap( ~ region, nrow = 1, scales = "free_x")
+  facet_wrap( ~ location, nrow = 1, scales = "free_x")
 
 # The code for preparing the following plots is a bit more tedious because I wanted the plots to be the same size
 # despite the legends having different widths due to the differing lengths of numbers in the legend keys.
@@ -492,29 +492,17 @@ eta_max <- 190
 theta_min <- 190
 theta_max <- 245
 
-# Find the maximum fill value corresponding to the helical region of each donor type.
-helical_region_no <- pt_df[(pt_df$type == "Non") & (eta_min < pt_df$eta_translated) & (pt_df$eta_translated < eta_max) &
-                               (theta_min < pt_df$theta_translated) & (pt_df$theta_translated < theta_max),] %>%
-  ggplot(aes(x = eta_translated, y = theta_translated)) + geom_bin_2d(binwidth = c(bin_w, bin_w))
-max_helical_value_no <- max(ggplot_build(helical_region_no)$data[[1]]$value)
-helical_region_single <- pt_df[(pt_df$type == "Single") & (eta_min < pt_df$eta_translated) & (pt_df$eta_translated < eta_max) &
-                                 (theta_min < pt_df$theta_translated) & (pt_df$theta_translated < theta_max),] %>%
-  ggplot(aes(x = eta_translated, y = theta_translated)) + geom_bin_2d(binwidth = c(bin_w, bin_w))
-max_helical_value_single <- max(ggplot_build(helical_region_single)$data[[1]]$value)
-helical_region_dual <- pt_df[(pt_df$type == "Dual") & (eta_min < pt_df$eta_translated) & (pt_df$eta_translated < eta_max) &
-                               (theta_min < pt_df$theta_translated) & (pt_df$theta_translated < theta_max),] %>%
-  ggplot(aes(x = eta_translated, y = theta_translated)) + geom_bin_2d(binwidth = c(bin_w, bin_w))
-max_helical_value_dual <- max(ggplot_build(helical_region_dual)$data[[1]]$value)
-
-# Create the plot with eta theta values outside the central region.
-pt_no_out_plot_legend <- pt_df[which(pt_df$type == "Non"),] %>%
+# Create plots with the helical region and locations 1 and 2 outlined.
+pt_no_plot_legend <- pt_df[which(pt_df$type == "Non"),] %>%
   ggplot(aes(x = eta_translated, y = theta_translated)) +
   geom_bin_2d(binwidth = c(bin_w, bin_w)) +
-  geom_rect(xmin = 50.4-7.2, xmax = 64.8+7.2, ymin = 158.4-7.2, ymax = 172.8+7.2,
-            linewidth=0.4, linetype=1, colour="red", fill=NA) + # region 2, expanded
-  geom_rect(xmin = 302.4-7.2, xmax = 316.8+7.2, ymin = 21.6-7.2, ymax = 36+7.2,
-            linewidth=0.4, linetype=1, colour="red", fill=NA) + # region 3, expanded
-  scale_fill_viridis(labels = comma, name = "Count", limits = c(1, max_helical_value_no/13)) +
+  geom_rect(xmin = eta_min, xmax = eta_max, ymin = theta_min, ymax = theta_max,
+            linewidth=0.4, linetype=3, colour="red", fill=NA) + # helical region
+  geom_rect(xmin = 43.2, xmax = 72, ymin = 151.2, ymax = 180,
+            linewidth=0.4, linetype=1, colour="red", fill=NA) + # location 1
+  geom_rect(xmin = 295.2, xmax = 324, ymin = 14.4, ymax = 43.2,
+            linewidth=0.4, linetype=1, colour="red", fill=NA) + # location 2
+  scale_fill_viridis(labels = comma, name = "Count", transform = 'log10') +
   ggtitle("Non-Donating Amines") +
   xlab("\u03B7 (\ub0)") +
   ylab("\u03B8 (\ub0)") +
@@ -522,18 +510,19 @@ pt_no_out_plot_legend <- pt_df[which(pt_df$type == "Non"),] %>%
   scale_x_continuous(breaks = seq(0, 360, 90)) +
   scale_y_continuous(breaks = seq(0, 360, 90)) +
   theme_classic(base_size = 10) +
-  theme(legend.key.width = unit(0.1, "in"), legend.key.height = unit(0.2, "in"),
-        legend.margin = margin(t = 5, r = 5, b = 20, l = 0, unit = "pt"),
-        plot.margin = margin(t = 5, r = 0, b = 5, l = 5, unit = "pt"),
-        plot.title = element_text(vjust = 1, hjust = 0.5))
-pt_single_out_plot_legend <- pt_df[which(pt_df$type == "Single"),] %>%
+  theme(legend.key.width = unit(0.1, "in"), legend.key.height = unit(0.25, "in"),
+        legend.margin = margin(t = 0, r = 0, b = 0.2, l = 0, "in"), plot.title = element_text(vjust = 1, hjust = 0.5),
+        plot.margin = margin(t = 0, r = 0, b = 0, l = 0.1, "in"))
+pt_single_plot_legend <- pt_df[which(pt_df$type == "Single"),] %>%
   ggplot(aes(x = eta_translated, y = theta_translated)) +
   geom_bin_2d(binwidth = c(bin_w, bin_w)) +
-  geom_rect(xmin = 50.4-7.2, xmax = 64.8+7.2, ymin = 158.4-7.2, ymax = 172.8+7.2,
-            linewidth=0.4, linetype=1, colour="red", fill=NA) + # region 2, expanded
-  geom_rect(xmin = 302.4-7.2, xmax = 316.8+7.2, ymin = 21.6-7.2, ymax = 36+7.2,
-            linewidth=0.4, linetype=1, colour="red", fill=NA) + # region 3, expanded
-  scale_fill_viridis(labels = comma, name = "Count", limits = c(1, max_helical_value_single/13)) +
+  geom_rect(xmin = eta_min, xmax = eta_max, ymin = theta_min, ymax = theta_max,
+            linewidth=0.4, linetype=3, colour="red", fill=NA) + # helical region
+  geom_rect(xmin = 43.2, xmax = 72, ymin = 151.2, ymax = 180,
+            linewidth=0.4, linetype=1, colour="red", fill=NA) + # location 1
+  geom_rect(xmin = 295.2, xmax = 324, ymin = 14.4, ymax = 43.2,
+            linewidth=0.4, linetype=1, colour="red", fill=NA) + # location 2
+  scale_fill_viridis(labels = comma, name = "Count", transform = 'log10') +
   ggtitle("Single-Donating Amines") +
   xlab("\u03B7 (\ub0)") +
   ylab("\u03B8 (\ub0)") +
@@ -541,18 +530,19 @@ pt_single_out_plot_legend <- pt_df[which(pt_df$type == "Single"),] %>%
   scale_x_continuous(breaks = seq(0, 360, 90)) +
   scale_y_continuous(breaks = seq(0, 360, 90)) +
   theme_classic(base_size = 10) +
-  theme(legend.key.width = unit(0.1, "in"), legend.key.height = unit(0.2, "in"),
-        legend.margin = margin(t = 5, r = 5, b = 20, l = 0, unit = "pt"),
-        plot.margin = margin(t = 5, r = 0, b = 5, l = 5, unit = "pt"),
-        plot.title = element_text(vjust = 1, hjust = 0.5))
-pt_dual_out_plot_legend <- pt_df[which(pt_df$type == "Dual"),] %>%
+  theme(legend.key.width = unit(0.1, "in"), legend.key.height = unit(0.25, "in"),
+        legend.margin = margin(t = 0, r = 0, b = 0.2, l = 0, "in"), plot.title = element_text(vjust = 1, hjust = 0.5),
+        plot.margin = margin(t = 0, r = 0, b = 0, l = 0.1, "in"))
+pt_dual_plot_legend <- pt_df[which(pt_df$type == "Dual"),] %>%
   ggplot(aes(x = eta_translated, y = theta_translated)) +
   geom_bin_2d(binwidth = c(bin_w, bin_w)) +
-  geom_rect(xmin = 50.4-7.2, xmax = 64.8+7.2, ymin = 158.4-7.2, ymax = 172.8+7.2,
-            linewidth=0.4, linetype=1, colour="red", fill=NA) + # region 2, expanded
-  geom_rect(xmin = 302.4-7.2, xmax = 316.8+7.2, ymin = 21.6-7.2, ymax = 36+7.2,
-            linewidth=0.4, linetype=1, colour="red", fill=NA) + # region 3, expanded
-  scale_fill_viridis(labels = comma, name = "Count", limits = c(1, max_helical_value_dual/13)) +
+  geom_rect(xmin = eta_min, xmax = eta_max, ymin = theta_min, ymax = theta_max,
+            linewidth=0.4, linetype=3, colour="red", fill=NA) + # helical region
+  geom_rect(xmin = 43.2, xmax = 72, ymin = 151.2, ymax = 180,
+            linewidth=0.4, linetype=1, colour="red", fill=NA) + # location 1
+  geom_rect(xmin = 295.2, xmax = 324, ymin = 14.4, ymax = 43.2,
+            linewidth=0.4, linetype=1, colour="red", fill=NA) + # location 2
+  scale_fill_viridis(labels = comma, name = "Count", transform = 'log10') +
   ggtitle("Dual-Donating Amines") +
   xlab("\u03B7 (\ub0)") +
   ylab("\u03B8 (\ub0)") +
@@ -560,90 +550,35 @@ pt_dual_out_plot_legend <- pt_df[which(pt_df$type == "Dual"),] %>%
   scale_x_continuous(breaks = seq(0, 360, 90)) +
   scale_y_continuous(breaks = seq(0, 360, 90)) +
   theme_classic(base_size = 10) +
-  theme(legend.key.width = unit(0.1, "in"), legend.key.height = unit(0.2, "in"),
-        legend.margin = margin(t = 5, r = 5, b = 20, l = 0, unit = "pt"),
-        plot.margin = margin(t = 5, r = 0, b = 5, l = 5, unit = "pt"),
-        plot.title = element_text(vjust = 1, hjust = 0.5))
+  theme(legend.key.width = unit(0.1, "in"), legend.key.height = unit(0.25, "in"),
+        legend.margin = margin(t = 0, r = 0, b = 0.2, l = 0, "in"), plot.title = element_text(vjust = 1, hjust = 0.5),
+        plot.margin = margin(t = 0, r = 0, b = 0, l = 0.1, "in"))
 
 # Extract the legends.
-pt_no_out_legend <- get_legend(pt_no_out_plot_legend)
-pt_single_out_legend <- get_legend(pt_single_out_plot_legend)
-pt_dual_out_legend <- get_legend(pt_dual_out_plot_legend)
+pt_no_legend <- get_legend(pt_no_plot_legend)
+pt_single_legend <- get_legend(pt_single_plot_legend)
+pt_dual_legend <- get_legend(pt_dual_plot_legend)
 
 # Extract the plots.
-pt_no_out_plot <- pt_no_out_plot_legend + theme(legend.position = "none")
-pt_single_out_plot <- pt_single_out_plot_legend + theme(legend.position = "none")
-pt_dual_out_plot <- pt_dual_out_plot_legend + theme(legend.position = "none")
+pt_no_plot <- pt_no_plot_legend + theme(legend.position = "none")
+pt_single_plot <- pt_single_plot_legend + theme(legend.position = "none")
+pt_dual_plot <- pt_dual_plot_legend + theme(legend.position = "none")
 
 # Combine the plots and legends.
-pt_no_out_grid <- plot_grid(pt_no_out_plot, pt_no_out_legend, rel_widths = grid_rel_w)
-pt_single_out_grid <- plot_grid(pt_single_out_plot, pt_single_out_legend, rel_widths = grid_rel_w)
-pt_dual_out_grid <- plot_grid(pt_dual_out_plot, pt_dual_out_legend, rel_widths = grid_rel_w)
+pt_no_grid <- plot_grid(pt_no_plot, pt_no_legend, rel_widths = grid_rel_w)
+pt_single_grid <- plot_grid(pt_single_plot, pt_single_legend, rel_widths = grid_rel_w)
+pt_dual_grid <- plot_grid(pt_dual_plot, pt_dual_legend, rel_widths = grid_rel_w)
 
 # Combine the plots.
-pt_1_plots <- plot_grid(pt_no_out_grid, pt_single_out_grid, pt_dual_out_grid, combined_region_plot, nrow = 2) +
+pt_plots <- plot_grid(pt_no_grid, pt_single_grid, pt_dual_grid, combined_location_plot, nrow = 2) +
   theme(plot.background = element_rect(fill = "white", color = NA))
 
-# Create the plot with all eta theta values and a red-dashed box outlining the central region.
-pt_no_all_plot <- pt_df[which(pt_df$type == "Non"),] %>%
-  ggplot(aes(x = eta_translated, y = theta_translated)) +
-  geom_bin_2d(binwidth = c(bin_w, bin_w)) +
-  geom_rect(xmin = eta_min, xmax = eta_max, ymin = theta_min, ymax = theta_max,
-            linewidth=0.4, linetype=3, colour="red", fill=NA) + # helical region
-  scale_fill_viridis(labels = comma, name = "Count") +
-  ggtitle("Non-Donating Amines") +
-  xlab("\u03B7 (\ub0)") +
-  ylab("\u03B8 (\ub0)") +
-  coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
-  scale_x_continuous(breaks = seq(0, 360, 90)) +
-  scale_y_continuous(breaks = seq(0, 360, 90)) +
-  theme_classic(base_size = 10) +
-  theme(legend.key.width = unit(0.1, "in"), legend.key.height = unit(0.25, "in"),
-        plot.title = element_text(vjust = 1, hjust = 0.5))
-pt_single_all_plot <- pt_df[which(pt_df$type == "Single"),] %>%
-  ggplot(aes(x = eta_translated, y = theta_translated)) +
-  geom_bin_2d(binwidth = c(bin_w, bin_w)) +
-  geom_rect(xmin = eta_min, xmax = eta_max, ymin = theta_min, ymax = theta_max,
-            linewidth=0.4, linetype=3, colour="red", fill=NA) + # helical region
-  scale_fill_viridis(labels = comma, name = "Count") +
-  ggtitle("Single-Donating Amines") +
-  xlab("\u03B7 (\ub0)") +
-  ylab("\u03B8 (\ub0)") +
-  coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
-  scale_x_continuous(breaks = seq(0, 360, 90)) +
-  scale_y_continuous(breaks = seq(0, 360, 90)) +
-  theme_classic(base_size = 10) +
-  theme(legend.key.width = unit(0.1, "in"), legend.key.height = unit(0.25, "in"),
-        plot.title = element_text(vjust = 1, hjust = 0.5))
-pt_dual_all_plot <- pt_df[which(pt_df$type == "Dual"),] %>%
-  ggplot(aes(x = eta_translated, y = theta_translated)) +
-  geom_bin_2d(binwidth = c(bin_w, bin_w)) +
-  geom_rect(xmin = eta_min, xmax = eta_max, ymin = theta_min, ymax = theta_max,
-            linewidth=0.4, linetype=3, colour="red", fill=NA) + # helical region
-  scale_fill_viridis(labels = comma, name = "Count") +
-  ggtitle("Dual-Donating Amines") +
-  xlab("\u03B7 (\ub0)") +
-  ylab("\u03B8 (\ub0)") +
-  coord_fixed(ratio = 1, xlim = c(0, 360), ylim = c(0, 360)) +
-  scale_x_continuous(breaks = seq(0, 360, 90)) +
-  scale_y_continuous(breaks = seq(0, 360, 90)) +
-  theme_classic(base_size = 10) +
-  theme(legend.key.width = unit(0.1, "in"), legend.key.height = unit(0.25, "in"),
-        plot.title = element_text(vjust = 1, hjust = 0.5))
-
-# Make and combine the graphical objects.
-pt_no_all_grob <- ggplotGrob(pt_no_all_plot)
-pt_single_all_grob <- ggplotGrob(pt_single_all_plot)
-pt_dual_all_grob <- ggplotGrob(pt_dual_all_plot)
-pt_2_plots <- rbind(pt_no_all_grob, pt_single_all_grob, pt_dual_all_grob)
-
 # Write the plots.
-ggsave(snakemake@output[["pt_1"]], plot = pt_1_plots, width = 6.5, height = 5.5, units = "in")
-ggsave(snakemake@output[["pt_2"]], plot = pt_2_plots, width = 3, height = 6.5, units = "in")
+ggsave(snakemake@output[["pt"]], plot = pt_plots, width = 6.5, height = 5.5, units = "in")
 
 # Write key data to a csv file.
 pt_acc_pairs_df <-
-  combined_region_df[c("region", "don_label", "acc_pair_combined_reformat", "n_resn_pair", "n_resn_pair_same")]
+  combined_location_df[c("location", "don_label", "acc_pair_combined_reformat", "n_resn_pair", "n_resn_pair_same")]
 write.csv(pt_acc_pairs_df, file = snakemake@output[["pt_acc_pairs"]], row.names = FALSE)
 
 #### CHI PLOTS ####

@@ -9,9 +9,29 @@ compiled.
 
 import sys
 import csv
+import numpy as np
 
 
 def parse_nrlist(nrlist_file, all_members=False):
+    # Count the number of IFEs and unique PDB IDs in the provided nrlist file.
+    pdb_id_list_count = []
+    with open(nrlist_file, mode='r') as read_file:
+        for line in csv.reader(read_file):
+            for class_member in line[1].split(','):
+                pdb_id_chars = []
+                for char in class_member.split('+')[0]:
+                    if char != '|':
+                        pdb_id_chars.append(char)
+                    else:
+                        break
+                # check if the PDB ID contains the expected number of characters
+                if len("".join(pdb_id_chars)) != 4:
+                    print(f"Error: At least one of the PDB IDs for a member of equivalence class {line[0]} does "
+                          f"not contain the expected number of characters.")
+                    sys.exit(1)
+                pdb_id_list_count.append("".join(pdb_id_chars))
+    print(f"The provided representative structure file contains {len(np.array(pdb_id_list_count))} IFEs and "
+          f"{len(np.unique(np.array(pdb_id_list_count)))} unique PDB IDs.")
     # Prepare a dictionary of the equivalence classes that includes the PDB ID, model info, and chain info for the
     # equivalence class members.
     eq_class_dict = {}

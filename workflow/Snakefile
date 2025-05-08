@@ -9,8 +9,7 @@ eq_class_members = scripts.parse_nrlist.parse_nrlist(config["rep_set_file"], con
 rule all:
     input:
         "results/plots/pairs.png",
-        "results/plots/pt_1.png",
-        "results/plots/pt_2.png",
+        "results/plots/pt.png",
         "results/plots/don_id.png",
         "results/plots/acc_pair_id.png",
         "results/tables/acc_pair_id.csv",
@@ -77,8 +76,7 @@ rule create_plots:
         combined = "results/combine_data/combined.csv"
     output:
         pairs = "results/plots/pairs.png",
-        pt_1 = "results/plots/pt_1.png",
-        pt_2 = "results/plots/pt_2.png",
+        pt = "results/plots/pt.png",
         don_id = "results/plots/don_id.png",
         acc_pair_id = "results/plots/acc_pair_id.png",
         acc_pair_id_csv = "results/tables/acc_pair_id.csv",
