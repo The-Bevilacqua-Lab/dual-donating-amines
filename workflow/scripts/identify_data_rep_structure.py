@@ -644,7 +644,11 @@ for i, ls in enumerate(dend['leaves_color_list']):
 dend["color_list"]= color_list_n #updated branch color list is assigned to the original dendrogram
 dend["leaves_color_list"]= leaves_color_list_n #updated leaves color list is assigned to the original dendrogram
 
-dend1 = dendrogram(Z, color_threshold= best_cutoff_sil, labels=D1.index, above_threshold_color='lightgray', leaf_rotation=0, orientation='left', leaf_font_size=5)
+leaf_lab= args[3]
+if leaf_lab== '0': #this means user does not want leaves labeling 
+    dend1 = dendrogram(Z, color_threshold= best_cutoff_sil, labels=D1.index, above_threshold_color='lightgray', leaf_rotation=0, orientation='left', leaf_font_size=5, no_labels=True)
+elif leaf_lab== '1': #this means user wants the leaves labeling
+    dend1 = dendrogram(Z, color_threshold= best_cutoff_sil, labels=D1.index, above_threshold_color='lightgray', leaf_rotation=0, orientation='left', leaf_font_size=5)
 
 #assigning branch color
 for i, dcoord in enumerate(dend['dcoord']):
