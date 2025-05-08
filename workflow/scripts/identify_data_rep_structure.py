@@ -421,7 +421,7 @@ def plot_validation_scores(cutoffs, sil_scores, ch_scores, db_scores):
     plt.yticks(rotation=0,fontsize=15)
     
     plt.tight_layout()
-    plt.savefig("val_score_vs_RMSD_cutoff_normalized.pdf", format="pdf", bbox_inches="tight", dpi=4000)
+    plt.savefig("val_score_vs_RMSD_cutoff_normalized.png", format="png", bbox_inches="tight", dpi=2000)
     plt.show()
 
 
@@ -702,7 +702,7 @@ elif val_mat=='2':
 elif val_mat=='3':
     plt.axvline(x=best_cutoff_db, color='green', linestyle='--', alpha= 0.8,  linewidth=2)
 
-plt.savefig("all_structure_dendrogram.pdf", format="pdf", bbox_inches="tight", dpi = 4000)
+plt.savefig("all_structure_dendrogram.png", format="png", bbox_inches="tight", dpi = 2000)
 #need to turn off the leaves labeling
 
 cl_dict={}
