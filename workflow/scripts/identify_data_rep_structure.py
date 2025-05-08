@@ -22,6 +22,7 @@ from math import floor
 from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bouldin_score
 from sklearn.manifold import MDS
 from optparse import OptionParser
+from matplotlib.ticker import FormatStrFormatter
 
 #################################### Functions ####################################
 
@@ -355,38 +356,74 @@ def compute_validation_scores(D1, Z, cutoff_range):
 
     return valid_cutoffs, silhouette_scores, calinski_scores, db_scores, validation_df
 
+#this function will normalize the validation scores
+def min_max_normalize(arr):
+    arr = np.array(arr, dtype=np.float64)
+    min_val = np.nanmin(arr)
+    max_val = np.nanmax(arr)
+    return (arr - min_val) / (max_val - min_val) if max_val > min_val else np.zeros_like(arr)
+
+#this function will plot different validation scores against the RMSD cut-off ranges
 def plot_validation_scores(cutoffs, sil_scores, ch_scores, db_scores):
     plt.figure(figsize=(12, 6))
+    plt.rcParams['font.family'] = 'Arial'
 
-    # Plotting each score as a line with markers
-    plt.plot(cutoffs, sil_scores, marker='o', linestyle='-', label='Silhouette Score', color='royalblue')
-    plt.plot(cutoffs, ch_scores, marker='^', linestyle='-', label='Calinski-Harabasz Index', color='darkgreen')
-    plt.plot(cutoffs, db_scores, marker='s', linestyle='-', label='Davies-Bouldin Index', color='darkorange')
+    # Normalize each score to [0, 1] range
+    sil_scores_norm = min_max_normalize(sil_scores)
+    ch_scores_norm = min_max_normalize(ch_scores)
+    db_scores_norm = min_max_normalize(db_scores)
 
-    # Highlight best Silhouette Score cutoff
+    # Plotting normalized scores
+    plt.plot(cutoffs, sil_scores_norm, marker='o', linestyle='-', label='Silhouette Score (normalized)', color='royalblue')
+    plt.plot(cutoffs, ch_scores_norm, marker='^', linestyle='-', label='Calinski-Harabasz Index (normalized)', color='darkgreen')
+    plt.plot(cutoffs, db_scores_norm, marker='s', linestyle='-', label='Davies-Bouldin Index (normalized)', color='darkorange')
+
+    # best cutoffs defined by different validation metrics
     best_cutoff_sil = cutoffs[np.nanargmax(sil_scores)]
-    plt.axvline(x=best_cutoff_sil, color='royalblue', linestyle='--', linewidth=2, alpha=0.8,
-                label=f'Best Silhouette Cutoff = {best_cutoff_sil:.2f} Å')
-    
-    # Highlight best Calinski-Harabasz Index cutoff
     best_cutoff_ch = cutoffs[np.nanargmax(ch_scores)]
-    plt.axvline(x=best_cutoff_ch, color='darkgreen', linestyle='--', linewidth=2, alpha=0.8,
-                label=f'Best Calinski-Harabasz Cutoff = {best_cutoff_ch:.2f} Å')
-    
-    # Highlight best Davies-Bouldin Index cutoff
-    best_cutoff_db = cutoffs[np.nanargmax(db_scores)]
-    plt.axvline(x=best_cutoff_db, color='darkorange', linestyle='--', linewidth=2, alpha=0.8,
-                label=f'Best Davies-Bouldin Index Cutoff = {best_cutoff_db:.2f} Å')
-    
+    best_cutoff_db = cutoffs[np.nanargmin(db_scores)]
 
-    # Axis labels and legend
-    plt.xlabel("RMSD Cut-off (Å)", fontsize=12)
-    plt.ylabel("Validation Score", fontsize=12)
-    plt.title("Clustering Validation Scores vs RMSD Cut-off", fontsize=14)
-    plt.legend()
-    plt.grid(True)
+    plt.axvline(x=best_cutoff_sil, color='royalblue', linestyle='-', linewidth=6, alpha=0.4,
+                label=f'Best Silhouette Cutoff = {best_cutoff_sil:.2f} Å')
+    plt.axvline(x=best_cutoff_ch, color='darkgreen', linestyle='--', linewidth=4, alpha=0.4,
+                label=f'Best Calinski-Harabasz Cutoff = {best_cutoff_ch:.2f} Å')
+    plt.axvline(x=best_cutoff_db, color='darkorange', linestyle='--', linewidth=2, alpha=0.4,
+                label=f'Best Davies-Bouldin Cutoff = {best_cutoff_db:.2f} Å')
+
+
+    #adding labels for axis
+    plt.xlabel("RMSD Cut-off (Å)", fontsize=18)
+    plt.ylabel("Normalized Validation Score", fontsize=18)
+    
+    #modifying the legend box
+    plt.legend(frameon= True) #add 'fontsize= n' if you want to change the fontsize 
+    
+    #turning on/off the grids in the plot
+    plt.grid(False)
+
+    ax = plt.gca()
+    
+    #modifying plot boarders
+    ax.spines.top.set_linewidth(1)
+    ax.spines.bottom.set_linewidth(1)
+    ax.spines.left.set_linewidth(1)
+    ax.spines.right.set_linewidth(1)
+    
+    #specifying decimal places for the axis tick labels
+    ax.xaxis.set_major_formatter(FormatStrFormatter('%.1f'))
+    ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
+    
+    #modifying axis tick length and thickness
+    ax.tick_params(axis='both', length=10, width= 1)
+    
+    #modifying axis tick labels
+    plt.xticks(rotation=0, fontsize=15)
+    plt.yticks(rotation=0,fontsize=15)
+    
     plt.tight_layout()
-    plt.savefig("val_score_vs_RMSD_cutoff.pdf", format="pdf", bbox_inches="tight", dpi = 4000)
+    plt.savefig("val_score_vs_RMSD_cutoff_normalized.pdf", format="pdf", bbox_inches="tight", dpi=4000)
+    plt.show()
+
 
 
 # functions to calculate teh representative structure for each cluster
