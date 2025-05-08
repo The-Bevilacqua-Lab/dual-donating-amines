@@ -422,7 +422,6 @@ def plot_validation_scores(cutoffs, sil_scores, ch_scores, db_scores, fstring):
     
     plt.tight_layout()
     plt.savefig(fstring+"_val_score_vs_RMSD_cutoff_normalized.png", format="png", bbox_inches="tight", dpi=2000)
-    plt.show()
 
 
 
