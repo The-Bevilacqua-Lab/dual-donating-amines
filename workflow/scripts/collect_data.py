@@ -3,10 +3,10 @@ This script reads information from an equivalence class member provided by the r
 PyMOL to save an mmCIF file of the original structure to a location specified in the Snakemake configuration file.
 Alternative conformations are removed, hydrogens are added, and the modified structure is saved to an mmCIF file
 specified by the Snakefile. The script collects data from the modified structure on potential hydrogen bonds involving
-amines of A's, C's, and G's and nucleobase atom b-factors in the equivalence class member RNA chains. Other data is
-also collected, such as the number of heavy atoms around each amine. It writes this data to a csv file specified by the
-Snakefile. If commit_hash is set to true in the Snakemake configuration file, the commit hash of the repo will also be
-written within a commented line to the csv file if no uncommitted changes have been made to the repo.
+amines of A's, C's, and G's in the equivalence class member RNA chains. Other data is also collected, such as the
+number of heavy atoms around each amine. It writes this data to a csv file specified by the Snakefile. If commit_hash
+is set to true in the Snakemake configuration file, the commit hash of the repo will also be written within a commented
+line to the csv file if no uncommitted changes have been made to the repo.
 """
 
 import sys
@@ -163,11 +163,11 @@ mem_rna_chains = " ".join(["chain " + chain for chain in chain_list])
 # Retrieve the structure that contains the equivalence class member RNA chains.
 cmd.fetch(pdb_id)
 
-# If the structure contains more than one model (or "state" in PyMOL), create a new PyMOL object of just that model. If
-# only a single model exists, change the name of the object to match the format of objects derived from structures that
-# have multiple models. Additionally, model numbers typically start at 1 and then increment upwards by 1 for each
-# additional model present. Depending on the situation, throw an error, make a note, and/or reset the model variable
-# when an unusual model numbering is detected.
+# If the structure contains more than one model (or "state" in PyMOL), create a new PyMOL object of just the indicated
+# model. If only a single model exists, change the name of the object to match the format of objects derived from
+# structures that have multiple models (e.g., 1ABC_state_1). Additionally, model numbers typically start at 1 and then
+# increment upwards by 1 for each additional model present. Depending on the situation, throw an error, make a note,
+# and/or reset the model variable when an unusual model numbering is detected.
 num_models = cmd.count_states(pdb_id)
 # Based on the number of models present, determine what the expected model numbers would be. This will match how PyMOL
 # assigns the states.
@@ -211,6 +211,7 @@ elif num_models == 1:
               f"representative structure is not 1, which does not match the PyMOL numbering. This model number will be "
               f"reset to 1.")
         model = "1"
+        object_name = f'{pdb_id}_state_{model}'
     cmd.set_name(pdb_id, object_name)
 else:
     error("Error: An issue occurred when working with the number of models (i.e., PyMOL states) present in the "
@@ -285,7 +286,8 @@ for donor in stored.donor_list:
               f"this data collection.")
 
 # Store the number of heavy atoms belonging to polymers near the donor of interest within a dictionary. Additionally,
-# store the average b-factor of the heavy atoms that make up the nucleobase containing the donors of interest.
+# store the average b-factor of the heavy atoms that make up the nucleobase containing the donors of interest. Lastly,
+# record the chi value of the parent residue.
 don_info_dict = {"don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "don_segi": [],
                  "don_alt": [], "count_1": [], "count_2": [], "b_factor": [], "chi": []}
 for donor in donor_list_filtered:
@@ -300,7 +302,7 @@ for donor in donor_list_filtered:
                 "stored.b_factors.append(b)")
     # Calculate the average of the b-factors.
     b_factor_avg = sum(stored.b_factors)/len(stored.b_factors)
-    # Obtain the chi dihedral for later anti/syn analysis.
+    # Obtain the chi dihedral.
     if donor[2] in ["A", "DA", "G", "DG"]:
         O4_prime = f"name O4' and resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]}"
         C1_prime = f"name C1' and resn {donor[2]} and resi \\{donor[3]} and chain {donor[4]}"
@@ -330,8 +332,8 @@ else:
 # Create a dataframe based on the info dictionary.
 don_info_df = pd.DataFrame(don_info_dict).astype("str")
 
-# Store a list of acceptors near the donors of interest within an atom pair dictionary. Also include two keys which have
-# values containing both residue and atom names for donor and acceptor atoms.
+# Store a list of acceptors near the donors of interest within an atom pair dictionary. Also include two keys (the last
+# two in the below dictionary) which have values containing both residue and atom names for donor and acceptor atoms.
 don_atom_pair_dict = {"don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "don_segi": [],
                       "don_alt": [], "acc_index": [], "acc_name": [], "acc_resn": [], "acc_resi": [], "acc_chain": [],
                       "acc_segi": [], "acc_alt": [], "don_resn_name": [], "acc_resn_name": []}
@@ -417,13 +419,13 @@ for idx, chain in enumerate(chain_list):
         na_torsion_df = pd.concat([na_torsion_df, additional_df])
 na_torsion_df['resi'] = na_torsion_df['resi'].astype('str')
 
-# Prepare a master dataframe containing heavy atom count, b-factor, H-bonding data, and other relevant information.
+# Prepare a master data frame containing heavy atom count, b-factor, H-bonding data, and other relevant information.
 master_df = don_info_df.merge(don_h_bonds_df, how='outer')
 master_df = master_df.merge(na_torsion_df, left_on=['don_resn', 'don_chain', 'don_resi'], right_on=['N', 'c', 'resi'],
                             how='left', suffixes=(None, '_y')).drop(columns=['N', 'c', 'resi', 'chi_y'])
 master_df.loc[:, ['model', 'PDB', 'eq_class_member']] = [model, pdb_id, eq_class_mem_id]
 
-# Write a csv containing the data stored in the master dataframe.
+# Write a csv containing the data stored in the master data frame.
 with open(snakemake.output.data, "w") as csv_file:
     writer = csv.writer(csv_file)
     if commit_hash:
