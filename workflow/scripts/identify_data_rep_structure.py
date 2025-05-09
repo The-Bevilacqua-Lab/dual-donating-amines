@@ -693,9 +693,9 @@ dend["leaves_color_list"]= leaves_color_list_n #updated leaves color list is ass
 
 leaf_lab= args[4]
 if leaf_lab== '0': #this means user does not want leaves labeling 
-    dend1 = dendrogram(Z, color_threshold= 0, labels=D1.index, above_threshold_color='lightgray', leaf_rotation=0, orientation='left', leaf_font_size=5, no_labels=True)
+    dend1 = dendrogram(Z, color_threshold= 0, labels=D1.index, above_threshold_color='white', leaf_rotation=0, orientation='left', leaf_font_size=5, no_labels=True)
 elif leaf_lab== '1': #this means user wants the leaves labeling
-    dend1 = dendrogram(Z, color_threshold= 0, labels=D1.index, above_threshold_color='lightgray', leaf_rotation=0, orientation='left', leaf_font_size=5)
+    dend1 = dendrogram(Z, color_threshold= 0, labels=D1.index, above_threshold_color='white', leaf_rotation=0, orientation='left', leaf_font_size=5)
 
 #assigning branch color
 for i, dcoord in enumerate(dend['dcoord']):
