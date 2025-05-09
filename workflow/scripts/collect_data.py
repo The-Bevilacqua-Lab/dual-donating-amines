@@ -219,10 +219,16 @@ else:
 
 # If present, remove atoms representing alternative conformations.
 if cmd.count_atoms("not alt ''") > 0:
-    cmd.save(disordered_mmcif_dir + object_name + "_with_disorder.cif")
-    remove_disordered_atoms.remove(disordered_mmcif_dir, object_name)
-    cmd.delete('all')
-    cmd.load(disordered_mmcif_dir + object_name + "_no_disorder.cif", object_name)
+    # If the structure without disorder already exists, load it in place of the current structure.
+    if os.path.isfile(disordered_mmcif_dir + object_name + "_no_disorder.cif"):
+        cmd.delete('all')
+        cmd.load(disordered_mmcif_dir + object_name + "_no_disorder.cif", object_name)
+    # If it does not exist, create a structure without disorder and then load it in place of the current structure.
+    else:
+        cmd.save(disordered_mmcif_dir + object_name + "_with_disorder.cif")
+        remove_disordered_atoms.remove(disordered_mmcif_dir, object_name)
+        cmd.delete('all')
+        cmd.load(disordered_mmcif_dir + object_name + "_no_disorder.cif", object_name)
 
 # Remove any hydrogens that loaded with the structure.
 cmd.remove('elem H')
