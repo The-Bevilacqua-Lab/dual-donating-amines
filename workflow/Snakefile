@@ -24,6 +24,8 @@ rule all:
         "results/plots/full_plots.png",
         "results/plots/partial_plots_combined.png",
         "results/tables/pt_acc_pairs.csv",
+        "results/tables/location_1_frag_info.csv",
+        "results/tables/location_2_frag_info.csv",
         "results/acc_pair_examples/acc_pair_5A.csv",
         "results/acc_pair_examples/acc_pair_5B_1.csv",
         "results/acc_pair_examples/acc_pair_5B_2.csv",
@@ -97,6 +99,21 @@ rule create_plots:
         "envs/general.yaml"
     script:
         "scripts/create_plots.R"
+
+rule pt_loc_info:
+    input:
+        location_1_residues = "results/tables/location_1_residues.csv",
+        location_2_residues= "results/tables/location_2_residues.csv"
+    output:
+        location_1_frag_info = "results/tables/location_1_frag_info.csv",
+        location_2_frag_info = "results/tables/location_2_frag_info.csv"
+    log:
+        stdout = "results/logs/pt_loc_info/output.stdout",
+        stderr = "results/logs/pt_loc_info/error.stderr"
+    conda:
+        "envs/general.yaml"
+    script:
+        "scripts/pt_loc_info.py"
 
 rule list_examples:
     input:
