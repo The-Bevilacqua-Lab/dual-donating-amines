@@ -645,12 +645,18 @@ best_cutoff_db = round(cutoffs[np.nanargmax(db_scores)], 2)
 # generating dendrogram with the RMSD cut-off best by the Slihouette score (default) or other matric defined by the user
 plt.figure()
 val_mat= args[3]
+leaf_lab= args[4]
+
+
 if val_mat in ['0', '1']:
-    dend = dendrogram(Z, color_threshold= best_cutoff_sil, labels=D1.index, above_threshold_color='lightgray', leaf_rotation=0, orientation='left', leaf_font_size=5, no_plot= True)
+    dend = dendrogram(Z, color_threshold= best_cutoff_sil, labels=D1.index, above_threshold_color='lightgray', leaf_rotation=0, orientation='left', leaf_font_size=5, no_plot=True)
 elif val_mat == '2':
-    dend = dendrogram(Z, color_threshold= best_cutoff_ch, labels=D1.index, above_threshold_color='lightgray', leaf_rotation=0, orientation='left', leaf_font_size=5, no_plot= True)
+    dend = dendrogram(Z, color_threshold= best_cutoff_ch, labels=D1.index, above_threshold_color='lightgray', leaf_rotation=0, orientation='left', leaf_font_size=5, no_plot=True)
 elif val_mat == '3':
-    dend = dendrogram(Z, color_threshold= best_cutoff_db, labels=D1.index, above_threshold_color='lightgray', leaf_rotation=0, orientation='left', leaf_font_size=5, no_plot= True)
+    dend = dendrogram(Z, color_threshold= best_cutoff_db, labels=D1.index, above_threshold_color='lightgray', leaf_rotation=0, orientation='left', leaf_font_size=5, no_plot=True)
+
+##for line in plt.gca().get_lines():
+##    line.set_linewidth(3)
 
 color_list_counter=  dict(Counter(dend['color_list']))
 lcolor_list_counter=  dict(Counter(dend['leaves_color_list']))
@@ -669,12 +675,16 @@ leaves_color_list_n= [] #updated color list for the branch leaves
 for i, cls in enumerate(dend['color_list']):
     if cls in small_clusters:
         color_list_n.append('lightgray')
+    elif cls =='lightgray':
+        color_list_n.append('lightgray')
     else:
         color_list_n.append(cls)
 
 for i, ls in enumerate(dend['leaves_color_list']):
     if ls in small_clusters:
       leaves_color_list_n.append('lightgray')
+    elif ls =='lightgray':
+        leaves_color_list_n.append('lightgray')
     else:
         leaves_color_list_n.append(ls)
 
@@ -683,9 +693,9 @@ dend["leaves_color_list"]= leaves_color_list_n #updated leaves color list is ass
 
 leaf_lab= args[4]
 if leaf_lab== '0': #this means user does not want leaves labeling 
-    dend1 = dendrogram(Z, color_threshold= best_cutoff_sil, labels=D1.index, above_threshold_color='lightgray', leaf_rotation=0, orientation='left', leaf_font_size=5, no_labels=True)
+    dend1 = dendrogram(Z, color_threshold= 0, labels=D1.index, above_threshold_color='lightgray', leaf_rotation=0, orientation='left', leaf_font_size=5, no_labels=True)
 elif leaf_lab== '1': #this means user wants the leaves labeling
-    dend1 = dendrogram(Z, color_threshold= best_cutoff_sil, labels=D1.index, above_threshold_color='lightgray', leaf_rotation=0, orientation='left', leaf_font_size=5)
+    dend1 = dendrogram(Z, color_threshold= 0, labels=D1.index, above_threshold_color='lightgray', leaf_rotation=0, orientation='left', leaf_font_size=5)
 
 #assigning branch color
 for i, dcoord in enumerate(dend['dcoord']):
@@ -697,7 +707,7 @@ for leaf, leaf_color in zip(plt.gca().get_yticklabels(), dend["leaves_color_list
 
 #modifying the branch thickness in the dendrogram
 for line in plt.gca().get_lines():
-    line.set_linewidth(1) 
+    line.set_linewidth(0.5) 
 
 if val_mat in ['0', '1']:
     plt.axvline(x=best_cutoff_sil, color='green', linestyle='--', alpha= 0.8,  linewidth=2)
@@ -786,6 +796,7 @@ max_key = max(cl_dict, key=lambda k: len(cl_dict[k]))
 # identifying data representative structure which is the representative structure for the major cluster
 # major cluster is the cluster with the highest number of members
 DF1['rep_data'] = ((DF1['cluster'] == max_key) & (DF1['rep_cls'] == 1)).astype(int)
+DF1.replace('*', '', inplace=True)
 DF1.to_csv(FSTRING+'_alignment_n_clustering_results.csv', index= False)
 
 #  storing the data representative structure to the result_path
