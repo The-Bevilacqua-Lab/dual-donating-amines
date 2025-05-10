@@ -20,14 +20,13 @@ sys.stdout = stdout_file
 sys.stderr = stderr_file
 
 # The following block gathers residue information for location 1.
-location_1_df = pd.read_csv(snakemake.config["location_1_residues"], keep_default_na=False, na_values="NaN", dtype="str")
+location_1_df = pd.read_csv(snakemake.input["location_1_residues"], keep_default_na=False, na_values="NaN", dtype="str")
 location_1_frag_info = []
 for row in location_1_df.itertuples():
 
     # Create a Biopython structure object.
     parser = MMCIFParser(QUIET=True)
-    # pdb_file = f'{path.join(getcwd(), "../../", snakemake.config["original_mmcif_dir"])}{row.PDB.lower()}.cif'
-    pdb_file = f'{path.join(getcwd(), "mmCIF_files/")}{row.PDB.lower()}.cif'
+    pdb_file = f'{snakemake.config["original_mmcif_dir"]}{row.PDB.lower()}.cif'
     structure = parser.get_structure(row.PDB, pdb_file)
 
     # Set variables pertaining to the dual donating A(N6).
@@ -118,17 +117,16 @@ location_1_frag_info_df = pd.DataFrame(location_1_frag_info, columns =
                                        "chain_B",
                                        "resi_B_1", "resi_B_2", "resi_B_3", "resi_B_4", "resi_B_5",
                                        "icode_B_1", "icode_B_2", "icode_B_3", "icode_B_4", "icode_B_5"])
-location_1_frag_info_df.to_csv(snakemake.config["location_1_frag_info"], index=False, na_rep='NaN')
+location_1_frag_info_df.to_csv(snakemake.output["location_1_frag_info"], index=False, na_rep='NaN')
 
 # The following block gathers residue information for location 2.
-location_2_df = pd.read_csv(snakemake.config["location_2_residues"], keep_default_na=False, na_values="NaN", dtype="str")
+location_2_df = pd.read_csv(snakemake.input["location_2_residues"], keep_default_na=False, na_values="NaN", dtype="str")
 location_2_frag_info = []
 for row in location_2_df.itertuples():
 
     # Create a Biopython structure object.
     parser = MMCIFParser(QUIET=True)
-    # pdb_file = f'{path.join(getcwd(), "../../", snakemake.config["original_mmcif_dir"])}{row.PDB.lower()}.cif'
-    pdb_file = f'{path.join(getcwd(), "mmCIF_files/")}{row.PDB.lower()}.cif'
+    pdb_file = f'{snakemake.config["original_mmcif_dir"]}{row.PDB.lower()}.cif'
     structure = parser.get_structure(row.PDB, pdb_file)
 
     # Set variables pertaining to the dual donating G(N2).
@@ -219,7 +217,7 @@ location_2_frag_info_df = pd.DataFrame(location_2_frag_info, columns =
                                         "chain_B",
                                         "resi_B_1", "resi_B_2", "resi_B_3", "resi_B_4", "resi_B_5",
                                         "icode_B_1", "icode_B_2", "icode_B_3", "icode_B_4", "icode_B_5"])
-location_2_frag_info_df.to_csv(snakemake.config["location_2_frag_info"], index=False, na_rep='NaN')
+location_2_frag_info_df.to_csv(snakemake.output["location_2_frag_info"], index=False, na_rep='NaN')
 
 # Close files and reset stdout and stderr.
 stdout_file.close()
