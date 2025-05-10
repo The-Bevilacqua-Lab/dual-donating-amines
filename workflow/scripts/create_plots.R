@@ -362,7 +362,7 @@ pair_1_df <- pair_1_df %>% filter(eta_translated >= 43.2 & eta_translated < 72 &
 pair_1_top_df <- pair_1_df %>% filter(don_resn == "A" & acc_pair_combined == "A(N7), N(NPO)")
 pair_1_top_df <- pair_1_top_df[c("PDB", "model", "don_chain", "don_resi", "acc_pair_1_chain", "acc_pair_1_resi",
                                  "acc_pair_1_name", "acc_pair_2_chain", "acc_pair_2_resi", "acc_pair_2_name")]
-write.csv(pair_1_top_df, snakemake@input[["location_1_residues"]], quote = FALSE, na = "NaN", row.names = FALSE)
+write.csv(pair_1_top_df, snakemake@output[["location_1_residues"]], quote = FALSE, na = "NaN", row.names = FALSE)
 
 # Create a column that contains the donor atom name along with the donor residue name.
 pair_1_df <- pair_1_df %>% mutate(don_label = paste(don_resn, "(", don_name, ")", sep = ""))
@@ -413,7 +413,7 @@ pair_2_df <- pair_2_df %>% filter(eta_translated >= 295.2 & eta_translated < 324
 pair_2_top_df <- pair_2_df %>% filter(don_resn == "G" & acc_pair_combined %in% c("N(NPO), U(O4)", "N(O5'), U(O4)"))
 pair_2_top_df <- pair_2_top_df[c("PDB", "model", "don_chain", "don_resi", "acc_pair_1_chain", "acc_pair_1_resi",
                                  "acc_pair_1_name", "acc_pair_2_chain", "acc_pair_2_resi", "acc_pair_2_name")]
-write.csv(pair_2_top_df, snakemake@input[["location_2_residues"]], quote = FALSE, na = "NaN", row.names = FALSE)
+write.csv(pair_2_top_df, snakemake@output[["location_2_residues"]], quote = FALSE, na = "NaN", row.names = FALSE)
 
 # Create a column that contains the donor atom name along with the donor residue name.
 pair_2_df <- pair_2_df %>% mutate(don_label = paste(don_resn, "(", don_name, ")", sep = ""))
