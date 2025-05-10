@@ -6,6 +6,9 @@ configfile: "config/config.yaml"
 # equivalence class members.
 eq_class_members = scripts.parse_nrlist.parse_nrlist(config["rep_set_file"], config["all_members"])
 
+# Define the pseudo-torsion locations for clustering.
+pt_grps = ['location_1', 'location_2']
+
 rule all:
     input:
         "results/plots/pairs.png",
@@ -36,7 +39,12 @@ rule all:
         "results/acc_pair_examples/acc_pair_5E.csv",
         "results/acc_pair_examples/acc_pair_5F.csv",
         "results/acc_pair_examples/acc_pair_S3A.csv",
-        "results/acc_pair_examples/acc_pair_S3B.csv"
+        "results/acc_pair_examples/acc_pair_S3B.csv",
+        expand("results/alignment_clustering/{pt_grps}_val_score_vs_RMSD_cutoff_normalized.png", pt_grps=pt_grps),
+        expand("results/alignment_clustering/{pt_grps}_val_score_vs_RMSD_cutoff.csv", pt_grps=pt_grps),
+        expand("results/alignment_clustering/{pt_grps}_all_against_all_RMSD.csv", pt_grps=pt_grps),
+        expand("results/alignment_clustering/{pt_grps}_all_structure_dendrogram.png", pt_grps=pt_grps),
+        expand("results/alignment_clustering/{pt_grps}_alignment_n_clustering_results.csv", pt_grps=pt_grps)
 
 rule collect_data:
     output:
@@ -134,3 +142,20 @@ rule list_examples:
         "envs/general.yaml"
     script:
         "scripts/acc_pair_examples.R"
+
+rule id_rep_struct:
+    input:
+        frag_info = "results/tables/{pt_grps}_frag_info.csv"
+    output:
+        val_score_plt = "results/alignment_clustering/{pt_grps}_val_score_vs_RMSD_cutoff_normalized.png",
+        val_score_csv = "results/alignment_clustering/{pt_grps}_val_score_vs_RMSD_cutoff.csv",
+        rmsd = "results/alignment_clustering/{pt_grps}_all_against_all_RMSD.csv",
+        dendrogram = "results/alignment_clustering/{pt_grps}_all_structure_dendrogram.png",
+        align_clust_results = "results/alignment_clustering/{pt_grps}_alignment_n_clustering_results.csv"
+    log:
+        stdout = "results/logs/id_rep_struct/output.stdout",
+        stderr = "results/logs/id_rep_struct/error.stderr"
+    conda:
+        "envs/general.yaml"
+    script:
+        "scripts/id_rep_struct.py"

@@ -23,6 +23,7 @@ from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bo
 from sklearn.manifold import MDS
 from optparse import OptionParser
 from matplotlib.ticker import FormatStrFormatter
+import time
 
 #################################### Functions ####################################
 
@@ -158,7 +159,7 @@ def clip(p, r, h, F):
                     p3[col] = ""  # Fill missing columns with empty values
 
             # Open the output PDB file for writing
-            with open(F, "w") as pdb_file:
+            with open(clipped_structures_dir + F, "w") as pdb_file:
                 atom_serial_number = 1
                 common_chain_ID= 'A' #temporary solution
                 #main problem is what should be the solution if residues are from multiple chains?
@@ -208,7 +209,7 @@ def clip(p, r, h, F):
 
             print (p5.shape)
 
-            p5.to_csv(F, header= False, sep=' ', index= False)
+            p5.to_csv(clipped_structures_dir + F, header= False, sep=' ', index= False)
 
 #functions for the alignment and distance calculation 
 
@@ -267,13 +268,11 @@ def align(str1, str2):
     return rmsd
 
 #this function will calculate all-against-all RMSD between structures in a directory
-def align_all_against_all(dr):
-    home= os.getcwd()
-    os.chdir(dr)
+def align_all_against_all(clip_dir):
     clmns=['#']
     filenames=[]
     RMSDs={}
-    for filename in os.listdir('.'):
+    for filename in os.listdir(clip_dir):
         if filename.endswith('.cif'):
             clmns.append(filename)
             filenames.append(filename)
@@ -308,21 +307,11 @@ def align_all_against_all(dr):
             print (align(k1, k2))
             print (align(k2, k1))
 
-    
-    os.chdir(home)
+
     return t1
 
 
 # functions to calculate and visualize clustering validation scores 
-
-import numpy as np
-import pandas as pd
-from scipy.spatial.distance import squareform
-from scipy.cluster.hierarchy import linkage, fcluster
-from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bouldin_score
-from sklearn.manifold import MDS
-import matplotlib.pyplot as plt
-
 def compute_validation_scores(D1, Z, cutoff_range):
     rmsd_matrix = D1.values
     mds = MDS(n_components=2, dissimilarity='precomputed', random_state=0)
@@ -421,12 +410,11 @@ def plot_validation_scores(cutoffs, sil_scores, ch_scores, db_scores, fstring):
     plt.yticks(rotation=0,fontsize=15)
     
     plt.tight_layout()
-    plt.savefig(fstring+"_val_score_vs_RMSD_cutoff_normalized.png", format="png", bbox_inches="tight", dpi=2000)
+    plt.savefig(snakemake.output['val_score_plt'], format="png", bbox_inches="tight", dpi=2000)
 
 
 
 # functions to calculate teh representative structure for each cluster
- 
 def load_structures_from_directory(directory, f_list):
     parser = MMCIFParser(QUIET=True)
     structures = []
@@ -541,27 +529,21 @@ def align_avg(avg, strs):
 #################################### Analysis steps ####################################
 
 # step 1: import data
-optparser = OptionParser()
-(options, args) = optparser.parse_args()
-csvfile = args[0]
-FSTRING= args[1]
+csvfile = snakemake.input["frag_info"]
+FSTRING = snakemake.input["frag_info"].split("/")[-1][:-14]
 DF1= pd.read_csv(csvfile) #this will be referred as the 'MAIN DATAFRAME'
 DF1['str_ID'] = FSTRING+ '_'+ DF1[['pdb', 'chain_A', 'resi_A_1']].astype(str).agg('_'.join, axis=1)
 
-
-# step 2: generate structures with clipped motifs
-usr_dir= args[2]
-
-work_path= os.path.join(usr_dir, FSTRING+'_identifying_data_rep_structures')
-os.makedirs(work_path, exist_ok=True)
-
-clip_path= os.path.join(work_path, FSTRING+'_all_clipped_structures') #all clipped structures will be stored here
-os.makedirs(clip_path, exist_ok=True)
-
-result_path= os.path.join(work_path, FSTRING+'_result_rep_structures') #result of alignment and clustering will be stored here
-os.makedirs(result_path, exist_ok=True)
-
-os.chdir(clip_path)
+# Check whether the folder exists to write the clipped structures.
+# If it does not exist, create the folder.
+clipped_structures_dir = snakemake.config['clipped_structures_dir'][:-1] + "_" + FSTRING + "/"
+if not os.path.isdir(clipped_structures_dir):
+    try:
+        os.mkdir(clipped_structures_dir)
+    except FileExistsError:
+        time.sleep(5.0)
+        if not os.path.isdir(clipped_structures_dir):
+            os.mkdir(clipped_structures_dir)
 
 suffix_groups = {}
 DF1.replace(" ","*", inplace=True)
@@ -599,10 +581,9 @@ for ind, pid in enumerate(DF1['pdb']):
     clip(pid, list_residue, 'N', F)
 
 # step 3: align and calculate pair-wise distance
-os.chdir(result_path)
 
-rmsd_df= align_all_against_all(clip_path)
-rmsd_df.to_csv(FSTRING+'_all_against_all_RMSD.csv', index= False)
+rmsd_df= align_all_against_all(clipped_structures_dir)
+rmsd_df.to_csv(snakemake.output['rmsd'], index= False)
 
 #step 4: clustering
 cl_names= [j.rstrip('.cif').replace('-', '_') for i,j in enumerate(list(rmsd_df.columns)[1:])]
@@ -634,7 +615,7 @@ cutoffs, sil_scores, ch_scores, db_scores, validation_df = compute_validation_sc
 
 # visualizing validation matrics at different RMSD cut-off
 plot_validation_scores(cutoffs, sil_scores, ch_scores, db_scores, FSTRING)
-validation_df.to_csv(FSTRING+'_val_score_vs_RMSD_cutoff.csv', index= False)
+validation_df.to_csv(snakemake.output['val_score_csv'], index= False)
 
 # extracting best RMSD cut-off defined by different validation matrics
 best_cutoff_sil = round(cutoffs[np.nanargmax(sil_scores)], 2)
@@ -644,15 +625,14 @@ best_cutoff_db = round(cutoffs[np.nanargmax(db_scores)], 2)
 
 # generating dendrogram with the RMSD cut-off best by the Slihouette score (default) or other matric defined by the user
 plt.figure()
-val_mat= args[3]
-leaf_lab= args[4]
+val_mat= snakemake.config['val_score']
 
 
-if val_mat in ['0', '1']:
+if val_mat == 'sil':
     dend = dendrogram(Z, color_threshold= best_cutoff_sil, labels=D1.index, above_threshold_color='lightgray', leaf_rotation=0, orientation='left', leaf_font_size=5, no_plot=True)
-elif val_mat == '2':
+elif val_mat == 'ch':
     dend = dendrogram(Z, color_threshold= best_cutoff_ch, labels=D1.index, above_threshold_color='lightgray', leaf_rotation=0, orientation='left', leaf_font_size=5, no_plot=True)
-elif val_mat == '3':
+elif val_mat == 'db':
     dend = dendrogram(Z, color_threshold= best_cutoff_db, labels=D1.index, above_threshold_color='lightgray', leaf_rotation=0, orientation='left', leaf_font_size=5, no_plot=True)
 
 ##for line in plt.gca().get_lines():
@@ -691,10 +671,10 @@ for i, ls in enumerate(dend['leaves_color_list']):
 dend["color_list"]= color_list_n #updated branch color list is assigned to the original dendrogram
 dend["leaves_color_list"]= leaves_color_list_n #updated leaves color list is assigned to the original dendrogram
 
-leaf_lab= args[4]
-if leaf_lab== '0': #this means user does not want leaves labeling 
+leaf_lab= snakemake.config['leaf_labels']
+if not leaf_lab: #this means user does not want leaves labeling
     dend1 = dendrogram(Z, color_threshold= 0, labels=D1.index, above_threshold_color='white', leaf_rotation=0, orientation='left', leaf_font_size=5, no_labels=True)
-elif leaf_lab== '1': #this means user wants the leaves labeling
+else: #this means user wants the leaves labeling
     dend1 = dendrogram(Z, color_threshold= 0, labels=D1.index, above_threshold_color='white', leaf_rotation=0, orientation='left', leaf_font_size=5)
 
 #assigning branch color
@@ -709,14 +689,14 @@ for leaf, leaf_color in zip(plt.gca().get_yticklabels(), dend["leaves_color_list
 for line in plt.gca().get_lines():
     line.set_linewidth(0.5) 
 
-if val_mat in ['0', '1']:
+if val_mat == 'sil':
     plt.axvline(x=best_cutoff_sil, color='green', linestyle='--', alpha= 0.8,  linewidth=2)
-elif val_mat=='2':
+elif val_mat=='ch':
     plt.axvline(x=best_cutoff_ch, color='green', linestyle='--', alpha= 0.8,  linewidth=2)
-elif val_mat=='3':
+elif val_mat=='db':
     plt.axvline(x=best_cutoff_db, color='green', linestyle='--', alpha= 0.8,  linewidth=2)
 
-plt.savefig(FSTRING+"_all_structure_dendrogram.png", format="png", bbox_inches="tight", dpi = 2000)
+plt.savefig(snakemake.output['dendrogram'], format="png", bbox_inches="tight", dpi = 2000)
 #need to turn off the leaves labeling
 
 cl_dict={}
@@ -751,7 +731,7 @@ for cls in cl_dict:
     print (str_list)
     
     print ('STARTING STEP 1---------------------------------------------->>>>>>>>>>>>>')
-    structures1= load_structures_from_directory(clip_path, str_list) #loading required structures
+    structures1= load_structures_from_directory(clipped_structures_dir, str_list) #loading required structures
 
     print ('STARTING STEP 2---------------------------------------------->>>>>>>>>>>>>')
     structures2= align_structures(structures1) #aligning structures with the reference structure
@@ -797,12 +777,12 @@ max_key = max(cl_dict, key=lambda k: len(cl_dict[k]))
 # major cluster is the cluster with the highest number of members
 DF1['rep_data'] = ((DF1['cluster'] == max_key) & (DF1['rep_cls'] == 1)).astype(int)
 DF1.replace('*', '', inplace=True)
-DF1.to_csv(FSTRING+'_alignment_n_clustering_results.csv', index= False)
+DF1.to_csv(snakemake.output['align_clust_results'], index= False)
 
 #  storing the data representative structure to the result_path
 data_rep_str= DF1[DF1['rep_data']==1]['str_ID'].to_list()[0]
 
-src = clip_path+ '/'+ data_rep_str+'.cif'
-dst = result_path+ '/'+ data_rep_str+ '.cif'
+src = clipped_structures_dir + data_rep_str+'.cif'
+dst = "results/alignment_clustering/" + data_rep_str+ '.cif'
 
 shutil.copy(src, dst)

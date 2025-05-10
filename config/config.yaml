@@ -1,11 +1,13 @@
 # Provide the representative set file name.
 rep_set_file: "resources/nrlist_<id>.csv"
 
-# Where should PyMOL save fetched mmCIF files, modified mmCIF files, and chain PDB files?
+# What are the paths of the directories that will hold structures?
 original_mmcif_dir: "resources/original_mmCIF_files/"
 disordered_mmcif_dir: "results/disordered_mmcif_files/"
 modified_mmcif_dir: "results/modified_mmcif_files/"
 chain_pdb_dir: "results/chain_pdb_files/"
+clipped_structures_dir: "results/clipped_structures/"
+alignment_clustering_dir: "results/alignment_clustering/"
 
 # What are the search radii?
 search_dist: 4.1
@@ -21,6 +23,12 @@ dual_h_donors:
   - 'A.N6'
   - 'C.N4'
   - 'G.N2'
+
+# For the clustering, what validation score will be used (sil, ch, or db)?
+val_score: "sil"
+
+# For the clustering, should leaf labels be included with the dendrograms?
+leaf_labels: false
 
 # Should the folder with the mmCIF files fetched from the PDB be removed to save space?
 remove_original_mmcif: true
