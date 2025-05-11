@@ -15,6 +15,7 @@ rule all:
         "results/plots/pt.png",
         "results/tables/location_1_residues.csv",
         "results/tables/location_2_residues.csv",
+        "results/tables/pt_acc_pairs.csv",
         "results/plots/don_id.png",
         "results/plots/acc_pair_id.png",
         "results/tables/acc_pair_id.csv",
@@ -24,9 +25,8 @@ rule all:
         "results/plots/density_all.png",
         "results/plots/density_filtered.png",
         "results/tables/density_stats.csv",
-        "results/plots/full_plots.png",
-        "results/plots/partial_plots_combined.png",
-        "results/tables/pt_acc_pairs.csv",
+        "results/plots/chi_full.png",
+        "results/plots/chi_partial_combined.png",
         "results/tables/location_1_frag_info.csv",
         "results/tables/location_2_frag_info.csv",
         "results/acc_pair_examples/acc_pair_5A.csv",
@@ -91,6 +91,7 @@ rule create_plots:
         pt = "results/plots/pt.png",
         location_1_residues = "results/tables/location_1_residues.csv",
         location_2_residues= "results/tables/location_2_residues.csv",
+        pt_acc_pairs = "results/tables/pt_acc_pairs.csv",
         don_id = "results/plots/don_id.png",
         acc_pair_id = "results/plots/acc_pair_id.png",
         acc_pair_id_csv = "results/tables/acc_pair_id.csv",
@@ -100,9 +101,8 @@ rule create_plots:
         density_all = "results/plots/density_all.png",
         density_filtered = "results/plots/density_filtered.png",
         density_stats = "results/tables/density_stats.csv",
-        full_plots = "results/plots/full_plots.png",
-        partial_plots_combined = "results/plots/partial_plots_combined.png",
-        pt_acc_pairs = "results/tables/pt_acc_pairs.csv"
+        chi_full = "results/plots/chi_full.png",
+        chi_partial_combined = "results/plots/chi_partial_combined.png"
     conda:
         "envs/general.yaml"
     script:

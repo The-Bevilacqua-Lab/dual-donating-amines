@@ -145,11 +145,11 @@ acc_pair_id_plot <- acc_pair_id_df %>%
                    width = 0.8, color = "black", fill = "grey", pattern = "stripe", pattern_fill = "black",
                    pattern_size = 0, pattern_angle = 45, pattern_spacing = 0.02) +
   geom_text(aes(y=n_resn_pair+max(n_resn_pair)*0.05, label=fraction_label),
-            size = 10, size.unit = "pt", hjust = 0, vjust = 0, angle = 45) +
+            size = 8, size.unit = "pt", hjust = 0, vjust = 0, angle = 45) +
   xlab("Pair of Acceptor Atoms") +
   ylab("Count") +
   scale_x_reordered(limits = function(x) rev(x)[1:10]) +
-  scale_y_continuous(limits = c(0, 2100)) +
+  scale_y_continuous(limits = c(0, 2500)) +
   theme_bw(base_size = 10) +
   theme(aspect.ratio = 1, axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
         panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank()) +
@@ -191,6 +191,7 @@ sasa_box_plot <- sasa_df %>% ggplot(aes(x=type, y=SASA)) +
   geom_text(data = sasa_summary, aes(x=type, y=-12, label = paste("n = ", prettyNum(n, big.mark = ","), sep = "")),
             size = 8, size.unit = "pt", hjust = 0.5, vjust = 0.5, angle = 60) +
   coord_fixed(ratio = ratio, xlim = c(1, 3), ylim = ylim) +
+  scale_y_continuous(breaks = seq(0, 60, 20)) +
   xlab("Type of Donating Amine") +
   ylab("SASA (\uc5\ub2)") +
   theme_bw(base_size = 10) +
@@ -279,7 +280,7 @@ density_all_plot <- density_all_pivot_df %>% ggplot(aes(x=type, y=density_values
   geom_boxplot(width = 0.2, alpha = 0, show.legend = FALSE) +
   geom_text(data = density_summary_all,
             aes(x=type, y=-45, label = sample_label_all),
-            size = 8, size.unit = "pt", hjust = 0.5, vjust = 0.5, angle = 60) +
+            size = 8, size.unit = "pt", hjust = 0.5, vjust = 0.5, angle = 65) +
   coord_fixed(ratio = ratio, xlim = c(1, 3), ylim = ylim) +
   scale_fill_manual(values = c(color_palette[3], color_palette[6])) +
   xlab("Type of Donating Amine") +
@@ -321,7 +322,7 @@ density_filtered_plot <- density_filtered_pivot_df %>% ggplot(aes(x=type, y=dens
   geom_boxplot(width = 0.2, alpha = 0, show.legend = FALSE) +
   geom_text(data = density_summary_filtered,
             aes(x=type, y=-4, label = sample_label_filtered),
-            size = 8, size.unit = "pt", hjust = 0.5, vjust = 0.5, angle = 60) +
+            size = 8, size.unit = "pt", hjust = 0.5, vjust = 0.5, angle = 65) +
   coord_fixed(ratio = ratio, xlim = c(1, 3), ylim = ylim) +
   scale_fill_manual(values = c(color_palette[3], color_palette[6])) +
   xlab("Type of Donating Amine") +
@@ -459,12 +460,12 @@ combined_location_plot <- combined_location_df %>%
                    width = 0.8, color = "black", pattern = "stripe", pattern_fill = "black",
                    pattern_size = 0, pattern_angle = 45, pattern_spacing = 0.02, show.legend = FALSE) +
   geom_text(aes(y=n_resn_pair+max(n_resn_pair)*0.025, label=fraction_label),
-            size = 8, size.unit = "pt", hjust = 0, vjust = 0, angle = 45) +
+            size = 8, size.unit = "pt", hjust = 0, vjust = 0, angle = 40) +
   xlab("Pair of Acceptor Atoms") +
   ylab("Count") +
   scale_fill_manual(values = c(color_palette[3], color_palette[8], color_palette[4]), name = "Donor") +
   scale_x_reordered(limits = function(x) rev(x)[1:5]) +
-  scale_y_continuous(limits = c(0, 200)) +
+  scale_y_continuous(limits = c(0, 250)) +
   theme_bw(base_size = 10) +
   theme(aspect.ratio = 1.5) +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
@@ -986,8 +987,8 @@ partial_plots_combined <- plot_grid(grob_combined, partial_plots, ncol = 1, rel_
   theme(plot.background = element_rect(fill = "white", color = NA))
 
 # Create the plots.
-ggsave(snakemake@output[["full_plots"]], plot = full_plots, width = 6.5, height = 7, units = "in", scale = 1)
-ggsave(snakemake@output[["partial_plots_combined"]],
+ggsave(snakemake@output[["chi_full"]], plot = full_plots, width = 6.5, height = 7, units = "in", scale = 1)
+ggsave(snakemake@output[["chi_partial_combined"]],
        plot = partial_plots_combined, width = 4, height = 7.6, units = "in", scale = 1)
 
 # Remove the default Rplots.pdf generated.
