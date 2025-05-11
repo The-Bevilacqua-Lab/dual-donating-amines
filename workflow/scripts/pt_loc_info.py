@@ -6,7 +6,7 @@ structures which can then be analyzed using clustering.
 """
 
 import sys
-from os import getcwd, path
+import subprocess
 import pandas as pd
 from Bio.PDB.MMCIFParser import MMCIFParser
 
@@ -218,6 +218,14 @@ location_2_frag_info_df = pd.DataFrame(location_2_frag_info, columns =
                                         "resi_B_1", "resi_B_2", "resi_B_3", "resi_B_4", "resi_B_5",
                                         "icode_B_1", "icode_B_2", "icode_B_3", "icode_B_4", "icode_B_5"])
 location_2_frag_info_df.to_csv(snakemake.output["location_2_frag_info"], index=False, na_rep='NaN')
+
+# Remove the original mmCIF folder if specified.
+if snakemake.config["remove_original_mmcif"]:
+    subprocess.run(["rm", "-r", snakemake.config["original_mmcif_dir"]])
+
+# Remove the disordered mmCIF folder if specified.
+if snakemake.config["remove_disordered_mmcif"]:
+    subprocess.run(["rm", "-r", snakemake.config["disordered_mmcif_dir"]])
 
 # Close files and reset stdout and stderr.
 stdout_file.close()
