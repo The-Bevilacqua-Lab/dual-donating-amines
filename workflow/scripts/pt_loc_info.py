@@ -127,6 +127,9 @@ for row in location_2_df.itertuples():
     # Create a Biopython structure object.
     parser = MMCIFParser(QUIET=True)
     pdb_file = f'{snakemake.config["original_mmcif_dir"]}{row.PDB.lower()}.cif'
+    # Remove the plus symbol if the PDB ID in the file name is represented as scientific notation
+    if pdb_file[-7] == '+':
+        pdb_file = pdb_file[:-7] + pdb_file[-6:]
     structure = parser.get_structure(row.PDB, pdb_file)
 
     # Set variables pertaining to the dual donating G(N2).
