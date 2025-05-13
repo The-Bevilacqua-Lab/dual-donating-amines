@@ -454,7 +454,8 @@ combined_location_df <- rbind(pair_1_df, pair_2_df)
 
 # Create the plots.
 combined_location_plot <- combined_location_df %>%
-  ggplot(aes(x=reorder_within(acc_pair_combined_reformat, n_resn_pair, location), y=n_resn_pair, fill = don_label)) +
+  ggplot(aes(x=reorder_within(acc_pair_combined_reformat, n_resn_pair, list(don_label, location)),
+             y=n_resn_pair, fill = don_label)) +
   geom_col(width = 0.8, color = "black") +
   geom_col_pattern(aes(y=n_resn_pair_same),
                    width = 0.8, color = "black", pattern = "stripe", pattern_fill = "black",
