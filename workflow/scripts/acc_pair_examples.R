@@ -25,7 +25,7 @@ g_a_n7_h_bonding_df <- merge(guanines_to_consider_df, combined_df,
                              by.x = c('adenine_resi', 'adenine_chain', 'acc_pair_1_resi', 'acc_pair_1_chain', 
                                       'model', 'PDB'),
                              by.y = c('acc_resi', 'acc_chain', 'don_resi', 'don_chain', 'model', 'PDB')) %>%
-  filter(h_bond == 1, acc_name == "N7") %>% distinct(don_index, eq_class_member, .keep_all = TRUE)
+  filter(h_bond == 1, don_name == "N2", acc_name == "N7") %>% distinct(don_index, eq_class_member, .keep_all = TRUE)
 
 # Backtrack to identify the A's involved in the sheared GA base pair.
 sheared_ga_df <- merge(g_a_n7_h_bonding_df, combined_df, 
@@ -140,8 +140,36 @@ a_hoogsteen_df <- combined_df %>% filter(don_resn == "A", type == 2,
                                          acc_pair_combined == "A(N7), N(NPO)", same_resi == "True") %>%
   distinct(don_index, eq_class_member, .keep_all = TRUE)
 
+# Only keep relevant columns.
+a_hoogsteen_df <- a_hoogsteen_df[c('don_resi', 'don_chain', 'acc_pair_1_name', 'acc_pair_2_name', 'acc_pair_1_resn',
+                                   'acc_pair_1_resi', 'acc_pair_1_chain', 'model', 'PDB')]
+
+# Rename select columns.
+a_hoogsteen_df <- a_hoogsteen_df %>% rename(dual_don_A_resi=don_resi, dual_don_A_chain=don_chain)
+
+# Which adenines bearing the acceptor pair form a A(N6)-to-A(N7) H-bond?
+a_n6_a_n7_h_bonding_df <- merge(a_hoogsteen_df, combined_df,
+                                by.x = c('dual_don_A_resi', 'dual_don_A_chain', 'acc_pair_1_resi', 'acc_pair_1_chain',
+                                         'model', 'PDB'),
+                                by.y = c('acc_resi', 'acc_chain', 'don_resi', 'don_chain', 'model', 'PDB')) %>%
+  filter(h_bond == 1, don_name == "N6", acc_name == "N7") %>% distinct(don_index, eq_class_member, .keep_all = TRUE)
+
+# Backtrack to identify the A's involved in the tHH AA base pair.
+tHH_aa_df <- merge(a_n6_a_n7_h_bonding_df, combined_df,
+                   by.x = c('acc_pair_1_resi', 'acc_pair_1_chain', 'model', 'PDB'),
+                   by.y = c('acc_pair_1_resi', 'acc_pair_1_chain', 'model', 'PDB')) %>%
+  filter(don_resn.y == "A", type.y == 2, acc_pair_combined.y == "A(N7), N(NPO)", same_resi.y == "True") %>%
+  distinct(don_index.y, eq_class_member.y, .keep_all = TRUE)
+
+# Rename and remove select columns.
+tHH_aa_df <- tHH_aa_df[c('don_index.y', 'don_name.y', 'don_resi', 'don_chain', 'eta.y', 'theta.y', 'acc_pair_1_name',
+                         'acc_pair_1_resi', 'acc_pair_1_chain', 'acc_pair_2_name', 'acc_pair_2_resi.y',
+                         'acc_pair_2_chain.y', 'model', 'PDB', 'eq_class_member.y', 'type.y')] %>%
+  rename(don_index=don_index.y, don_name=don_name.y, eta=eta.y, theta=theta.y, acc_pair_2_resi=acc_pair_2_resi.y,
+         acc_pair_2_chain=acc_pair_2_chain.y, eq_class_member=eq_class_member.y, type=type.y)
+
 # Write the data to a csv.
-write.csv(a_hoogsteen_df, snakemake@output[["acc_pair_5C"]], na = "NaN")
+write.csv(tHH_aa_df, snakemake@output[["acc_pair_5C"]], na = "NaN")
 
 #### 5D - C AMINE DUAL DONATION AND GC BASE PAIR ####
 
