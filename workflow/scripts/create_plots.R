@@ -464,7 +464,7 @@ combined_location_plot <- combined_location_df %>%
   xlab("Pair of Acceptor Atoms") +
   ylab("Count") +
   scale_fill_manual(values = c(color_palette[3], color_palette[8], color_palette[4]), name = "Donor") +
-  scale_x_reordered(limits = function(x) rev(x)[1:5]) +
+  scale_x_reordered(limits = function(x) rev(x)[1:4]) +
   scale_y_continuous(limits = c(0, 250)) +
   theme_bw(base_size = 10) +
   theme(aspect.ratio = 1.5) +
