@@ -81,6 +81,7 @@ with open(args.output_file, "w") as file:
     if args.don_resn is not None:
         file.write(f"# don_resn: {args.don_resn}\n")
     file.write("# this script is to be used with PyMOL\n\n")
+    file.write("import numpy as np\n")
     file.write("from pymol import cmd\n\n")
     file.write("amines = [\n")
     for idx, row in enumerate(df.itertuples()):
@@ -148,7 +149,10 @@ with open(args.output_file, "w") as file:
     file.write("    cmd.hide('labels')\n")
     file.write("    cmd.show('dashes', f'dist_{num}*')\n")
     file.write("    cmd.hide('sticks', 'elem H')\n")
-    file.write("    cmd.orient('visible')\n")
+    file.write("    cmd.orient(f'sidechain and resi \\\\{amines[num-1][0][1]} and chain {amines[num-1][0][2]}')\n")
+    file.write("    view = np.array(cmd.get_view(quiet=1))\n")
+    file.write("    view[[11, 15, 16]] = view[11] - 40, view[15] + 40, view[16] + 40\n")
+    file.write("    cmd.set_view(view.tolist())\n")
     file.write("    print(f'Showing amine number {num}')\n\n\n")
     file.write("# Show the next amine in the list.\n")
     file.write("def n():\n")
