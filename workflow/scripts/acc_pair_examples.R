@@ -272,3 +272,81 @@ g_c_aa_df <- combined_df %>% filter(don_resn == "G", type == 2, acc_pair_combine
 
 # Write the data to a csv.
 write.csv(g_c_aa_df, snakemake@output[["acc_pair_S3B"]], na = "NaN")
+
+#### PSEUDO-TORSION LOCATION 1, LOCATION 2, AND NEIGHBORS ####
+
+# Extract the rows from the combined data frame relevant for these plots.
+pair_1_df <- combined_df %>% filter(don_resn %in% c("A", "C", "G") & type == 2) %>%
+  distinct(don_index, eq_class_member, .keep_all = TRUE)
+
+# Translate the pseudo-torsions to range from 0 to 360 degrees.
+pair_1_df[which(pair_1_df$eta >= 0), "eta_translated"] <- pair_1_df[which(pair_1_df$eta >= 0), "eta"]
+pair_1_df[which(pair_1_df$eta < 0), "eta_translated"] <- pair_1_df[which(pair_1_df$eta < 0), "eta"] + 360
+pair_1_df[which(pair_1_df$theta >= 0), "theta_translated"] <- pair_1_df[which(pair_1_df$theta >= 0), "theta"]
+pair_1_df[which(pair_1_df$theta < 0), "theta_translated"] <- pair_1_df[which(pair_1_df$theta < 0), "theta"] + 360
+
+# Filter for location 1.
+pair_1_df <- pair_1_df %>% filter(eta_translated >= 43.2 & eta_translated < 72 &
+                                    theta_translated >= 151.2 & theta_translated < 180)
+
+# Create a column that contains the donor atom name along with the donor residue name.
+pair_1_df <- pair_1_df %>% mutate(don_label = paste(don_resn, "(", don_name, ")", sep = ""))
+
+# Extract the rows from the combined data frame relevant for these plots.
+pair_2_df <- combined_df %>% filter(don_resn %in% c("A", "C", "G") & type == 2) %>%
+  distinct(don_index, eq_class_member, .keep_all = TRUE)
+
+# Translate the pseudo-torsions to range from 0 to 360 degrees.
+pair_2_df[which(pair_2_df$eta >= 0), "eta_translated"] <- pair_2_df[which(pair_2_df$eta >= 0), "eta"]
+pair_2_df[which(pair_2_df$eta < 0), "eta_translated"] <- pair_2_df[which(pair_2_df$eta < 0), "eta"] + 360
+pair_2_df[which(pair_2_df$theta >= 0), "theta_translated"] <- pair_2_df[which(pair_2_df$theta >= 0), "theta"]
+pair_2_df[which(pair_2_df$theta < 0), "theta_translated"] <- pair_2_df[which(pair_2_df$theta < 0), "theta"] + 360
+
+# Filter for location 2.
+pair_2_df <- pair_2_df %>% filter(eta_translated >= 295.2 & eta_translated < 324 &
+                                    theta_translated >= 14.4 & theta_translated < 43.2)
+
+# Create a column that contains the donor atom name along with the donor residue name.
+pair_2_df <- pair_2_df %>% mutate(don_label = paste(don_resn, "(", don_name, ")", sep = ""))
+
+# Create two new columns.
+pair_1_df <- pair_1_df %>% mutate(acc_pair_combined_reformat = gsub(", ", "/", acc_pair_combined, fixed = TRUE))
+pair_2_df <- pair_2_df %>% mutate(acc_pair_combined_reformat = gsub(", ", "/", acc_pair_combined, fixed = TRUE))
+pair_1_df["location"] <- "Location 1"
+pair_2_df["location"] <- "Location 2"
+
+# Create csv files for the residues within Location 1 and Location 2.
+write.csv(pair_1_df[,c("don_index", "don_name", "don_resn", "don_resi", "don_chain",
+                       "acc_pair_1_name", "acc_pair_1_resi", "acc_pair_1_chain",
+                       "acc_pair_2_name", "acc_pair_2_resi", "acc_pair_2_chain",
+                       "don_label", "acc_pair_combined_reformat", "same_resi", "type",
+                       "PDB", "model", "eq_class_member",
+                       "eta", "theta", "eta_translated", "theta_translated", "chi")],
+          snakemake@output[["pt_location_1"]], quote = FALSE, na = "NaN", row.names = FALSE)
+write.csv(pair_2_df[,c("don_index", "don_name", "don_resn", "don_resi", "don_chain",
+                       "acc_pair_1_name", "acc_pair_1_resi", "acc_pair_1_chain",
+                       "acc_pair_2_name", "acc_pair_2_resi", "acc_pair_2_chain",
+                       "don_label", "acc_pair_combined_reformat", "same_resi", "type",
+                       "PDB", "model", "eq_class_member",
+                       "eta", "theta", "eta_translated", "theta_translated", "chi")],
+          snakemake@output[["pt_location_2"]], quote = FALSE, na = "NaN", row.names = FALSE)
+
+# Create a csv file with residues from Location 1 that are connected to the 5'-end of any residue from Location 2. This
+# approach may not work if an insertion code is used for this or the downstream residue. If this is the case, print an
+# error message, and create an empty csv file.
+if (any(grepl("[a-zA-Z]", pair_1_df$don_resi)) | any(grepl("[a-zA-Z]", pair_2_df$don_resi))) {
+  cat("Error: At least one residue within one of the pseudo-torsion locations contains an insertion code. The file
+      named pt_neighbors.csv will be empty.")
+  write.csv(data.frame(), snakemake@output[["pt_neighbors"]], quote = FALSE, na = "NaN", row.names = FALSE)
+} else {
+  neighbors_df <- merge(pair_1_df %>% mutate(downstream_resi = as.character(as.numeric(don_resi) + 1)), pair_2_df,
+                        by.x = c("downstream_resi", "don_chain", "eq_class_member"),
+                        by.y = c("don_resi", "don_chain", "eq_class_member"), suffixes = c("",".y"))
+  neighbors_df <- neighbors_df[,c("don_index", "don_name", "don_resn", "don_resi", "don_chain",
+                                  "acc_pair_1_name", "acc_pair_1_resi", "acc_pair_1_chain",
+                                  "acc_pair_2_name", "acc_pair_2_resi", "acc_pair_2_chain",
+                                  "don_label", "acc_pair_combined_reformat", "same_resi", "type",
+                                  "PDB", "model", "eq_class_member",
+                                  "eta", "theta", "eta_translated", "theta_translated", "chi")]
+  write.csv(neighbors_df, snakemake@output[["pt_neighbors"]], quote = FALSE, na = "NaN", row.names = FALSE)
+}

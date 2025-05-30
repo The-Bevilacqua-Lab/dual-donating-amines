@@ -20,15 +20,19 @@ rule all:
         "results/plots/acc_pair_id.png",
         "results/tables/acc_pair_id.csv",
         "results/plots/sasa_box.png",
+        "results/plots/sasa_jitter.png",
         "results/plots/sasa_col.png",
         "results/tables/sasa_stats.csv",
-        "results/plots/density_all.png",
-        "results/plots/density_filtered.png",
+        "results/plots/density.png",
+        "results/plots/density_no_outiers.png",
         "results/tables/density_stats.csv",
+        "results/p-values/density_pvals.csv",
         "results/plots/chi_full.png",
         "results/plots/chi_partial_combined.png",
         "results/tables/location_1_frag_info.csv",
         "results/tables/location_2_frag_info.csv",
+        "results/tables/chi_stats.csv",
+        "results/p-values/chi_pvals.csv",
         "results/acc_pair_examples/acc_pair_5A.csv",
         "results/acc_pair_examples/acc_pair_5B_1.csv",
         "results/acc_pair_examples/acc_pair_5B_2.csv",
@@ -96,13 +100,18 @@ rule create_plots:
         acc_pair_id = "results/plots/acc_pair_id.png",
         acc_pair_id_csv = "results/tables/acc_pair_id.csv",
         sasa_box = "results/plots/sasa_box.png",
+        sasa_jitter = "results/plots/sasa_jitter.png",
         sasa_col = "results/plots/sasa_col.png",
         sasa_stats = "results/tables/sasa_stats.csv",
-        density_all = "results/plots/density_all.png",
-        density_filtered = "results/plots/density_filtered.png",
+        sasa_pvals = "results/p-values/sasa_pvals.csv",
+        density = "results/plots/density.png",
+        density_no_outiers = "results/plots/density_no_outiers.png",
         density_stats = "results/tables/density_stats.csv",
+        density_pvals = "results/p-values/density_pvals.csv",
         chi_full = "results/plots/chi_full.png",
-        chi_partial_combined = "results/plots/chi_partial_combined.png"
+        chi_partial_combined = "results/plots/chi_partial_combined.png",
+        chi_stats = "results/tables/chi_stats.csv",
+        chi_pvals = "results/p-values/chi_pvals.csv"
     conda:
         "envs/general.yaml"
     script:
@@ -137,7 +146,10 @@ rule list_examples:
         acc_pair_5E = "results/acc_pair_examples/acc_pair_5E.csv",
         acc_pair_5F = "results/acc_pair_examples/acc_pair_5F.csv",
         acc_pair_S3A = "results/acc_pair_examples/acc_pair_S3A.csv",
-        acc_pair_S3B = "results/acc_pair_examples/acc_pair_S3B.csv"
+        acc_pair_S3B = "results/acc_pair_examples/acc_pair_S3B.csv",
+        pt_location_1 = "results/acc_pair_examples/pt_location_1.csv",
+        pt_location_2 = "results/acc_pair_examples/pt_location_2.csv",
+        pt_neighbors = "results/acc_pair_examples/pt_neighbors.csv"
     conda:
         "envs/general.yaml"
     script:
