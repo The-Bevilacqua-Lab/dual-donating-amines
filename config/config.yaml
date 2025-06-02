@@ -31,13 +31,13 @@ val_score: "sil"
 leaf_labels: false
 
 # Should the folder with the mmCIF files fetched from the PDB be removed to save space?
-remove_original_mmcif: true
+remove_original_mmcif: false
 
 # Should the folder with the disordered mmCIF files be removed to save space?
-remove_disordered_mmcif: true
+remove_disordered_mmcif: false
 
 # Should the mmCIF of the modified structures be saved?
-save_modified_mmcif: false
+save_modified_mmcif: true
 
 # Should the commit hash be written to output data files?
 commit_hash: false
