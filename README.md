@@ -1,11 +1,7 @@
-# Dual Donating Amines
+# Dual-Donating Amines
 
-These scripts make up a computational pipeline to identify nucleobases in structured nucleic acids that donate two hydrogen bonds via their exocyclic amines along with other possible noncovalent interactions.
-
-## Dependencies
-
-PyMOL==3.0.0
-
-## Notes
-
-This repo was designed to work with csv files downloaded from the Representative Sets of RNA 3D Structures database maintained by the RNA group at BGSU.
+This Snakemake workflow mines RNA-containing structures retrieved from the Protein Data Bank (PDB), identifies 
+nucleobases that contain non-, single-, and dual-donating amines, and then performs a variety of analyses. To reduce 
+the redundancy of structures, the workflow was designed to source information from csv files created by BGSU's 
+[Representative Sets of RNA 3D Structures](https://rna.bgsu.edu/rna3dhub/nrlist). The preprint for the paper 
+corresponding to this workflow can be accessed through bioRxiv at https://doi.org/10.1101/2025.06.05.658080.
