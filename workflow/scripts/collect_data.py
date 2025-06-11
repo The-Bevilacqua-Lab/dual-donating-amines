@@ -52,6 +52,18 @@ def error(msg):
     sys.exit(0)
 
 
+# Check whether the folder exists for PyMOL to save mmCIF files into for structures that originally had hydrogen atoms
+# which were then omitted by Biopython during the save. In other words, these structures originally had hydrogens, but
+# now they do not. If the folder does not exist, create it.
+h_omitted_mmcif_dir = snakemake.config["h_omitted_mmcif_dir"]
+if not os.path.isdir(h_omitted_mmcif_dir):
+    try:
+        os.mkdir(h_omitted_mmcif_dir)
+    except FileExistsError:
+        time.sleep(5.0)
+        if not os.path.isdir(h_omitted_mmcif_dir):
+            os.mkdir(h_omitted_mmcif_dir)
+
 # Check whether the folder exists for PyMOL to save mmCIF files into for structures that originally had disordered
 # atoms. Structures that had disordered atoms omitted will also be saved to this folder via Biopython. If the folder
 # does not exist, create it.
@@ -329,7 +341,7 @@ for donor in donor_list_filtered:
         don_info_dict[key].append(value)
 
 # Calculate the SASA using Bio.PDB for each donor of interest and add it to the dictionary.
-sasa_values = sasa.sasa(pdb_id, model, eq_class_mem_id, donor_list_filtered, original_mmcif_dir)
+sasa_values = sasa.sasa(pdb_id, model, eq_class_mem_id, donor_list_filtered, original_mmcif_dir, h_omitted_mmcif_dir)
 if type(sasa_values) is list:
     don_info_dict["SASA"] = sasa_values
 else:
