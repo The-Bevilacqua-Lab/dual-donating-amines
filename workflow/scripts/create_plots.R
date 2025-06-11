@@ -193,10 +193,10 @@ sasa_box_plot <- sasa_df %>% ggplot(aes(x=type, y=SASA)) +
 sasa_dual_df <- sasa_df[sasa_df["type"] == "Dual",]
 possible_values <- round(seq(0, ceiling(max(sasa_dual_df$SASA)), sort(unique(sasa_dual_df$SASA))[2]), digits = 1)
 sasa_jitter_plot <- sasa_dual_df %>% ggplot(aes(x=don_label, y=SASA)) +
-  geom_jitter(size = 0.5, alpha = 0.5, stroke = 0) +
+  geom_point(size = 0.5, alpha = 0.5, stroke = 0, position = position_jitter(seed = 1)) +
   scale_y_continuous(breaks = possible_values[seq(1, length(possible_values), 2)], minor_breaks = possible_values) +
   ggtitle("Dual-Donating Amines") +
-  xlab("Nucleobase Type") +
+  xlab("Nucleobase") +
   ylab("SASA (\uc5\ub2)") +
   theme_bw(base_size = 10) +
   theme(plot.title = element_text(hjust = 0.5), panel.grid.major.x = element_blank())
