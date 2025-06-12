@@ -237,7 +237,7 @@ df = df.assign(type=pd.NA)
 df.loc[:, ~df.columns.isin(["don_index"])] = (
     df.groupby("don_index", group_keys=False).apply(classify, include_groups=False))
 
-# Add two new columns that identifies the pair of acceptors corresponding to dual H-bonding amines.
+# Add new columns that identifies the pair of acceptors corresponding to dual H-bonding amines.
 df = df.assign(acc_pair_1_name=pd.NA, acc_pair_1_resn=pd.NA, acc_pair_1_resi=pd.NA, acc_pair_1_chain=pd.NA,
                acc_pair_2_name=pd.NA, acc_pair_2_resn=pd.NA, acc_pair_2_resi=pd.NA, acc_pair_2_chain=pd.NA,
                same_resi=pd.NA)
