@@ -213,9 +213,15 @@ eq_class_mem_id = snakemake.input.data[21:-4]
 try:
     df = pd.read_csv(snakemake.input.data, comment="#", keep_default_na=False, na_values="NaN",
                      dtype={"don_resi": "str", "acc_resi": "str", "don_chain": "str", "acc_chain": "str"})
-# Write an empty file and exit if one of the below errors is encountered.
-except (FileNotFoundError, pd.errors.EmptyDataError):
+# Write an empty file and exit if FileNotFoundError is encountered.
+except FileNotFoundError:
     subprocess.run(["touch", snakemake.output.data])
+    print(f"Warning: A FileNotFoundError was encountered with {eq_class_mem_id}.")
+    sys.exit(0)
+# Write an empty file and exit if EmptyDataError is encountered.
+except pd.errors.EmptyDataError:
+    subprocess.run(["touch", snakemake.output.data])
+    print(f"Note: The collect_data output file for {eq_class_mem_id} contains no data.")
     sys.exit(0)
 
 # Set the H-bonding criteria.
