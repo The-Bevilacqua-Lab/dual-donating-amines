@@ -12,7 +12,7 @@ import csv
 import numpy as np
 
 
-def parse_nrlist(nrlist_file, all_members=False):
+def parse_nrlist(nrlist_file):
     # Count the number of IFEs and unique PDB IDs in the provided nrlist file.
     pdb_id_list_count = []
     with open(nrlist_file, mode='r') as read_file:
@@ -38,7 +38,7 @@ def parse_nrlist(nrlist_file, all_members=False):
     with open(nrlist_file, mode='r') as read_file:
         for line in csv.reader(read_file):
             eq_class_dict[line[0]] = {'PDB_ID': [], 'model': [], 'chain_list': []}
-            for class_member in line[2].split(','):
+            for class_member in line[1]:
                 pdb_id_list = []
                 model_list = []
                 chain_list = []
@@ -82,8 +82,6 @@ def parse_nrlist(nrlist_file, all_members=False):
                 eq_class_dict[line[0]]['PDB_ID'].append(pdb_id_list[0])
                 eq_class_dict[line[0]]['model'].append(model_list[0])
                 eq_class_dict[line[0]]['chain_list'].append(chain_list)
-                if not all_members:
-                    break
     # Prepare a list of strings where each string includes the equivalence class name, PDB ID, model info, and chain
     # info for the equivalence class members.
     eq_class_members = []

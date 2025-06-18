@@ -41,6 +41,3 @@ save_modified_mmcif: true
 
 # Should the commit hash be written to output data files?
 commit_hash: false
-
-# Should all the members of an equivalence class be collected?
-all_members: false
