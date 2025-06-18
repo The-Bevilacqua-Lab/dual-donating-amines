@@ -414,9 +414,9 @@ if not os.path.isdir(chain_pdb_dir):
 
 # Save PDB files for each representative chain, run NaTorsion, and create a data frame with the output.
 for idx, chain in enumerate(chain_list):
-    cmd.save(f"{chain_pdb_dir}{pdb_id}_{chain}.pdb", f"chain {chain} and polymer.nucleic")
+    cmd.save(f"{chain_pdb_dir}{eq_class_mem_id}_{chain}.pdb", f"chain {chain} and polymer.nucleic")
     # Run NaTorsion and store output
-    na_torsion_output = subprocess.run(["NaTorsion", f"{chain_pdb_dir}{pdb_id}_{chain}.pdb"],
+    na_torsion_output = subprocess.run(["NaTorsion", f"{chain_pdb_dir}{eq_class_mem_id}_{chain}.pdb"],
                                        cwd=os.path.dirname(os.path.realpath(__file__))[:-16],
                                        capture_output=True).stdout.decode('ascii')
     # For the first chain considered, create na_torsion_df
