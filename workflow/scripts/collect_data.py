@@ -229,18 +229,13 @@ else:
     error("Error: An issue occurred when working with the number of models (i.e., PyMOL states) present in the "
           f"structure for {eq_class_mem_id}.")
 
-# If present, remove atoms representing alternative conformations.
+# If present, remove atoms representing alternative conformations by creating a structure without disorder and then
+# loading it in place of the current structure.
 if cmd.count_atoms("not alt ''") > 0:
-    # If the structure without disorder already exists, load it in place of the current structure.
-    if os.path.isfile(disordered_mmcif_dir + object_name + "_no_disorder.cif"):
-        cmd.delete('all')
-        cmd.load(disordered_mmcif_dir + object_name + "_no_disorder.cif", object_name)
-    # If it does not exist, create a structure without disorder and then load it in place of the current structure.
-    else:
-        cmd.save(disordered_mmcif_dir + object_name + "_with_disorder.cif")
-        remove_disordered_atoms.remove(disordered_mmcif_dir, object_name)
-        cmd.delete('all')
-        cmd.load(disordered_mmcif_dir + object_name + "_no_disorder.cif", object_name)
+    cmd.save(disordered_mmcif_dir + eq_class_mem_id + "_with_disorder.cif")
+    remove_disordered_atoms.remove(disordered_mmcif_dir, eq_class_mem_id)
+    cmd.delete('all')
+    cmd.load(disordered_mmcif_dir + eq_class_mem_id + "_no_disorder.cif", object_name)
 
 # Remove any hydrogens that loaded with the structure.
 cmd.remove('elem H')

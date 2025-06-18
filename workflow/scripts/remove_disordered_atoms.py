@@ -9,7 +9,7 @@ from Bio.PDB.mmcifio import MMCIFIO, Select
 from Bio.PDB.Selection import unfold_entities
 
 
-def remove(dir_of_disordered_mmcif, name_of_object):
+def remove(dir_of_disordered_mmcif, eq_class_mem_id):
 
     # Define a subclass of Bio.PDB.PDBIO.Select to select the atoms.
     class AtomSelect(Select):
@@ -24,7 +24,7 @@ def remove(dir_of_disordered_mmcif, name_of_object):
 
     # Create a Biopython structure object.
     parser = MMCIFParser(QUIET=True)
-    structure = parser.get_structure(name_of_object, dir_of_disordered_mmcif + name_of_object + "_with_disorder.cif")
+    structure = parser.get_structure(eq_class_mem_id, dir_of_disordered_mmcif + eq_class_mem_id + "_with_disorder.cif")
 
     # Create a list of atoms to keep in the output structure.
     atom_list = []
@@ -34,4 +34,4 @@ def remove(dir_of_disordered_mmcif, name_of_object):
     # Write the fragments to PDB files.
     io = MMCIFIO()
     io.set_structure(structure)
-    io.save(dir_of_disordered_mmcif + name_of_object + "_no_disorder.cif", AtomSelect(atom_list))
+    io.save(dir_of_disordered_mmcif + eq_class_mem_id + "_no_disorder.cif", AtomSelect(atom_list))
