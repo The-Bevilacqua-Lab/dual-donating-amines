@@ -3,8 +3,9 @@ This module contains the evaluate function which works with PyMOL to calculate H
 function can be used by other modules or scripts to obtain H-bonding geometry measurements involving specified donor
 and acceptor atoms, where the donor is a nucleobase amine. The first two arguments should describe the donor and
 acceptor atoms, respectively. For each atom, a tuple containing the atom index, atom name, residue name, residue
-number, and chain ID should be provided in that order. The equivalence class member ID and a residue library should be
-provided as the third and forth arguments. The amine donor atom must be bonded to exactly two hydrogens.
+number, and chain ID should be provided in that order. The tuple may contain other elements after the five just listed.
+The equivalence class member ID and a residue library should be provided as the third and forth arguments. The names
+of the amine donor atoms should be provided as the fifth argument. The amines must be bonded to exactly two hydrogens.
 """
 
 from pymol import cmd
@@ -16,12 +17,8 @@ def evaluate(donor_atom, acceptor_atom, eq_class_mem, library, dual_h_donors):
     # Return NaN values if the donor is not included in the config file's dual_h_donors list.
     if f"{donor_atom[2]}.{donor_atom[1]}" not in dual_h_donors:
         return [True, [[pd.NA, pd.NA, pd.NA, pd.NA, pd.NA, pd.NA]]]
-    # Construct lists containing the names of the canonical protein and nucleic residues.
-    protein_residues = ['ALA', 'ASP', 'ASN', 'ARG', 'CYS', 'GLU', 'GLN', 'GLY', 'HIS', 'ILE', 'LEU', 'LYS', 'MET',
-                        'PHE', 'PRO', 'SER', 'THR', 'TRP', 'TYR', 'VAL']
-    nucleic_residues = ['A', 'C', 'G', 'U', 'DA', 'DC', 'DG', 'DT']
-    # Determine whether the donor atom is listed in the residue library.
-    # If found, collect other information about that atom.
+    # Determine whether the donor atom is listed in the residue library. If found, collect other information about that
+    # atom.
     donor_info = []
     for residue in library:
         if donor_atom[2] == residue['res']:
@@ -48,7 +45,7 @@ def evaluate(donor_atom, acceptor_atom, eq_class_mem, library, dual_h_donors):
                        f"{donor_atom[2]}.{donor_atom[3]}.{donor_atom[1]} of {eq_class_mem}."]
     # Calculate the H-A distances, D-H-A angles, and the dihedrals between the hydrogens and the WCF endocyclic
     # nitrogen. For instance, an adenine dihedral would be the N1-C6-N6-H dihedral for one of the amine hydrogens.
-    # Collect the indices of the hydrogens.
+    # Collect information pertaining to the hydrogens.
     stored.hydrogen = []
     cmd.iterate(f'elem H and neighbor index {donor_atom[0]}',
                 'stored.hydrogen.append((index, name, resn, resi, chain))')
