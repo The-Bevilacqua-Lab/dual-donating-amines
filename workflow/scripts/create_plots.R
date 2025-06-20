@@ -539,46 +539,6 @@ pair_1_distinct_df["location"] <- "Location 1"
 pair_2_distinct_df["location"] <- "Location 2"
 combined_location_df <- rbind(pair_1_distinct_df, pair_2_distinct_df)
 
-# Create a csv file with residues from Location 1 that are connected to the 5'-end of any residue from Location 2. This
-# approach may not work if an insertion code is used for this or the downstream residue. If this is the case, print an
-# error message, and create an empty csv file.
-if (any(grepl("[a-zA-Z]", pair_1_df$don_resi)) | any(grepl("[a-zA-Z]", pair_2_df$don_resi))) {
-  cat("Error: At least one residue within one of the pseudo-torsion locations contains an insertion code. The file
-      named pt_neighbors.csv will be empty.")
-  write.csv(data.frame(), "tables/pt_neighbors.csv", quote = FALSE, na = "NaN", row.names = FALSE)
-} else {
-  pair_1_df <- pair_1_df %>% mutate(acc_pair_combined_reformat = gsub(", ", "/", acc_pair_combined, fixed = TRUE))
-  pair_2_df <- pair_2_df %>% mutate(acc_pair_combined_reformat = gsub(", ", "/", acc_pair_combined, fixed = TRUE))
-  pair_1_df["location"] <- "Location 1"
-  pair_2_df["location"] <- "Location 2"
-  neighbors_df <- merge(pair_1_df %>% mutate(downstream_resi = as.character(as.numeric(don_resi) + 1)), pair_2_df,
-                        by.x = c("downstream_resi", "don_chain", "eq_class_member"),
-                        by.y = c("don_resi", "don_chain", "eq_class_member"), suffixes = c("",".y"))
-  neighbors_df <- neighbors_df[,c("don_index", "don_name", "don_resn", "don_resi", "don_chain",
-                                  "acc_pair_1_name", "acc_pair_1_resi", "acc_pair_1_chain",
-                                  "acc_pair_2_name", "acc_pair_2_resi", "acc_pair_2_chain",
-                                  "don_label", "acc_pair_combined_reformat", "same_resi", "type",
-                                  "PDB", "model", "eq_class_member",
-                                  "eta", "theta", "eta_translated", "theta_translated", "chi")]
-  write.csv(neighbors_df, snakemake@output[["pt_neighbors"]], quote = FALSE, na = "NaN", row.names = FALSE)
-}
-
-# Create csv files for the residues within Location 1 and Location 2.
-write.csv(pair_1_df[,c("don_index", "don_name", "don_resn", "don_resi", "don_chain",
-                       "acc_pair_1_name", "acc_pair_1_resi", "acc_pair_1_chain",
-                       "acc_pair_2_name", "acc_pair_2_resi", "acc_pair_2_chain",
-                       "don_label", "acc_pair_combined_reformat", "same_resi", "type",
-                       "PDB", "model", "eq_class_member",
-                       "eta", "theta", "eta_translated", "theta_translated", "chi")],
-          snakemake@output[["pt_location_1.csv"]], quote = FALSE, na = "NaN", row.names = FALSE)
-write.csv(pair_2_df[,c("don_index", "don_name", "don_resn", "don_resi", "don_chain",
-                       "acc_pair_1_name", "acc_pair_1_resi", "acc_pair_1_chain",
-                       "acc_pair_2_name", "acc_pair_2_resi", "acc_pair_2_chain",
-                       "don_label", "acc_pair_combined_reformat", "same_resi", "type",
-                       "PDB", "model", "eq_class_member",
-                       "eta", "theta", "eta_translated", "theta_translated", "chi")],
-          snakemake@output[["pt_location_2.csv"]], quote = FALSE, na = "NaN", row.names = FALSE)
-
 # Create the plots.
 combined_location_plot <- combined_location_df %>%
   ggplot(aes(x=reorder_within(acc_pair_combined_reformat, n_resn_pair, list(don_label, location)),
