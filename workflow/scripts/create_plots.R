@@ -539,6 +539,46 @@ pair_1_distinct_df["location"] <- "Location 1"
 pair_2_distinct_df["location"] <- "Location 2"
 combined_location_df <- rbind(pair_1_distinct_df, pair_2_distinct_df)
 
+# Create a csv file with residues from Location 1 that are connected to the 5'-end of any residue from Location 2. This
+# approach may not work if an insertion code is used for this or the downstream residue. If this is the case, print an
+# error message, and create an empty csv file.
+if (any(grepl("[a-zA-Z]", pair_1_df$don_resi)) | any(grepl("[a-zA-Z]", pair_2_df$don_resi))) {
+  cat("Error: At least one residue within one of the pseudo-torsion locations contains an insertion code. The file
+      named pt_neighbors.csv will be empty.")
+  write.csv(data.frame(), "tables/pt_neighbors.csv", quote = FALSE, na = "NaN", row.names = FALSE)
+} else {
+  pair_1_df <- pair_1_df %>% mutate(acc_pair_combined_reformat = gsub(", ", "/", acc_pair_combined, fixed = TRUE))
+  pair_2_df <- pair_2_df %>% mutate(acc_pair_combined_reformat = gsub(", ", "/", acc_pair_combined, fixed = TRUE))
+  pair_1_df["location"] <- "Location 1"
+  pair_2_df["location"] <- "Location 2"
+  neighbors_df <- merge(pair_1_df %>% mutate(downstream_resi = as.character(as.numeric(don_resi) + 1)), pair_2_df,
+                        by.x = c("downstream_resi", "don_chain", "eq_class_member"),
+                        by.y = c("don_resi", "don_chain", "eq_class_member"), suffixes = c("",".y"))
+  neighbors_df <- neighbors_df[,c("don_index", "don_name", "don_resn", "don_resi", "don_chain",
+                                  "acc_pair_1_name", "acc_pair_1_resi", "acc_pair_1_chain",
+                                  "acc_pair_2_name", "acc_pair_2_resi", "acc_pair_2_chain",
+                                  "don_label", "acc_pair_combined_reformat", "same_resi", "type",
+                                  "PDB", "model", "eq_class_member",
+                                  "eta", "theta", "eta_translated", "theta_translated", "chi")]
+  write.csv(neighbors_df, snakemake@output[["pt_neighbors"]], quote = FALSE, na = "NaN", row.names = FALSE)
+}
+
+# Create csv files for the residues within Location 1 and Location 2.
+write.csv(pair_1_df[,c("don_index", "don_name", "don_resn", "don_resi", "don_chain",
+                       "acc_pair_1_name", "acc_pair_1_resi", "acc_pair_1_chain",
+                       "acc_pair_2_name", "acc_pair_2_resi", "acc_pair_2_chain",
+                       "don_label", "acc_pair_combined_reformat", "same_resi", "type",
+                       "PDB", "model", "eq_class_member",
+                       "eta", "theta", "eta_translated", "theta_translated", "chi")],
+          snakemake@output[["pt_location_1.csv"]], quote = FALSE, na = "NaN", row.names = FALSE)
+write.csv(pair_2_df[,c("don_index", "don_name", "don_resn", "don_resi", "don_chain",
+                       "acc_pair_1_name", "acc_pair_1_resi", "acc_pair_1_chain",
+                       "acc_pair_2_name", "acc_pair_2_resi", "acc_pair_2_chain",
+                       "don_label", "acc_pair_combined_reformat", "same_resi", "type",
+                       "PDB", "model", "eq_class_member",
+                       "eta", "theta", "eta_translated", "theta_translated", "chi")],
+          snakemake@output[["pt_location_2.csv"]], quote = FALSE, na = "NaN", row.names = FALSE)
+
 # Create the plots.
 combined_location_plot <- combined_location_df %>%
   ggplot(aes(x=reorder_within(acc_pair_combined_reformat, n_resn_pair, list(don_label, location)),
@@ -910,10 +950,7 @@ chi_plot_combined <- chi_df %>% ggplot(aes(x = chi_adjusted)) +
   scale_y_continuous(transform = "log10", name = "Count") +
   xlab("\u03c7 (\ub0)") +
   theme_bw(base_size = 10) +
-  theme(aspect.ratio = 0.4, plot.margin = margin(t = 5, r = 15, b = 5, l = 15, unit = "pt"))
-
-# Convert the combined plot into a graphical object.
-grob_combined <- ggplotGrob(chi_plot_combined)
+  theme(aspect.ratio = 0.4)
 
 # Create the plots of a segment of the 360 range for each don_resn and type combination.
 
@@ -934,7 +971,7 @@ chi_plot_partial_1 <- chi_bins[which(chi_bins$don_resn == "A" & chi_bins$type ==
   scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) + scale_y_continuous(limits = c(0, max_partial)) +
   xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
   theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
-        plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
+        plot.margin = margin(t = 0, r = 5, b = 15, l = 5, unit = "pt"))
 chi_plot_partial_2 <- chi_bins[which(chi_bins$don_resn == "A" & chi_bins$type == "Single"),] %>%
   ggplot(aes(x=mids, y=density*10^4)) +
   annotate("rect", linetype = "blank", fill = color_palette[6], alpha = 0.3,
@@ -948,7 +985,7 @@ chi_plot_partial_2 <- chi_bins[which(chi_bins$don_resn == "A" & chi_bins$type ==
   scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) + scale_y_continuous(limits = c(0, max_partial)) +
   xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
   theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
-        plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
+        plot.margin = margin(t = 0, r = 5, b = 15, l = 5, unit = "pt"))
 chi_plot_partial_3 <- chi_bins[which(chi_bins$don_resn == "A" & chi_bins$type == "Dual"),] %>%
   ggplot(aes(x=mids, y=density*10^4)) +
   annotate("rect", linetype = "blank", fill = color_palette[6], alpha = 0.3,
@@ -962,7 +999,7 @@ chi_plot_partial_3 <- chi_bins[which(chi_bins$don_resn == "A" & chi_bins$type ==
   scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) + scale_y_continuous(limits = c(0, max_partial)) +
   xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
   theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
-        plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
+        plot.margin = margin(t = 0, r = 5, b = 15, l = 5, unit = "pt"))
 
 # Cytosine
 chi_plot_partial_4 <- chi_bins[which(chi_bins$don_resn == "C" & chi_bins$type == "Non"),] %>%
@@ -978,7 +1015,7 @@ chi_plot_partial_4 <- chi_bins[which(chi_bins$don_resn == "C" & chi_bins$type ==
   scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) + scale_y_continuous(limits = c(0, max_partial)) +
   xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
   theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
-        plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
+        plot.margin = margin(t = 0, r = 5, b = 15, l = 5, unit = "pt"))
 chi_plot_partial_5 <- chi_bins[which(chi_bins$don_resn == "C" & chi_bins$type == "Single"),] %>%
   ggplot(aes(x=mids, y=density*10^4)) +
   annotate("rect", linetype = "blank", fill = color_palette[6], alpha = 0.3,
@@ -992,7 +1029,7 @@ chi_plot_partial_5 <- chi_bins[which(chi_bins$don_resn == "C" & chi_bins$type ==
   scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) + scale_y_continuous(limits = c(0, max_partial)) +
   xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
   theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
-        plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
+        plot.margin = margin(t = 0, r = 5, b = 15, l = 5, unit = "pt"))
 chi_plot_partial_6 <- chi_bins[which(chi_bins$don_resn == "C" & chi_bins$type == "Dual"),] %>%
   ggplot(aes(x=mids, y=density*10^4)) +
   annotate("rect", linetype = "blank", fill = color_palette[6], alpha = 0.3,
@@ -1006,7 +1043,7 @@ chi_plot_partial_6 <- chi_bins[which(chi_bins$don_resn == "C" & chi_bins$type ==
   scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) + scale_y_continuous(limits = c(0, max_partial)) +
   xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
   theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
-        plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
+        plot.margin = margin(t = 0, r = 5, b = 15, l = 5, unit = "pt"))
 
 # Guanine
 chi_plot_partial_7 <- chi_bins[which(chi_bins$don_resn == "G" & chi_bins$type == "Non"),] %>%
@@ -1022,7 +1059,7 @@ chi_plot_partial_7 <- chi_bins[which(chi_bins$don_resn == "G" & chi_bins$type ==
   scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) + scale_y_continuous(limits = c(0, max_partial)) +
   xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
   theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
-        plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
+        plot.margin = margin(t = 0, r = 5, b = 15, l = 5, unit = "pt"))
 chi_plot_partial_8 <- chi_bins[which(chi_bins$don_resn == "G" & chi_bins$type == "Single"),] %>%
   ggplot(aes(x=mids, y=density*10^4)) +
   annotate("rect", linetype = "blank", fill = color_palette[6], alpha = 0.3,
@@ -1036,7 +1073,7 @@ chi_plot_partial_8 <- chi_bins[which(chi_bins$don_resn == "G" & chi_bins$type ==
   scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) + scale_y_continuous(limits = c(0, max_partial)) +
   xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
   theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
-        plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
+        plot.margin = margin(t = 0, r = 5, b = 15, l = 5, unit = "pt"))
 chi_plot_partial_9 <- chi_bins[which(chi_bins$don_resn == "G" & chi_bins$type == "Dual"),] %>%
   ggplot(aes(x=mids, y=density*10^4)) +
   annotate("rect", linetype = "blank", fill = color_palette[6], alpha = 0.3,
@@ -1050,7 +1087,7 @@ chi_plot_partial_9 <- chi_bins[which(chi_bins$don_resn == "G" & chi_bins$type ==
   scale_x_continuous(limits = c(-20, 130), breaks = seq(0, 120, 30)) + scale_y_continuous(limits = c(0, max_partial)) +
   xlab(element_blank()) + ylab(element_blank()) + theme_bw(base_size = 10) +
   theme(plot.title = element_text(size = 10, hjust = 0.5), panel.border = element_blank(),
-        plot.margin = margin(t = 5, r = 5, b = 0, l = 5, unit = "pt"))
+        plot.margin = margin(t = 0, r = 5, b = 15, l = 5, unit = "pt"))
 
 # Convert the partial plots into graphical objects.
 grob_part_1 <- ggplotGrob(chi_plot_partial_1)
@@ -1070,14 +1107,14 @@ guanine_partial <- cbind(grob_part_7, grob_part_8, grob_part_9)
 partial_no_y <- plot_grid(adenine_title, adenine_partial, cytosine_title, cytosine_partial,
                           guanine_title, guanine_partial, x_title,
                           ncol = 1, rel_heights = c(0.15, 1, 0.15, 1, 0.15, 1, 0.15))
-partial_plots <- plot_grid(y_title, partial_no_y, nrow = 1, rel_widths = c(0.1, 1))
-partial_plots_combined <- plot_grid(grob_combined, partial_plots, ncol = 1, rel_heights = c(1.9, 5.7)) +
+partial_plots <- plot_grid(y_title, partial_no_y, nrow = 1, rel_widths = c(0.1, 1)) +
   theme(plot.background = element_rect(fill = "white", color = NA))
 
 # Create the plots.
-ggsave(snakemake@output[["chi_full"]], plot = full_plots, width = 6.5, height = 7, units = "in", scale = 1)
-ggsave(snakemake@output[["chi_partial_combined"]],
-       plot = partial_plots_combined, width = 4, height = 7.6, units = "in", scale = 1)
+ggsave(snakemake@output[["chi_full.png"]], plot = full_plots, width = 6.5, height = 7, units = "in", scale = 1)
+ggsave(snakemake@output[["chi_combined.png"]], plot = chi_plot_combined,
+  width = 3.75, height = 1.75, units = "in", scale = 1)
+ggsave(snakemake@output[["chi_partial.png"]], plot = partial_plots, width = 4, height = 6.5, units = "in", scale = 1)
 
 # Calculate the number of residues that belong to the major and minor conformations.
 chi_df[!(chi_df["chi_adjusted"] > -20 & chi_df["chi_adjusted"] <= 130), "conformation"] <- "major"
