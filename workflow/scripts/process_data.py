@@ -212,7 +212,7 @@ eq_class_mem_id = snakemake.input.data[21:-4]
 # Read the data for the equivalence class member.
 try:
     df = pd.read_csv(snakemake.input.data, comment="#", keep_default_na=False, na_values="NaN",
-                     dtype={"don_resi": "str", "acc_resi": "str", "don_chain": "str", "acc_chain": "str"})
+                     dtype={"don_resi": "str", "acc_resi": "str", "don_chain": "str", "acc_chain": "str", "PDB": "str"})
 # Write an empty file and exit if FileNotFoundError is encountered.
 except FileNotFoundError:
     subprocess.run(["touch", snakemake.output.data])
