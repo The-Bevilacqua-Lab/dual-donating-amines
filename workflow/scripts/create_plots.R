@@ -14,7 +14,8 @@ library(circular)
 #### SET INITIAL VARIABLES ####
 
 # Creates data frames from the combined data.
-combined_df <- read.csv(snakemake@input[["combined"]], header = TRUE, na.strings = "NaN", comment.char = "#")
+combined_df <- read.csv(snakemake@input[["combined"]], header = TRUE, na.strings = "NaN", comment.char = "#",
+                        colClasses = c("PDB" = "character"))
 
 # Color Palette: black, orange, sky blue, bluish green, yellow, blue, vermilion, reddish purple
 # Colors from DOI 10.1038/nmeth.1618

@@ -3,7 +3,8 @@ library(dplyr)
 #### SET INITIAL VARIABLES ####
 
 # Creates data frames from the combined data.
-combined_df <- read.csv(snakemake@input[["combined"]], header = TRUE, na.strings = "NaN", comment.char = "#")
+combined_df <- read.csv(snakemake@input[["combined"]], header = TRUE, na.strings = "NaN", comment.char = "#",
+                        colClasses = c("PDB" = "character"))
 
 #### 4A - SHEARED GA BASE PAIR ####
 
