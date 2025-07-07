@@ -31,11 +31,10 @@ def parse_nrlist(nrlist_file):
     print(f"The provided representative structure file contains {len(np.array(pdb_id_list_count))} IFEs and "
           f"{len(np.unique(np.array(pdb_id_list_count)))} unique PDB IDs.")
     # Prepare a dictionary of the equivalence classes that includes the PDB ID, model info, and chain info for the
-    # equivalence class members.
+    # representative member of each equivalence class.
     eq_class_dict = {}
     with open(nrlist_file, mode='r') as read_file:
         for line in csv.reader(read_file):
-            eq_class_dict[line[0]] = {'PDB_ID': [], 'model': [], 'chain_list': []}
             pdb_id_list = []
             model_list = []
             chain_list = []
@@ -76,21 +75,12 @@ def parse_nrlist(nrlist_file):
                 if model != model_list[0]:
                     print(f"Error: The models for a member of equivalence class {line[0]} do not match.")
                     sys.exit(1)
-            eq_class_dict[line[0]]['PDB_ID'].append(pdb_id_list[0])
-            eq_class_dict[line[0]]['model'].append(model_list[0])
-            eq_class_dict[line[0]]['chain_list'].append(chain_list)
+            eq_class_dict[line[0]] = {'PDB_ID': pdb_id_list[0], 'model': model_list[0], 'chain_list': chain_list}
     # Prepare a list of strings where each string includes the equivalence class name, PDB ID, model info, and chain
-    # info for the equivalence class members.
+    # info for the representative member of the corresponding equivalence class.
     eq_class_members = []
     for eq_class in eq_class_dict:
-        if not (len(eq_class_dict[eq_class]['PDB_ID']) == len(eq_class_dict[eq_class]['model']) ==
-                len(eq_class_dict[eq_class]['chain_list'])):
-            print(f"Error: There is an issue with the information for a member of equivalence class {eq_class} in the "
-                  f"Snakefile.")
-            sys.exit(1)
-        for idx in range(len(eq_class_dict[eq_class]['PDB_ID'])):
-            eq_class_members.append(f'{eq_class}_{eq_class_dict[eq_class]["PDB_ID"][idx]}_'
-                                    f'{eq_class_dict[eq_class]["model"][idx]}')
-            for chain in eq_class_dict[eq_class]["chain_list"][idx]:
-                eq_class_members[-1] = eq_class_members[-1] + "_" + chain
+        eq_class_members.append(f'{eq_class}_{eq_class_dict[eq_class]["PDB_ID"]}_{eq_class_dict[eq_class]["model"]}')
+        for chain in eq_class_dict[eq_class]["chain_list"]:
+            eq_class_members[-1] = eq_class_members[-1] + "_" + chain
     return eq_class_members
