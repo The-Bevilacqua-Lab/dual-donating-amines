@@ -1,10 +1,9 @@
 """
-This script iterates through the lines of a representative set file and collects the equivalence class names, PDB IDs,
-model info, and chain info of the equivalence class members that serve as the representative structures of their
-corresponding equivalence classes. Information for the equivalence class members are returned as a single list of
-strings. The name of the representative set file must be provided as the first argument. If True is provided as the
-second argument, information for all members (not just the representative structures) of the equivalence classes will be
-compiled.
+This script provides a function that iterates through the lines of a representative set file and collects the
+equivalence class names, PDB IDs, model info, and chain info of the equivalence class members that serve as the
+representative structures of their corresponding equivalence classes. Information for the equivalence class members are
+returned as a single list of strings. The name of the representative set file must be provided as the argument. Lastly,
+the function also prints the number of IFEs and unique PDB IDs present in the representative set file.
 """
 
 import sys
