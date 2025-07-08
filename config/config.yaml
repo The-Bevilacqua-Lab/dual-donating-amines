@@ -3,6 +3,7 @@ rep_set_file: "resources/nrlist_<id>.csv"
 
 # What are the paths of the directories that will hold structures?
 original_mmcif_dir: "resources/original_mmCIF_files/"
+h_omitted_mmcif_dir: "results/h_omitted_mmcif_dir/"
 disordered_mmcif_dir: "results/disordered_mmcif_files/"
 modified_mmcif_dir: "results/modified_mmcif_files/"
 chain_pdb_dir: "results/chain_pdb_files/"
