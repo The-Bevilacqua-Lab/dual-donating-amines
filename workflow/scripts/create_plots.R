@@ -238,44 +238,68 @@ write.csv(sasa_stats, file = snakemake@output[["sasa_stats"]], row.names = FALSE
 
 #### SASA WILCOXON RANK SUM TESTS ####
 
+# Start sinking the output into a text file.
+sink(file = snakemake@output[["sasa_pvals_txt"]])
+
 # Adenine p-values
 a_sasa_df <- sasa_df %>% filter(don_resn == "A")
-a_sasa_pvals <- data.frame(don_resn = "A",
-                            n.s = wilcox.test(pull(filter(a_sasa_df, type == "Non"), SASA),
-                                              pull(filter(a_sasa_df, type == "Single"), SASA))$p.value,
-                            n.d = wilcox.test(pull(filter(a_sasa_df, type == "Non"), SASA),
-                                              pull(filter(a_sasa_df, type == "Dual"), SASA))$p.value,
-                            s.d = wilcox.test(pull(filter(a_sasa_df, type == "Single"), SASA),
-                                              pull(filter(a_sasa_df, type == "Dual"), SASA))$p.value)
+a_sasa_ns <- wilcox.test(pull(filter(a_sasa_df, type == "Non"), SASA),
+                         pull(filter(a_sasa_df, type == "Single"), SASA))
+a_sasa_nd <- wilcox.test(pull(filter(a_sasa_df, type == "Non"), SASA),
+                         pull(filter(a_sasa_df, type == "Dual"), SASA))
+a_sasa_sd <- wilcox.test(pull(filter(a_sasa_df, type == "Single"), SASA),
+                         pull(filter(a_sasa_df, type == "Dual"), SASA))
+cat("A(N6) Non-Donating to Single-Donating Comparison:")
+a_sasa_ns
+cat("A(N6) Non-Donating to Dual-Donating Comparison:")
+a_sasa_nd
+cat("A(N6) Single-Donating to Dual-Donating Comparison:")
+a_sasa_sd
+a_sasa_pvals <- data.frame(don_resn = "A", n.s = a_sasa_ns$p.value, n.d = a_sasa_nd$p.value, s.d = a_sasa_sd$p.value)
 a_sasa_adjust <- p.adjust(as.numeric(a_sasa_pvals[1, c("n.s", "n.d", "s.d")]), method = "BH")
 a_sasa_pvals <-
   cbind(a_sasa_pvals, n.s_adjust = a_sasa_adjust[1], n.d_adjust = a_sasa_adjust[2], s.d_adjust = a_sasa_adjust[3])
 
 # Cytosine p-values
 c_sasa_df <- sasa_df %>% filter(don_resn == "C")
-c_sasa_pvals <- data.frame(don_resn = "C",
-                           n.s = wilcox.test(pull(filter(c_sasa_df, type == "Non"), SASA),
-                                             pull(filter(c_sasa_df, type == "Single"), SASA))$p.value,
-                           n.d = wilcox.test(pull(filter(c_sasa_df, type == "Non"), SASA),
-                                             pull(filter(c_sasa_df, type == "Dual"), SASA))$p.value,
-                           s.d = wilcox.test(pull(filter(c_sasa_df, type == "Single"), SASA),
-                                             pull(filter(c_sasa_df, type == "Dual"), SASA))$p.value)
+c_sasa_ns <- wilcox.test(pull(filter(c_sasa_df, type == "Non"), SASA),
+                         pull(filter(c_sasa_df, type == "Single"), SASA))
+c_sasa_nd <- wilcox.test(pull(filter(c_sasa_df, type == "Non"), SASA),
+                         pull(filter(c_sasa_df, type == "Dual"), SASA))
+c_sasa_sd <- wilcox.test(pull(filter(c_sasa_df, type == "Single"), SASA),
+                         pull(filter(c_sasa_df, type == "Dual"), SASA))
+cat("C(N4) Non-Donating to Single-Donating Comparison:")
+c_sasa_ns
+cat("C(N4) Non-Donating to Dual-Donating Comparison:")
+c_sasa_nd
+cat("C(N4) Single-Donating to Dual-Donating Comparison:")
+c_sasa_sd
+c_sasa_pvals <- data.frame(don_resn = "C", n.s = c_sasa_ns$p.value, n.d = c_sasa_nd$p.value, s.d = c_sasa_sd$p.value)
 c_sasa_adjust <- p.adjust(as.numeric(c_sasa_pvals[1, c("n.s", "n.d", "s.d")]), method = "BH")
 c_sasa_pvals <-
   cbind(c_sasa_pvals, n.s_adjust = c_sasa_adjust[1], n.d_adjust = c_sasa_adjust[2], s.d_adjust = c_sasa_adjust[3])
 
 # Guanine p-values
 g_sasa_df <- sasa_df %>% filter(don_resn == "G")
-g_sasa_pvals <- data.frame(don_resn = "G",
-                           n.s = wilcox.test(pull(filter(g_sasa_df, type == "Non"), SASA),
-                                             pull(filter(g_sasa_df, type == "Single"), SASA))$p.value,
-                           n.d = wilcox.test(pull(filter(g_sasa_df, type == "Non"), SASA),
-                                             pull(filter(g_sasa_df, type == "Dual"), SASA))$p.value,
-                           s.d = wilcox.test(pull(filter(g_sasa_df, type == "Single"), SASA),
-                                             pull(filter(g_sasa_df, type == "Dual"), SASA))$p.value)
+g_sasa_ns <- wilcox.test(pull(filter(g_sasa_df, type == "Non"), SASA),
+                         pull(filter(g_sasa_df, type == "Single"), SASA))
+g_sasa_nd <- wilcox.test(pull(filter(g_sasa_df, type == "Non"), SASA),
+                         pull(filter(g_sasa_df, type == "Dual"), SASA))
+g_sasa_sd <- wilcox.test(pull(filter(g_sasa_df, type == "Single"), SASA),
+                         pull(filter(g_sasa_df, type == "Dual"), SASA))
+cat("G(N2) Non-Donating to Single-Donating Comparison:")
+g_sasa_ns
+cat("G(N2) Non-Donating to Dual-Donating Comparison:")
+g_sasa_nd
+cat("G(N2) Single-Donating to Dual-Donating Comparison:")
+g_sasa_sd
+g_sasa_pvals <- data.frame(don_resn = "G", n.s = g_sasa_ns$p.value, n.d = g_sasa_nd$p.value, s.d = g_sasa_sd$p.value)
 g_sasa_adjust <- p.adjust(as.numeric(g_sasa_pvals[1, c("n.s", "n.d", "s.d")]), method = "BH")
 g_sasa_pvals <-
   cbind(g_sasa_pvals, n.s_adjust = g_sasa_adjust[1], n.d_adjust = g_sasa_adjust[2], s.d_adjust = g_sasa_adjust[3])
+
+# Stop sinking the output into a text file.
+sink(file = NULL)
 
 # Write SASA p-values to a csv file.
 sasa_pvals <- rbind(a_sasa_pvals, c_sasa_pvals, g_sasa_pvals)
@@ -349,83 +373,131 @@ write.csv(density_stats, file = snakemake@output[["density_stats"]], row.names =
 
 #### HEAVY ATOM DENSITY WILCOXON RANK SUM TESTS ####
 
+# Start sinking the output into a text file.
+sink(file = snakemake@output[["density_pvals_txt"]])
+
 # Adenine ROI 1 p-values
 a_roi_1_df <- density_pivot_df %>% filter(don_resn == "A", density_type == "ROI 1")
-a_roi_1_pvals <- data.frame(don_resn = "A", density_type = "ROI 1",
-                            n.s = wilcox.test(pull(filter(a_roi_1_df, type == "Non"), density_values),
-                                              pull(filter(a_roi_1_df, type == "Single"), density_values))$p.value,
-                            n.d = wilcox.test(pull(filter(a_roi_1_df, type == "Non"), density_values),
-                                              pull(filter(a_roi_1_df, type == "Dual"), density_values))$p.value,
-                            s.d = wilcox.test(pull(filter(a_roi_1_df, type == "Single"), density_values),
-                                              pull(filter(a_roi_1_df, type == "Dual"), density_values))$p.value)
+a_roi_1_ns <- wilcox.test(pull(filter(a_roi_1_df, type == "Non"), density_values),
+                          pull(filter(a_roi_1_df, type == "Single"), density_values))
+a_roi_1_nd <- wilcox.test(pull(filter(a_roi_1_df, type == "Non"), density_values),
+                          pull(filter(a_roi_1_df, type == "Dual"), density_values))
+a_roi_1_sd <- wilcox.test(pull(filter(a_roi_1_df, type == "Single"), density_values),
+                          pull(filter(a_roi_1_df, type == "Dual"), density_values))
+cat("A(N6) ROI 1 Non-Donating to Single-Donating Comparison:")
+a_roi_1_ns
+cat("A(N6) ROI 1 Non-Donating to Dual-Donating Comparison:")
+a_roi_1_nd
+cat("A(N6) ROI 1 Single-Donating to Dual-Donating Comparison:")
+a_roi_1_sd
+a_roi_1_pvals <- data.frame(don_resn = "A", density_type = "ROI 1", n.s = a_roi_1_ns$p.value, n.d = a_roi_1_nd$p.value,
+                            s.d = a_roi_1_sd$p.value)
 a_roi_1_adjust <- p.adjust(as.numeric(a_roi_1_pvals[1, c("n.s", "n.d", "s.d")]), method = "BH")
 a_roi_1_pvals <-
   cbind(a_roi_1_pvals, n.s_adjust = a_roi_1_adjust[1], n.d_adjust = a_roi_1_adjust[2], s.d_adjust = a_roi_1_adjust[3])
 
 # Cytosine ROI 1 p-values
 c_roi_1_df <- density_pivot_df %>% filter(don_resn == "C", density_type == "ROI 1")
-c_roi_1_pvals <- data.frame(don_resn = "C", density_type = "ROI 1",
-                            n.s = wilcox.test(pull(filter(c_roi_1_df, type == "Non"), density_values),
-                                              pull(filter(c_roi_1_df, type == "Single"), density_values))$p.value,
-                            n.d = wilcox.test(pull(filter(c_roi_1_df, type == "Non"), density_values),
-                                              pull(filter(c_roi_1_df, type == "Dual"), density_values))$p.value,
-                            s.d = wilcox.test(pull(filter(c_roi_1_df, type == "Single"), density_values),
-                                              pull(filter(c_roi_1_df, type == "Dual"), density_values))$p.value)
+c_roi_1_ns <- wilcox.test(pull(filter(c_roi_1_df, type == "Non"), density_values),
+                          pull(filter(c_roi_1_df, type == "Single"), density_values))
+c_roi_1_nd <- wilcox.test(pull(filter(c_roi_1_df, type == "Non"), density_values),
+                          pull(filter(c_roi_1_df, type == "Dual"), density_values))
+c_roi_1_sd <- wilcox.test(pull(filter(c_roi_1_df, type == "Single"), density_values),
+                          pull(filter(c_roi_1_df, type == "Dual"), density_values))
+cat("C(N4) ROI 1 Non-Donating to Single-Donating Comparison:")
+c_roi_1_ns
+cat("C(N4) ROI 1 Non-Donating to Dual-Donating Comparison:")
+c_roi_1_nd
+cat("C(N4) ROI 1 Single-Donating to Dual-Donating Comparison:")
+c_roi_1_sd
+c_roi_1_pvals <- data.frame(don_resn = "C", density_type = "ROI 1", n.s = c_roi_1_ns$p.value, n.d = c_roi_1_nd$p.value,
+                            s.d = c_roi_1_sd$p.value)
 c_roi_1_adjust <- p.adjust(as.numeric(c_roi_1_pvals[1, c("n.s", "n.d", "s.d")]), method = "BH")
 c_roi_1_pvals <-
   cbind(c_roi_1_pvals, n.s_adjust = c_roi_1_adjust[1], n.d_adjust = c_roi_1_adjust[2], s.d_adjust = c_roi_1_adjust[3])
 
 # Guanine ROI 1 p-values
 g_roi_1_df <- density_pivot_df %>% filter(don_resn == "G", density_type == "ROI 1")
-g_roi_1_pvals <- data.frame(don_resn = "G", density_type = "ROI 1",
-                            n.s = wilcox.test(pull(filter(g_roi_1_df, type == "Non"), density_values),
-                                              pull(filter(g_roi_1_df, type == "Single"), density_values))$p.value,
-                            n.d = wilcox.test(pull(filter(g_roi_1_df, type == "Non"), density_values),
-                                              pull(filter(g_roi_1_df, type == "Dual"), density_values))$p.value,
-                            s.d = wilcox.test(pull(filter(g_roi_1_df, type == "Single"), density_values),
-                                              pull(filter(g_roi_1_df, type == "Dual"), density_values))$p.value)
+g_roi_1_ns <- wilcox.test(pull(filter(g_roi_1_df, type == "Non"), density_values),
+                          pull(filter(g_roi_1_df, type == "Single"), density_values))
+g_roi_1_nd <- wilcox.test(pull(filter(g_roi_1_df, type == "Non"), density_values),
+                          pull(filter(g_roi_1_df, type == "Dual"), density_values))
+g_roi_1_sd <- wilcox.test(pull(filter(g_roi_1_df, type == "Single"), density_values),
+                          pull(filter(g_roi_1_df, type == "Dual"), density_values))
+cat("G(N2) ROI 1 Non-Donating to Single-Donating Comparison:")
+g_roi_1_ns
+cat("G(N2) ROI 1 Non-Donating to Dual-Donating Comparison:")
+g_roi_1_nd
+cat("G(N2) ROI 1 Single-Donating to Dual-Donating Comparison:")
+g_roi_1_sd
+g_roi_1_pvals <- data.frame(don_resn = "G", density_type = "ROI 1", n.s = g_roi_1_ns$p.value, n.d = g_roi_1_nd$p.value,
+                            s.d = g_roi_1_sd$p.value)
 g_roi_1_adjust <- p.adjust(as.numeric(g_roi_1_pvals[1, c("n.s", "n.d", "s.d")]), method = "BH")
 g_roi_1_pvals <-
   cbind(g_roi_1_pvals, n.s_adjust = g_roi_1_adjust[1], n.d_adjust = g_roi_1_adjust[2], s.d_adjust = g_roi_1_adjust[3])
 
 # Adenine ROI 2 p-values
 a_roi_2_df <- density_pivot_df %>% filter(don_resn == "A", density_type == "ROI 2")
-a_roi_2_pvals <- data.frame(don_resn = "A", density_type = "ROI 2",
-                            n.s = wilcox.test(pull(filter(a_roi_2_df, type == "Non"), density_values),
-                                              pull(filter(a_roi_2_df, type == "Single"), density_values))$p.value,
-                            n.d = wilcox.test(pull(filter(a_roi_2_df, type == "Non"), density_values),
-                                              pull(filter(a_roi_2_df, type == "Dual"), density_values))$p.value,
-                            s.d = wilcox.test(pull(filter(a_roi_2_df, type == "Single"), density_values),
-                                              pull(filter(a_roi_2_df, type == "Dual"), density_values))$p.value)
+a_roi_2_ns <- wilcox.test(pull(filter(a_roi_2_df, type == "Non"), density_values),
+                          pull(filter(a_roi_2_df, type == "Single"), density_values))
+a_roi_2_nd <- wilcox.test(pull(filter(a_roi_2_df, type == "Non"), density_values),
+                          pull(filter(a_roi_2_df, type == "Dual"), density_values))
+a_roi_2_sd <- wilcox.test(pull(filter(a_roi_2_df, type == "Single"), density_values),
+                          pull(filter(a_roi_2_df, type == "Dual"), density_values))
+cat("A(N6) ROI 2 Non-Donating to Single-Donating Comparison:")
+a_roi_2_ns
+cat("A(N6) ROI 2 Non-Donating to Dual-Donating Comparison:")
+a_roi_2_nd
+cat("A(N6) ROI 2 Single-Donating to Dual-Donating Comparison:")
+a_roi_2_sd
+a_roi_2_pvals <- data.frame(don_resn = "A", density_type = "ROI 2", n.s = a_roi_2_ns$p.value, n.d = a_roi_2_nd$p.value,
+                            s.d = a_roi_2_sd$p.value)
 a_roi_2_adjust <- p.adjust(as.numeric(a_roi_2_pvals[1, c("n.s", "n.d", "s.d")]), method = "BH")
 a_roi_2_pvals <-
   cbind(a_roi_2_pvals, n.s_adjust = a_roi_2_adjust[1], n.d_adjust = a_roi_2_adjust[2], s.d_adjust = a_roi_2_adjust[3])
 
 # Cytosine ROI 2 p-values
 c_roi_2_df <- density_pivot_df %>% filter(don_resn == "C", density_type == "ROI 2")
-c_roi_2_pvals <- data.frame(don_resn = "C", density_type = "ROI 2",
-                            n.s = wilcox.test(pull(filter(c_roi_2_df, type == "Non"), density_values),
-                                              pull(filter(c_roi_2_df, type == "Single"), density_values))$p.value,
-                            n.d = wilcox.test(pull(filter(c_roi_2_df, type == "Non"), density_values),
-                                              pull(filter(c_roi_2_df, type == "Dual"), density_values))$p.value,
-                            s.d = wilcox.test(pull(filter(c_roi_2_df, type == "Single"), density_values),
-                                              pull(filter(c_roi_2_df, type == "Dual"), density_values))$p.value)
+c_roi_2_ns <- wilcox.test(pull(filter(c_roi_2_df, type == "Non"), density_values),
+                          pull(filter(c_roi_2_df, type == "Single"), density_values))
+c_roi_2_nd <- wilcox.test(pull(filter(c_roi_2_df, type == "Non"), density_values),
+                          pull(filter(c_roi_2_df, type == "Dual"), density_values))
+c_roi_2_sd <- wilcox.test(pull(filter(c_roi_2_df, type == "Single"), density_values),
+                          pull(filter(c_roi_2_df, type == "Dual"), density_values))
+cat("C(N4) ROI 2 Non-Donating to Single-Donating Comparison:")
+c_roi_2_ns
+cat("C(N4) ROI 2 Non-Donating to Dual-Donating Comparison:")
+c_roi_2_nd
+cat("C(N4) ROI 2 Single-Donating to Dual-Donating Comparison:")
+c_roi_2_sd
+c_roi_2_pvals <- data.frame(don_resn = "C", density_type = "ROI 2", n.s = c_roi_2_ns$p.value, n.d = c_roi_2_nd$p.value,
+                            s.d = c_roi_2_sd$p.value)
 c_roi_2_adjust <- p.adjust(as.numeric(c_roi_2_pvals[1, c("n.s", "n.d", "s.d")]), method = "BH")
 c_roi_2_pvals <-
   cbind(c_roi_2_pvals, n.s_adjust = c_roi_2_adjust[1], n.d_adjust = c_roi_2_adjust[2], s.d_adjust = c_roi_2_adjust[3])
 
 # Guanine ROI 2 p-values
 g_roi_2_df <- density_pivot_df %>% filter(don_resn == "G", density_type == "ROI 2")
-g_roi_2_pvals <- data.frame(don_resn = "G", density_type = "ROI 2",
-                            n.s = wilcox.test(pull(filter(g_roi_2_df, type == "Non"), density_values),
-                                              pull(filter(g_roi_2_df, type == "Single"), density_values))$p.value,
-                            n.d = wilcox.test(pull(filter(g_roi_2_df, type == "Non"), density_values),
-                                              pull(filter(g_roi_2_df, type == "Dual"), density_values))$p.value,
-                            s.d = wilcox.test(pull(filter(g_roi_2_df, type == "Single"), density_values),
-                                              pull(filter(g_roi_2_df, type == "Dual"), density_values))$p.value)
+g_roi_2_ns <- wilcox.test(pull(filter(g_roi_2_df, type == "Non"), density_values),
+                          pull(filter(g_roi_2_df, type == "Single"), density_values))
+g_roi_2_nd <- wilcox.test(pull(filter(g_roi_2_df, type == "Non"), density_values),
+                          pull(filter(g_roi_2_df, type == "Dual"), density_values))
+g_roi_2_sd <- wilcox.test(pull(filter(g_roi_2_df, type == "Single"), density_values),
+                          pull(filter(g_roi_2_df, type == "Dual"), density_values))
+cat("G(N2) ROI 2 Non-Donating to Single-Donating Comparison:")
+g_roi_2_ns
+cat("G(N2) ROI 2 Non-Donating to Dual-Donating Comparison:")
+g_roi_2_nd
+cat("G(N2) ROI 2 Single-Donating to Dual-Donating Comparison:")
+g_roi_2_sd
+g_roi_2_pvals <- data.frame(don_resn = "G", density_type = "ROI 2", n.s = g_roi_2_ns$p.value, n.d = g_roi_2_nd$p.value,
+                            s.d = g_roi_2_sd$p.value)
 g_roi_2_adjust <- p.adjust(as.numeric(g_roi_2_pvals[1, c("n.s", "n.d", "s.d")]), method = "BH")
 g_roi_2_pvals <-
   cbind(g_roi_2_pvals, n.s_adjust = g_roi_2_adjust[1], n.d_adjust = g_roi_2_adjust[2], s.d_adjust = g_roi_2_adjust[3])
+
+# Stop sinking the output into a text file.
+sink(file = NULL)
 
 # Write density p-values to a csv file.
 density_pvals <- rbind(a_roi_1_pvals, c_roi_1_pvals, g_roi_1_pvals, a_roi_2_pvals, c_roi_2_pvals, g_roi_2_pvals)

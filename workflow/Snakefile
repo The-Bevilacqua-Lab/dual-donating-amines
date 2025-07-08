@@ -23,15 +23,18 @@ rule all:
         "results/plots/Fig_S2_sasa_jitter.png",
         "results/plots/Fig_5_sasa_col.png",
         "results/tables/sasa_stats.csv",
+        "results/p-values/sasa_pvals.csv",
+        "results/p-values/sasa_pvals.txt",
         "results/plots/Fig_S2_density.png",
         "results/plots/Fig_5_density_no_outiers.png",
         "results/tables/density_stats.csv",
         "results/p-values/density_pvals.csv",
+        "results/p-values/density_pvals.txt",
         "results/plots/Fig_S3_chi_full.png",
         "results/plots/Fig_6_chi_combined.png",
         "results/plots/Fig_6_chi_partial.png",
         "results/tables/chi_stats.csv",
-        "results/p-values/chi_pvals.csv",
+        "results/p-values/chi_pvals.txt",
         "results/tables/location_1_frag_info.csv",
         "results/tables/location_2_frag_info.csv",
         "results/acc_pair_examples/Supplemental_Data_S1.csv",
@@ -108,15 +111,17 @@ rule create_plots:
         fig_5_sasa_col = "results/plots/Fig_5_sasa_col.png",
         sasa_stats = "results/tables/sasa_stats.csv",
         sasa_pvals = "results/p-values/sasa_pvals.csv",
+        sasa_pvals_txt = "results/p-values/sasa_pvals.txt",
         fig_S2_density = "results/plots/Fig_S2_density.png",
         fig_5_density_no_outiers = "results/plots/Fig_5_density_no_outiers.png",
         density_stats = "results/tables/density_stats.csv",
         density_pvals = "results/p-values/density_pvals.csv",
+        density_pvals_txt = "results/p-values/density_pvals.txt",
         fig_S3_chi_full = "results/plots/Fig_S3_chi_full.png",
         fig_6_chi_combined = "results/plots/Fig_6_chi_combined.png",
         fig_6_chi_partial = "results/plots/Fig_6_chi_partial.png",
         chi_stats = "results/tables/chi_stats.csv",
-        chi_pvals = "results/p-values/chi_pvals.csv"
+        chi_pvals = "results/p-values/chi_pvals.txt"
     conda:
         "envs/general.yaml"
     script:
