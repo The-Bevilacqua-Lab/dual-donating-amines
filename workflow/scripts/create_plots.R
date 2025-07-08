@@ -1072,10 +1072,10 @@ partial_plots <- plot_grid(y_title, partial_no_y, nrow = 1, rel_widths = c(0.1, 
   theme(plot.background = element_rect(fill = "white", color = NA))
 
 # Create the plots.
-ggsave(snakemake@output[["fig_S3_chi_full.png"]], plot = full_plots, width = 6.5, height = 7, units = "in", scale = 1)
-ggsave(snakemake@output[["fig_6_chi_combined.png"]], plot = chi_plot_combined,
+ggsave(snakemake@output[["fig_S3_chi_full"]], plot = full_plots, width = 6.5, height = 7, units = "in", scale = 1)
+ggsave(snakemake@output[["fig_6_chi_combined"]], plot = chi_plot_combined,
   width = 3.75, height = 1.75, units = "in", scale = 1)
-ggsave(snakemake@output[["fig_6_chi_partial.png"]], plot = partial_plots, width = 4, height = 6.5, units = "in", scale = 1)
+ggsave(snakemake@output[["fig_6_chi_partial"]], plot = partial_plots, width = 4, height = 6.5, units = "in", scale = 1)
 
 # Calculate the number of residues that belong to the major and minor conformations.
 chi_df[!(chi_df["chi_adjusted"] > -20 & chi_df["chi_adjusted"] <= 130), "conformation"] <- "major"
