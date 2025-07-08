@@ -1,5 +1,5 @@
 """
-This module reads the relevant mmCIF file to collect the specified model numbers.
+This module provides a function that reads the relevant mmCIF file to collect the specified model numbers.
 """
 
 from gemmi import cif
@@ -14,7 +14,6 @@ def retrieve_model(mmCIF_dir, pdb):
     block = mmCIF.sole_block()
 
     # Check that the _atom_site.pdbx_PDB_model_num name exists, and retrieve its values if it does.
-    model_list = []
     if block.find_values('_atom_site.pdbx_PDB_model_num'):
         model_list = block.find_values('_atom_site.pdbx_PDB_model_num')
     else:
