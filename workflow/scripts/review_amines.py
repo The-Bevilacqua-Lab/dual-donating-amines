@@ -85,10 +85,10 @@ with open(args.output_file, "w") as file:
     file.write("from pymol import cmd\n\n")
     file.write("amines = [\n")
     for idx, row in enumerate(df.itertuples()):
-        # Write this for the first acceptor pair.
+        # Write this for the first atom of the acceptor pair.
         file.write(f'    [["{row.don_name}", "{row.don_resi}", "{row.don_chain}", "{row.acc_pair_1_name}", '
                    f'"{row.acc_pair_1_resi}", "{row.acc_pair_1_chain}", "{row.PDB}", "{row.model}"]')
-        # Write this for the second acceptor pair.
+        # Write this for the second atom of the acceptor pair.
         file.write(f', ["{row.don_name}", "{row.don_resi}", "{row.don_chain}", "{row.acc_pair_2_name}", '
                    f'"{row.acc_pair_2_resi}", "{row.acc_pair_2_chain}", "{row.PDB}", "{row.model}"]]')
         # Determine if this is the last row.
@@ -127,20 +127,20 @@ with open(args.output_file, "w") as file:
     file.write("    if num < 1:\n")
     file.write("        print('The amine number must be 1 or greater.')\n")
     file.write("        return None\n")
-    file.write("    i1 = num - 1\n")
-    file.write("    target_pdb = amines[num-1][0][6]\n")
-    file.write("    target_model = amines[num-1][0][7]\n")
+    file.write("    i1 = num-1\n")
+    file.write("    target_pdb = amines[i1][0][6]\n")
+    file.write("    target_model = amines[i1][0][7]\n")
     file.write("    check_pdb_model(current_pdb, current_model, target_pdb, target_model)\n")
     file.write("    current_pdb = target_pdb\n")
     file.write("    current_model = target_model\n")
     file.write("    cmd.delete(f'dist_{num}*')\n")
     file.write("    cmd.hide('all')\n")
     file.write("    cmd.color('grey60', 'elem C')\n")
-    file.write("    cmd.show('sticks', f'resi \\\\{amines[num-1][0][1]} and chain {amines[num-1][0][2]}')\n")
+    file.write("    cmd.show('sticks', f'resi \\\\{amines[i1][0][1]} and chain {amines[i1][0][2]}')\n")
     file.write("    cmd.color('cyan', 'elem C and visible')\n")
     file.write("    cmd.show('sticks', 'byres all within " + args.search_dist +
                " of (visible and sidechain)')\n")
-    file.write("    for i2, pair in enumerate(amines[i1]):\n")
+    file.write("    for i2, atom in enumerate(amines[i1]):\n")
     file.write("        cmd.distance(f'dist_{num}_{i2}',\n"
                "                     f'name {amines[i1][i2][0]} and resi \\\\{amines[i1][i2][1]} "
                "and chain {amines[i1][i2][2]}',\n"
@@ -149,7 +149,7 @@ with open(args.output_file, "w") as file:
     file.write("    cmd.hide('labels')\n")
     file.write("    cmd.show('dashes', f'dist_{num}*')\n")
     file.write("    cmd.hide('sticks', 'elem H')\n")
-    file.write("    cmd.orient(f'sidechain and resi \\\\{amines[num-1][0][1]} and chain {amines[num-1][0][2]}')\n")
+    file.write("    cmd.orient(f'sidechain and resi \\\\{amines[i1][0][1]} and chain {amines[i1][0][2]}')\n")
     file.write("    view = np.array(cmd.get_view(quiet=1))\n")
     file.write("    view[[11, 15, 16]] = view[11] - 40, view[15] + 40, view[16] + 40\n")
     file.write("    cmd.set_view(view.tolist())\n")
