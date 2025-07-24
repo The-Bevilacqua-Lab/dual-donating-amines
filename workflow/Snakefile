@@ -175,8 +175,8 @@ rule id_rep_struct:
         dendrogram = "results/alignment_clustering/{pt_grps}_all_structure_dendrogram.png",
         align_clust_results = "results/alignment_clustering/{pt_grps}_alignment_n_clustering_results.csv"
     log:
-        stdout = "results/logs/id_rep_struct/output.stdout",
-        stderr = "results/logs/id_rep_struct/error.stderr"
+        stdout = "results/logs/id_rep_struct/{pt_grps}.stdout",
+        stderr = "results/logs/id_rep_struct/{pt_grps}.stderr"
     conda:
         "envs/general.yaml"
     script:
