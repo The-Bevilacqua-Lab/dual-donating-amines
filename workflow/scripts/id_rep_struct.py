@@ -118,7 +118,7 @@ def clip(p, r, h, F):
 
     if len(p1)>1:
         p1['temp_col'] = p1[['_atom_site.auth_asym_id', '_atom_site.auth_seq_id', '_atom_site.pdbx_PDB_ins_code']].fillna("").agg('_'.join, axis=1).str.strip()
-        p1['temp_col'] = p1['temp_col'].str.replace('?', '*', regex=True)
+        p1['temp_col'] = p1['temp_col'].str.replace('?', '*')
         # instead of filtering out by chain ID, segment ID, residue index, residue ID one after another
         # temp column will have chain ID, residue index, and insertion code all together
         # each row will have their unique items for this column
@@ -297,15 +297,15 @@ def align_all_against_all(clip_dir):
         print (k1)
         print (k2)
 
-        t1.loc[t1['#']== k1, k2]= round(align(k1, k2), 2)
-        t1.loc[t1['#']== k2, k1]= round(align(k2, k1), 2)
+        t1.loc[t1['#']== k1, k2]= round(align(clip_dir + k1, clip_dir + k2), 2)
+        t1.loc[t1['#']== k2, k1]= round(align(clip_dir + k2, clip_dir + k1), 2)
         t1.loc[t1['#']== k1, k1]= 0
         t1.loc[t1['#']== k2, k2]= 0
-        if round(align(k1, k2), 2) != round(align(k2, k1), 2):
+        if round(align(clip_dir + k1, clip_dir + k2), 2) != round(align(clip_dir + k2, clip_dir + k1), 2):
             print ('<><><><><><><><><><><><><><><><><><><><><><><>')
             print (j)
-            print (align(k1, k2))
-            print (align(k2, k1))
+            print (align(clip_dir + k1, clip_dir + k2))
+            print (align(clip_dir + k2, clip_dir + k1))
 
 
     return t1
