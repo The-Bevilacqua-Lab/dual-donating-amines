@@ -23,3 +23,20 @@ def retrieve_model(mmCIF_dir, pdb):
     unique_model_list = list(set(model_list))
     unique_model_list.sort()
     return unique_model_list
+
+# Return the latest PDB entry version specified in the mmCIF file.
+def retrieve_version(mmCIF_dir, pdb):
+
+    # Read the mmCIF file.
+    mmCIF = cif.read_file(f"{mmCIF_dir}/{pdb.lower()}.cif")
+
+    # Initialize the block.
+    block = mmCIF.sole_block()
+
+    # Return information on the latest version in the revision_history.
+    if block.find('_pdbx_audit_revision_history.', ['major_revision', 'minor_revision', 'revision_date']):
+        last_version = block.find('_pdbx_audit_revision_history.',
+                                  ['major_revision', 'minor_revision', 'revision_date'])[-1]
+        return f"{last_version[0]}.{last_version[1]}", last_version[2]
+    else:
+        return "Error", "Error"

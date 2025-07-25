@@ -24,7 +24,7 @@ import residue_library
 import eval_H_bonding
 import remove_disordered_atoms
 import sasa
-from parse_mmCIF import retrieve_model
+from parse_mmCIF import retrieve_model, retrieve_version
 
 # Redirect stdout and stderr to log files.
 stdout = sys.stdout
@@ -432,11 +432,18 @@ for idx, chain in enumerate(chain_list):
         na_torsion_df = pd.concat([na_torsion_df, additional_df])
 na_torsion_df['resi'] = na_torsion_df['resi'].astype('str')
 
+# Retrieve the version information specified in the mmCIF file.
+version_num, version_date = retrieve_version(original_mmcif_dir, pdb_id)
+if version_num == "Error":
+        error(f"Error: For {eq_class_mem_id}, an issue occurred with retrieving the version information specified in "
+              f"the mmCIF file.")
+
 # Prepare a master data frame containing heavy atom count, b-factor, H-bonding data, and other relevant information.
 master_df = don_info_df.merge(don_h_bonds_df, how='outer')
 master_df = master_df.merge(na_torsion_df, left_on=['don_resn', 'don_chain', 'don_resi'], right_on=['N', 'c', 'resi'],
                             how='left', suffixes=(None, '_y')).drop(columns=['N', 'c', 'resi', 'chi_y'])
-master_df.loc[:, ['model', 'PDB', 'eq_class_member']] = [model, pdb_id, eq_class_mem_id]
+master_df.loc[:, ['model', 'PDB', 'eq_class_member', 'PDB_version_number', 'PDB_version_date']] = \
+    [model, pdb_id, eq_class_mem_id, version_num, version_date]
 
 # Write a csv containing the data stored in the master data frame.
 with open(snakemake.output.data, "w") as csv_file:
