@@ -1,5 +1,6 @@
 """
-Combine all the output data files from the process_data.py script.
+Combine all the output data files from the process_data.py script, and write to a single csv file. Also, write a
+separate csv file with the version information for the PDB entries.
 """
 
 import sys
@@ -66,6 +67,17 @@ with open(snakemake.output.combined, "w") as csv_file:
     writer.writerow([f"# representative set file: {snakemake.config['rep_set_file']}"])
     writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
 combined_df.to_csv(snakemake.output.combined, index=False, mode='a', na_rep='NaN')
+
+# Prepare a DataFrame of just the PDB entry version information and write it to a csv file.
+pdb_versions_df = (combined_df.drop_duplicates(subset=["PDB", "PDB_version_number", "PDB_version_date"])
+                   .loc[:, ["PDB", "PDB_version_number", "PDB_version_date"]])
+with open(snakemake.output.pdb_versions, "w") as csv_file:
+    writer = csv.writer(csv_file)
+    if commit_hash:
+        writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
+    writer.writerow([f"# representative set file: {snakemake.config['rep_set_file']}"])
+    writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
+pdb_versions_df.to_csv(snakemake.output.pdb_versions, index=False, mode='a', na_rep='NaN')
 
 # Close files and reset stdout and stderr.
 stdout_file.close()

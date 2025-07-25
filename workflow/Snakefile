@@ -11,6 +11,7 @@ pt_grps = ['location_1', 'location_2']
 
 rule all:
     input:
+        "results/combine_data/pdb_versions.csv",
         "results/plots/Fig_2_pairs.png",
         "results/plots/Fig_7_pt.png",
         "results/tables/location_1_residues.csv",
@@ -85,7 +86,8 @@ rule combine_data:
     input:
         data = expand("results/process_data/{eq_class_member}.csv", eq_class_member=eq_class_members)
     output:
-        combined = "results/combine_data/combined.csv"
+        combined = "results/combine_data/combined.csv",
+        pdb_versions = "results/combine_data/pdb_versions.csv"
     log:
         stdout = "results/logs/combine_data/output.stdout",
         stderr = "results/logs/combine_data/error.stderr"
