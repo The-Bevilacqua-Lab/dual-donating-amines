@@ -63,7 +63,7 @@ combined_df = combined_df.reset_index(drop=True)
 with open(snakemake.output.combined, "w") as csv_file:
     writer = csv.writer(csv_file)
     if commit_hash:
-        writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
+        writer.writerow([f"# dual-donating-amines repo git commit hash: {commit_hash}"])
     writer.writerow([f"# representative set file: {snakemake.config['rep_set_file']}"])
     writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
 combined_df.to_csv(snakemake.output.combined, index=False, mode='a', na_rep='NaN')
@@ -74,7 +74,7 @@ pdb_versions_df = (combined_df.drop_duplicates(subset=["PDB", "PDB_version_numbe
 with open(snakemake.output.pdb_versions, "w") as csv_file:
     writer = csv.writer(csv_file)
     if commit_hash:
-        writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
+        writer.writerow([f"# dual-donating-amines repo git commit hash: {commit_hash}"])
     writer.writerow([f"# representative set file: {snakemake.config['rep_set_file']}"])
     writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
 pdb_versions_df.to_csv(snakemake.output.pdb_versions, index=False, mode='a', na_rep='NaN')

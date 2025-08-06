@@ -299,7 +299,7 @@ df = df.drop(columns=["don_resn_name", "acc_resn_name"])
 with open(snakemake.output.data, "w") as csv_file:
     writer = csv.writer(csv_file)
     if commit_hash:
-        writer.writerow([f"# dual-H-bonding-nucleobases repo git commit hash: {commit_hash}"])
+        writer.writerow([f"# dual-donating-amines repo git commit hash: {commit_hash}"])
     writer.writerow([f"# representative set file: {snakemake.config['rep_set_file']}"])
     writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
     writer.writerow([f"# H-acc max distance: {H_DIST_MAX}"])
