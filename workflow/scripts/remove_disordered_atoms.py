@@ -15,9 +15,9 @@ def remove(dir_of_disordered_mmcif, eq_class_mem_id):
     class AtomSelect(Select):
         def __init__(self, list_of_atoms):
             self.list_of_atoms = list_of_atoms
-        def accept_atom(self, atom):
-            if atom.get_full_id() in self.list_of_atoms:
-                self.list_of_atoms.remove(atom.get_full_id())
+        def accept_atom(self, atm):
+            if atm.get_full_id() in self.list_of_atoms:
+                self.list_of_atoms.remove(atm.get_full_id())
                 return True
             else:
                 return False
@@ -31,7 +31,7 @@ def remove(dir_of_disordered_mmcif, eq_class_mem_id):
     for atom in unfold_entities(structure, 'A'):
         atom_list.append(atom.get_full_id())
 
-    # Write the fragments to PDB files.
+    # Write the fragments to CIF files.
     io = MMCIFIO()
     io.set_structure(structure)
     io.save(dir_of_disordered_mmcif + eq_class_mem_id + "_no_disorder.cif", AtomSelect(atom_list))
