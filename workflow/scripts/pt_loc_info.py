@@ -19,7 +19,33 @@ stderr_file = open(snakemake.log.stderr, mode='w')
 sys.stdout = stdout_file
 sys.stderr = stderr_file
 
-# The following block gathers residue information for location 1.
+
+# This function is to be run if an error is encountered.
+def error(msg):
+    # Create the output files expected by Snakemake.
+    subprocess.run(["touch", snakemake.output.data])
+    # Print the error message.
+    print(msg)
+    # Close files, reset stdout and stderr, and exit.
+    stdout_file.close()
+    stderr_file.close()
+    sys.stdout = stdout
+    sys.stderr = stderr
+    sys.exit(0)
+
+
+# Define a function to tease apart the insertion code from the residue number when they are presented together.
+def separate_res_num_icode(resi, pdb):
+    if resi[-1].isdigit():
+        return int(resi), " "
+    elif not resi[-2].isdigit():
+        error(f"Error: PDB ID {pdb} contains an insertion code that is more than one character in length.")
+    else:
+        print(f"Note: One or more residues in the fragment for PDB ID {pdb} contains an insertion code.")
+        return int(resi[:-1]), resi[-1]
+
+
+# The following code block gathers residue information for location 1.
 location_1_df = pd.read_csv(snakemake.input["location_1_residues"], keep_default_na=False, na_values="NaN", dtype="str")
 location_1_frag_info = []
 for row in location_1_df.itertuples():
@@ -32,17 +58,7 @@ for row in location_1_df.itertuples():
     # Set variables pertaining to the dual donating A(N6).
     # Residue numbers and insertion codes are reported together in row.don_resi.
     # If an insertion code is present, tease it apart from the residue number.
-    if row.don_resi[-1].isdigit():
-        a_don_resi_int = int(row.don_resi)
-        a_don_resi_icode = " "
-    else:
-        a_don_resi_int = int(row.don_resi[:-1])
-        a_don_resi_icode = row.don_resi[-1]
-        print(f"Note: One or more residues in the fragment for PDB ID {row.PDB} contains an insertion code.")
-        # This script does not currently handle insertion codes that are more than one character in length.
-        if not row.don_resi[-2].isdigit():
-            print(f"Error: PDB ID {row.PDB} contains an insertion code that is more than one character in length.")
-            continue
+    a_don_resi_int, a_don_resi_icode = separate_res_num_icode(row.don_resi, row.PDB)
     a_don_chain_str = row.don_chain
     a_don_chain = structure[int(row.model) - 1][a_don_chain_str]
     a_don_chain_residues = list(a_don_chain.get_residues())
@@ -56,35 +72,13 @@ for row in location_1_df.itertuples():
     if row.acc_pair_1_name == "N7":
         # Residue numbers and insertion codes are reported together in row.acc_pair_1_resi.
         # If an insertion code is present, tease it apart from the residue number.
-        if row.acc_pair_1_resi[-1].isdigit():
-            n7_resi_int = int(row.acc_pair_1_resi)
-            n7_resi_icode = " "
-            n7_chain_str = row.acc_pair_1_chain
-        else:
-            n7_resi_int = int(row.acc_pair_1_resi[:-1])
-            n7_resi_icode = row.acc_pair_1_resi[-1]
-            n7_chain_str = row.acc_pair_1_chain
-            print(f"Note: One or more residues in the fragment for PDB ID {row.PDB} contains an insertion code.")
-            # This script does not currently handle insertion codes that are more than one character in length.
-            if not row.acc_pair_1_resi[-2].isdigit():
-                print(f"Error: PDB ID {row.PDB} contains an insertion code that is more than one character in length.")
-                continue
+        n7_resi_int, n7_resi_icode = separate_res_num_icode(row.acc_pair_1_resi, row.PDB)
+        n7_chain_str = row.acc_pair_1_chain
     else:
         # Residue numbers and insertion codes are reported together in row.acc_pair_2_resi.
         # If an insertion code is present, tease it apart from the residue number.
-        if row.acc_pair_2_resi[-1].isdigit():
-            n7_resi_int = int(row.acc_pair_2_resi)
-            n7_resi_icode = " "
-            n7_chain_str = row.acc_pair_2_chain
-        else:
-            n7_resi_int = int(row.acc_pair_2_resi[:-1])
-            n7_resi_icode = row.acc_pair_2_resi[-1]
-            n7_chain_str = row.acc_pair_2_chain
-            print(f"Note: One or more residues in the fragment for PDB ID {row.PDB} contains an insertion code.")
-            # This script does not currently handle insertion codes that are more than one character in length.
-            if not row.acc_pair_2_resi[-2].isdigit():
-                print(f"Error: PDB ID {row.PDB} contains an insertion code that is more than one character in length.")
-                continue
+        n7_resi_int, n7_resi_icode = separate_res_num_icode(row.acc_pair_2_resi, row.PDB)
+        n7_chain_str = row.acc_pair_2_chain
     n7_chain = structure[int(row.model) - 1][n7_chain_str]
     n7_chain_residues = list(n7_chain.get_residues())
     n7_neighbor_list = []
@@ -119,7 +113,7 @@ location_1_frag_info_df = pd.DataFrame(location_1_frag_info, columns =
                                        "icode_B_1", "icode_B_2", "icode_B_3", "icode_B_4", "icode_B_5"])
 location_1_frag_info_df.to_csv(snakemake.output["location_1_frag_info"], index=False, na_rep='NaN')
 
-# The following block gathers residue information for location 2.
+# The following code block gathers residue information for location 2.
 location_2_df = pd.read_csv(snakemake.input["location_2_residues"], keep_default_na=False, na_values="NaN", dtype="str")
 location_2_frag_info = []
 for row in location_2_df.itertuples():
@@ -127,25 +121,12 @@ for row in location_2_df.itertuples():
     # Create a Biopython structure object.
     parser = MMCIFParser(QUIET=True)
     pdb_file = f'{snakemake.config["original_mmcif_dir"]}{row.PDB.lower()}.cif'
-    # Remove the plus symbol if the PDB ID in the file name is represented as scientific notation
-    if pdb_file[-7] == '+':
-        pdb_file = pdb_file[:-7] + pdb_file[-6:]
     structure = parser.get_structure(row.PDB, pdb_file)
 
     # Set variables pertaining to the dual donating G(N2).
     # Residue numbers and insertion codes are reported together in row.don_resi.
     # If an insertion code is present, tease it apart from the residue number.
-    if row.don_resi[-1].isdigit():
-        g_resi_int = int(row.don_resi)
-        g_resi_icode = " "
-    else:
-        g_resi_int = int(row.don_resi[:-1])
-        g_resi_icode = row.don_resi[-1]
-        print(f"Note: One or more residues in the fragment for PDB ID {row.PDB} contains an insertion code.")
-        # This script does not currently handle insertion codes that are more than one character in length.
-        if not row.don_resi[-2].isdigit():
-            print(f"Error: PDB ID {row.PDB} contains an insertion code that is more than one character in length.")
-            continue
+    g_resi_int, g_resi_icode = separate_res_num_icode(row.don_resi, row.PDB)
     g_chain_str = row.don_chain
     g_chain = structure[int(row.model)-1][g_chain_str]
     g_chain_residues = list(g_chain.get_residues())
@@ -159,35 +140,13 @@ for row in location_2_df.itertuples():
     if not row.acc_pair_1_name == "O4":
         # Residue numbers and insertion codes are reported together in row.acc_pair_1_resi.
         # If an insertion code is present, tease it apart from the residue number.
-        if row.acc_pair_1_resi[-1].isdigit():
-            npo_o5p_resi_int = int(row.acc_pair_1_resi)
-            npo_o5p_resi_icode = " "
-            npo_o5p_chain_str = row.acc_pair_1_chain
-        else:
-            npo_o5p_resi_int = int(row.acc_pair_1_resi[:-1])
-            npo_o5p_resi_icode = row.acc_pair_1_resi[-1]
-            npo_o5p_chain_str = row.acc_pair_1_chain
-            print(f"Note: One or more residues in the fragment for PDB ID {row.PDB} contains an insertion code.")
-            # This script does not currently handle insertion codes that are more than one character in length.
-            if not row.acc_pair_1_resi[-2].isdigit():
-                print(f"Error: PDB ID {row.PDB} contains an insertion code that is more than one character in length.")
-                continue
+        npo_o5p_resi_int, npo_o5p_resi_icode = separate_res_num_icode(row.acc_pair_1_resi, row.PDB)
+        npo_o5p_chain_str = row.acc_pair_1_chain
     else:
         # Residue numbers and insertion codes are reported together in row.acc_pair_2_resi.
         # If an insertion code is present, tease it apart from the residue number.
-        if row.acc_pair_2_resi[-1].isdigit():
-            npo_o5p_resi_int = int(row.acc_pair_2_resi)
-            npo_o5p_resi_icode = " "
-            npo_o5p_chain_str = row.acc_pair_2_chain
-        else:
-            npo_o5p_resi_int = int(row.acc_pair_2_resi[:-1])
-            npo_o5p_resi_icode = row.acc_pair_2_resi[-1]
-            npo_o5p_chain_str = row.acc_pair_2_chain
-            print(f"Note: One or more residues in the fragment for PDB ID {row.PDB} contains an insertion code.")
-            # This script does not currently handle insertion codes that are more than one character in length.
-            if not row.acc_pair_2_resi[-2].isdigit():
-                print(f"Error: PDB ID {row.PDB} contains an insertion code that is more than one character in length.")
-                continue
+        npo_o5p_resi_int, npo_o5p_resi_icode = separate_res_num_icode(row.acc_pair_2_resi, row.PDB)
+        npo_o5p_chain_str = row.acc_pair_2_chain
     npo_o5p_chain = structure[int(row.model)-1][npo_o5p_chain_str]
     npo_o5p_chain_residues = list(npo_o5p_chain.get_residues())
     npo_o5p_neighbor_list = []
