@@ -25,7 +25,7 @@ color_palette <- c(rgb(0/255, 0/255, 0/255), rgb(230/255, 159/255, 0/255), rgb(8
 
 #### H-BONDING MEASUREMENT PLOTS ####
 
-# Extract the rows from the combined data frame relevant for these plots.
+# Extract the rows from the combined data frame relevant for the primary amine-acceptor pair plot.
 pairs_df <- combined_df %>% filter(geom == 1 & don_resn %in% c("A", "C", "G")) %>% 
   distinct(don_index, acc_index, eq_class_member, .keep_all = TRUE)
 
@@ -58,6 +58,100 @@ pairs <- pairs_df %>% ggplot(aes(x = h_angle, y = h_acc_distance)) +
 
 # Write the plot.
 ggsave(snakemake@output[["fig_2_pairs"]], plot = pairs, width = 3.25, height = 3.75, units = "in", scale = 1)
+
+# Extract the rows from the combined data frame relevant for the other amine-acceptor pair plots.
+other_pairs_df <- combined_df %>% filter(geom > 1 & don_resn %in% c("A", "C", "G")) %>%
+  distinct(don_index, acc_index, eq_class_member, .keep_all = TRUE)
+
+# Convert geom from numeric to string.
+other_pairs_df[other_pairs_df$geom == 2, "geom"] <- "A(N6)-U(O4)"
+other_pairs_df[other_pairs_df$geom == 3, "geom"] <- "C(N4)-G(O6)"
+other_pairs_df[other_pairs_df$geom == 4, "geom"] <- "G(N2)-C(O2)"
+other_pairs_df[other_pairs_df$geom == 5, "geom"] <- "G(N2)-C(N3)"
+other_pairs_df$geom <- factor(other_pairs_df$geom,
+                              levels = c("A(N6)-U(O4)", "C(N4)-G(O6)", "G(N2)-C(O2)", "G(N2)-C(N3)"))
+
+# Create the plots.
+other_pairs_A <- other_pairs_df[other_pairs_df["geom"] == "A(N6)-U(O4)",] %>%
+  ggplot(aes(x = h_angle, y = h_acc_distance)) +
+  geom_bin_2d(binwidth = c(120/100, 2.0/100)) +
+  geom_segment(x=140, y=1.0, xend=140, yend=2.5, linewidth=0.4, linetype=2, colour="red") +
+  geom_segment(x=140, y=2.5, xend=180, yend=2.5, linewidth=0.4, linetype=2, colour="red") +
+  geom_segment(x=180, y=1.0, xend=180, yend=2.5, linewidth=0.4, linetype=2, colour="red") +
+  geom_segment(x=140, y=1.0, xend=180, yend=1.0, linewidth=0.4, linetype=2, colour="red") +
+  ggtitle("A(N6)-U(O4)") +
+  scale_fill_viridis(name = "Count") +
+  xlab("Angle (\ub0)") +
+  ylab("Distance (\uc5)") +
+  coord_fixed(ratio = 120/2.0, xlim = c(60, 180), ylim = c(1.0, 3.0)) +
+  scale_x_continuous(breaks = seq(60, 180, 30)) +
+  scale_y_continuous(breaks = seq(1.0, 3.0, 0.4)) +
+  theme_classic(base_size = 10) +
+  theme(legend.key.width = unit(0.125, "in"), plot.title = element_text(hjust = 0.5))
+other_pairs_B <- other_pairs_df[other_pairs_df["geom"] == "C(N4)-G(O6)",] %>%
+  ggplot(aes(x = h_angle, y = h_acc_distance)) +
+  geom_bin_2d(binwidth = c(120/100, 2.0/100)) +
+  geom_segment(x=140, y=1.0, xend=140, yend=2.5, linewidth=0.4, linetype=2, colour="red") +
+  geom_segment(x=140, y=2.5, xend=180, yend=2.5, linewidth=0.4, linetype=2, colour="red") +
+  geom_segment(x=180, y=1.0, xend=180, yend=2.5, linewidth=0.4, linetype=2, colour="red") +
+  geom_segment(x=140, y=1.0, xend=180, yend=1.0, linewidth=0.4, linetype=2, colour="red") +
+  ggtitle("C(N4)-G(O6)") +
+  scale_fill_viridis(name = "Count") +
+  xlab("Angle (\ub0)") +
+  ylab("Distance (\uc5)") +
+  coord_fixed(ratio = 120/2.0, xlim = c(60, 180), ylim = c(1.0, 3.0)) +
+  scale_x_continuous(breaks = seq(60, 180, 30)) +
+  scale_y_continuous(breaks = seq(1.0, 3.0, 0.4)) +
+  theme_classic(base_size = 10) +
+  theme(legend.key.width = unit(0.125, "in"), plot.title = element_text(hjust = 0.5))
+other_pairs_C <- other_pairs_df[other_pairs_df["geom"] == "G(N2)-C(O2)",] %>%
+  ggplot(aes(x = h_angle, y = h_acc_distance)) +
+  geom_bin_2d(binwidth = c(120/100, 2.0/100)) +
+  geom_segment(x=140, y=1.0, xend=140, yend=2.5, linewidth=0.4, linetype=2, colour="red") +
+  geom_segment(x=140, y=2.5, xend=180, yend=2.5, linewidth=0.4, linetype=2, colour="red") +
+  geom_segment(x=180, y=1.0, xend=180, yend=2.5, linewidth=0.4, linetype=2, colour="red") +
+  geom_segment(x=140, y=1.0, xend=180, yend=1.0, linewidth=0.4, linetype=2, colour="red") +
+  ggtitle("G(N2)-C(O2)") +
+  scale_fill_viridis(name = "Count") +
+  xlab("Angle (\ub0)") +
+  ylab("Distance (\uc5)") +
+  coord_fixed(ratio = 120/2.0, xlim = c(60, 180), ylim = c(1.0, 3.0)) +
+  scale_x_continuous(breaks = seq(60, 180, 30)) +
+  scale_y_continuous(breaks = seq(1.0, 3.0, 0.4)) +
+  theme_classic(base_size = 10) +
+  theme(legend.key.width = unit(0.125, "in"), plot.title = element_text(hjust = 0.5))
+other_pairs_D <- other_pairs_df[other_pairs_df["geom"] == "G(N2)-C(N3)",] %>%
+  ggplot(aes(x = h_angle, y = h_acc_distance)) +
+  geom_bin_2d(binwidth = c(120/100, 2.0/100)) +
+  geom_segment(x=140, y=1.0, xend=140, yend=2.5, linewidth=0.4, linetype=2, colour="red") +
+  geom_segment(x=140, y=2.5, xend=180, yend=2.5, linewidth=0.4, linetype=2, colour="red") +
+  geom_segment(x=180, y=1.0, xend=180, yend=2.5, linewidth=0.4, linetype=2, colour="red") +
+  geom_segment(x=140, y=1.0, xend=180, yend=1.0, linewidth=0.4, linetype=2, colour="red") +
+  ggtitle("G(N2)-C(N3)") +
+  scale_fill_viridis(name = "Count") +
+  xlab("Angle (\ub0)") +
+  ylab("Distance (\uc5)") +
+  coord_fixed(ratio = 120/2.0, xlim = c(60, 180), ylim = c(1.0, 3.0)) +
+  scale_x_continuous(breaks = seq(60, 180, 30)) +
+  scale_y_continuous(breaks = seq(1.0, 3.0, 0.4)) +
+  theme_classic(base_size = 10) +
+  theme(legend.key.width = unit(0.125, "in"), plot.title = element_text(hjust = 0.5))
+
+# Convert the plots into graphical objects.
+grob_other_pairs_A <- ggplotGrob(other_pairs_A)
+grob_other_pairs_B <- ggplotGrob(other_pairs_B)
+grob_other_pairs_C <- ggplotGrob(other_pairs_C)
+grob_other_pairs_D <- ggplotGrob(other_pairs_D)
+
+# Combine the grobs.
+row_one <- cbind(grob_other_pairs_A, grob_other_pairs_B)
+row_two <- cbind(grob_other_pairs_C, grob_other_pairs_D)
+other_pairs_combined <- plot_grid(row_one, row_two, ncol = 1) +
+  theme(plot.background = element_rect(fill = "white", color = NA))
+
+# Write the plot.
+ggsave(snakemake@output[["other_pairs"]], plot = other_pairs_combined,
+       width = 6, height = 5.25, units = "in", scale = 1)
 
 #### DONOR IDENTITY PLOT ####
 

@@ -13,6 +13,7 @@ rule all:
     input:
         "results/combine_data/pdb_versions.csv",
         "results/plots/Fig_2_pairs.png",
+        "results/plots/other_pairs.png",
         "results/plots/Fig_7_pt.png",
         "results/tables/location_1_residues.csv",
         "results/tables/location_2_residues.csv",
@@ -101,6 +102,7 @@ rule create_plots:
         combined = "results/combine_data/combined.csv"
     output:
         fig_2_pairs = "results/plots/Fig_2_pairs.png",
+        other_pairs = "results/plots/other_pairs.png",
         fig_7_pt = "results/plots/Fig_7_pt.png",
         location_1_residues = "results/tables/location_1_residues.csv",
         location_2_residues = "results/tables/location_2_residues.csv",
