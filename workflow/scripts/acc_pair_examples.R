@@ -6,7 +6,7 @@ library(dplyr)
 combined_df <- read.csv(snakemake@input[["combined"]], header = TRUE, na.strings = "NaN", comment.char = "#",
                         colClasses = c("PDB" = "character"))
 
-#### 4A - SHEARED GA BASE PAIR ####
+#### 5A - SHEARED GA BASE PAIR ####
 
 # Extract the guanines that interact with a dual donating A via their N3 and O2' atoms.
 guanines_to_consider_df <- combined_df %>% filter(don_resn == "A", type == 2, 
@@ -67,7 +67,7 @@ g_a_n7_h_bonding_dual_df <- g_a_n7_h_bonding_dual_df[c('don_index', 'don_name', 
 # Write the data to a csv.
 write.csv(g_a_n7_h_bonding_dual_df, snakemake@output[["supplemental_data_S2"]], na = "NaN")
 
-#### 4B - WC/H A-MINOR MOTIF ####
+#### 5B - WC/H A-MINOR MOTIF ####
 
 # Which guanines form a G(N2)-to-C(O2) H-bond?
 g_c_h_bonding_df <- merge(guanines_to_consider_df, combined_df, 
@@ -155,7 +155,7 @@ dual_g_df <- merge(combined_df, c_g_h_bonding_df,
 # Write the data to a csv.
 write.csv(dual_g_df, snakemake@output[["supplemental_data_S6"]], na = "NaN")
 
-#### 4C - A DUAL DONATING AMINE TO A HOOGSTEEN ####
+#### 5C - A DUAL DONATING AMINE TO A HOOGSTEEN ####
 
 # Extract the adenines amines that dual donate to the N7 and NPO of another A.
 a_hoogsteen_df <- combined_df %>% filter(don_resn == "A", type == 2, 
@@ -214,7 +214,7 @@ a_n6_a_n7_h_bonding_dual_df <- a_n6_a_n7_h_bonding_dual_df[c('don_index', 'don_n
 # Write the data to a csv.
 write.csv(a_n6_a_n7_h_bonding_dual_df, snakemake@output[["supplemental_data_S8"]], na = "NaN")
 
-#### 4D - C AMINE DUAL DONATION AND GC BASE PAIR ####
+#### 5D - C AMINE DUAL DONATION AND GC BASE PAIR ####
 
 # Extract the cytosines that interact with G(O6) and N(NPO).
 cytosines_df <- combined_df %>% filter(don_resn == "C", type == 2, acc_pair_combined == "G(O6), N(NPO)") %>%
@@ -251,7 +251,7 @@ base_pairing_cytosines_df <- merge(combined_df,
 # Write the data to a csv.
 write.csv(base_pairing_cytosines_df, snakemake@output[["supplemental_data_S9"]], na = "NaN")
 
-#### 4E - G AMINE DUAL DONATION AND GC BASE PAIR ####
+#### 5E - G AMINE DUAL DONATION AND GC BASE PAIR ####
 
 # Extract the guanines that interact with A(N3) and C(O2).
 guanines_df <- combined_df %>% filter(don_resn == "G", type == 2, acc_pair_combined == "A(N3), C(O2)") %>%
@@ -300,15 +300,15 @@ base_pairing_guanines_df[base_pairing_guanines_df['acc_pair_1_name'] != "N3", c(
                            c('acc_pair_2_resi', 'acc_pair_2_chain')]
 
 # Identify the adenines that accept an H-bond from the dual-donating G(N2) and that also bear a dual-donating N6.
-a_n6_dual_df <- merge(combined_df, base_pairing_guanines_df[c('adenine_resi', 'adenine_chain', 'model', 'PDB')],
-                      by.x = c('don_resi', 'don_chain', 'model', 'PDB'),
-                      by.y = c('adenine_resi', 'adenine_chain', 'model', 'PDB')) %>%
+a_n6_dual_1_df <- merge(combined_df, base_pairing_guanines_df[c('adenine_resi', 'adenine_chain', 'model', 'PDB')],
+                        by.x = c('don_resi', 'don_chain', 'model', 'PDB'),
+                        by.y = c('adenine_resi', 'adenine_chain', 'model', 'PDB')) %>%
   filter(type == 2) %>% distinct(don_index, eq_class_member, .keep_all = TRUE)
 
 # Write the data to a csv.
-write.csv(a_n6_dual_df[output_columns], snakemake@output[["supplemental_data_S11"]], na = "NaN")
+write.csv(a_n6_dual_1_df[output_columns], snakemake@output[["supplemental_data_S11"]], na = "NaN")
 
-#### 4F - G DUAL DONATING AMINE TO A(N7) AND NPO ####
+#### 5F - G DUAL DONATING AMINE TO A(N7) AND NPO ####
 
 # Extract the guanine amines that dual donate to A(N7) and an NPO. The acceptors belong to the same residue.
 g_a_n7_npo_same_df <- combined_df %>% filter(don_resn == "G", type == 2, 
@@ -318,6 +318,24 @@ g_a_n7_npo_same_df <- combined_df %>% filter(don_resn == "G", type == 2,
 # Write the data to a csv.
 write.csv(g_a_n7_npo_same_df, snakemake@output[["supplemental_data_S12"]], na = "NaN")
 
+# Create new columns that specify the A(N7) acceptor.
+g_a_n7_npo_same_df[c('adenine_resi', 'adenine_chain')] <- NA
+g_a_n7_npo_same_df[g_a_n7_npo_same_df['acc_pair_1_name'] == "N7", c('adenine_resi', 'adenine_chain')] <-
+  g_a_n7_npo_same_df[g_a_n7_npo_same_df['acc_pair_1_name'] == "N7",
+                           c('acc_pair_1_resi', 'acc_pair_1_chain')]
+g_a_n7_npo_same_df[g_a_n7_npo_same_df['acc_pair_1_name'] != "N7", c('adenine_resi', 'adenine_chain')] <-
+  g_a_n7_npo_same_df[g_a_n7_npo_same_df['acc_pair_1_name'] != "N7",
+                           c('acc_pair_2_resi', 'acc_pair_2_chain')]
+
+# Identify the adenines that accept an H-bond from the dual-donating G(N2) and that also bear a dual-donating N6.
+a_n6_dual_2_df <- merge(combined_df, g_a_n7_npo_same_df[c('adenine_resi', 'adenine_chain', 'model', 'PDB')],
+                        by.x = c('don_resi', 'don_chain', 'model', 'PDB'),
+                        by.y = c('adenine_resi', 'adenine_chain', 'model', 'PDB')) %>%
+  filter(type == 2) %>% distinct(don_index, eq_class_member, .keep_all = TRUE)
+
+# Write the data to a csv.
+write.csv(a_n6_dual_2_df[output_columns], snakemake@output[["supplemental_data_S13"]], na = "NaN")
+
 #### S1A - C DUAL DONATING AMINE TO AA(O) AND G(O6) ####
 
 # Extract the cytosine amines that dual donate to AA(O) and G(O6).
@@ -325,7 +343,7 @@ c_g_aa_df <- combined_df %>% filter(don_resn == "C", type == 2, acc_pair_combine
   distinct(don_index, eq_class_member, .keep_all = TRUE)
 
 # Write the data to a csv.
-write.csv(c_g_aa_df, snakemake@output[["supplemental_data_S13"]], na = "NaN")
+write.csv(c_g_aa_df, snakemake@output[["supplemental_data_S14"]], na = "NaN")
 
 #### S1B - G DUAL DONATING AMINE TO AA(O) AND C(O2) ####
 
@@ -334,7 +352,7 @@ g_c_aa_df <- combined_df %>% filter(don_resn == "G", type == 2, acc_pair_combine
   distinct(don_index, eq_class_member, .keep_all = TRUE)
 
 # Write the data to a csv.
-write.csv(g_c_aa_df, snakemake@output[["supplemental_data_S14"]], na = "NaN")
+write.csv(g_c_aa_df, snakemake@output[["supplemental_data_S15"]], na = "NaN")
 
 #### PSEUDO-TORSION LOCATION 1, LOCATION 2, AND NEIGHBORS ####
 
@@ -385,22 +403,22 @@ write.csv(pair_1_df[,c("don_index", "don_name", "don_resn", "don_resi", "don_cha
                        "don_label", "acc_pair_combined_reformat", "same_resi", "type",
                        "PDB", "model", "eq_class_member",
                        "eta", "theta", "eta_translated", "theta_translated", "chi")],
-          snakemake@output[["supplemental_data_S15"]], quote = FALSE, na = "NaN", row.names = FALSE)
+          snakemake@output[["supplemental_data_S16"]], quote = FALSE, na = "NaN", row.names = FALSE)
 write.csv(pair_2_df[,c("don_index", "don_name", "don_resn", "don_resi", "don_chain",
                        "acc_pair_1_name", "acc_pair_1_resi", "acc_pair_1_chain",
                        "acc_pair_2_name", "acc_pair_2_resi", "acc_pair_2_chain",
                        "don_label", "acc_pair_combined_reformat", "same_resi", "type",
                        "PDB", "model", "eq_class_member",
                        "eta", "theta", "eta_translated", "theta_translated", "chi")],
-          snakemake@output[["supplemental_data_S16"]], quote = FALSE, na = "NaN", row.names = FALSE)
+          snakemake@output[["supplemental_data_S17"]], quote = FALSE, na = "NaN", row.names = FALSE)
 
 # Create a csv file with residues from Location 1 that are connected to the 5'-end of any residue from Location 2. This
 # approach may not work if an insertion code is used for this or the downstream residue. If this is the case, print an
 # error message, and create an empty csv file.
 if (any(grepl("[a-zA-Z]", pair_1_df$don_resi)) | any(grepl("[a-zA-Z]", pair_2_df$don_resi))) {
   cat("Error: At least one residue within one of the pseudo-torsion locations contains an insertion code. The file
-      named Supplemental_Data_S14.csv will be empty.")
-  write.csv(data.frame(), snakemake@output[["supplemental_data_S17"]], quote = FALSE, na = "NaN", row.names = FALSE)
+      named Supplemental_Data_S18.csv will be empty.")
+  write.csv(data.frame(), snakemake@output[["supplemental_data_S18"]], quote = FALSE, na = "NaN", row.names = FALSE)
 } else {
   neighbors_df <- merge(pair_1_df %>% mutate(downstream_resi = as.character(as.numeric(don_resi) + 1)), pair_2_df,
                         by.x = c("downstream_resi", "don_chain", "eq_class_member"),
@@ -411,5 +429,5 @@ if (any(grepl("[a-zA-Z]", pair_1_df$don_resi)) | any(grepl("[a-zA-Z]", pair_2_df
                                   "don_label", "acc_pair_combined_reformat", "same_resi", "type",
                                   "PDB", "model", "eq_class_member",
                                   "eta", "theta", "eta_translated", "theta_translated", "chi")]
-  write.csv(neighbors_df, snakemake@output[["supplemental_data_S17"]], quote = FALSE, na = "NaN", row.names = FALSE)
+  write.csv(neighbors_df, snakemake@output[["supplemental_data_S18"]], quote = FALSE, na = "NaN", row.names = FALSE)
 }
