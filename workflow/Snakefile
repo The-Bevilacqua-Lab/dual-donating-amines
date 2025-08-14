@@ -53,6 +53,10 @@ rule all:
         "results/acc_pair_examples/Supplemental_Data_S12.csv",
         "results/acc_pair_examples/Supplemental_Data_S13.csv",
         "results/acc_pair_examples/Supplemental_Data_S14.csv",
+        "results/acc_pair_examples/Supplemental_Data_S15.csv",
+        "results/acc_pair_examples/Supplemental_Data_S16.csv",
+        "results/acc_pair_examples/Supplemental_Data_S17.csv",
+        "results/acc_pair_examples/Supplemental_Data_S18.csv",
         expand("results/alignment_clustering/{pt_grps}_val_score_vs_RMSD_cutoff_normalized.png", pt_grps=pt_grps),
         expand("results/alignment_clustering/{pt_grps}_val_score_vs_RMSD_cutoff.csv", pt_grps=pt_grps),
         expand("results/alignment_clustering/{pt_grps}_all_against_all_RMSD.csv", pt_grps=pt_grps),
@@ -163,7 +167,11 @@ rule list_examples:
         supplemental_data_S11 = "results/acc_pair_examples/Supplemental_Data_S11.csv",
         supplemental_data_S12 = "results/acc_pair_examples/Supplemental_Data_S12.csv",
         supplemental_data_S13 = "results/acc_pair_examples/Supplemental_Data_S13.csv",
-        supplemental_data_S14 = "results/acc_pair_examples/Supplemental_Data_S14.csv"
+        supplemental_data_S14 = "results/acc_pair_examples/Supplemental_Data_S14.csv",
+        supplemental_data_S15 = "results/acc_pair_examples/Supplemental_Data_S15.csv",
+        supplemental_data_S16 = "results/acc_pair_examples/Supplemental_Data_S16.csv",
+        supplemental_data_S17 = "results/acc_pair_examples/Supplemental_Data_S17.csv",
+        supplemental_data_S18 = "results/acc_pair_examples/Supplemental_Data_S18.csv"
     conda:
         "envs/general.yaml"
     script:
