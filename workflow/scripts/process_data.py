@@ -292,6 +292,36 @@ don_acc_grp = ["don_index", "acc_index"]
     (~df[["don_resn", "don_name", "acc_resn", "acc_name"]].eq(["G", "N2", "C", "N3"])
      .all(axis='columns')), "geom"]) = 1
 
+# Use the previously added column to identify the donor-acceptor pairs that were excluded.
+(df.loc[
+    # For a given donor-acceptor pair, only include the hydrogen with the greater D-H...A angle.
+    (df.groupby(don_acc_grp)["h_angle"]
+     .transform(lambda grp: [mem == grp.max() for mem in grp])) &
+    # Only include A(N6)-U(O4) atom pairs.
+    (df[["don_resn", "don_name", "acc_resn", "acc_name"]].eq(["A", "N6", "U", "O4"])
+     .all(axis='columns')), "geom"]) = 2
+(df.loc[
+    # For a given donor-acceptor pair, only include the hydrogen with the greater D-H...A angle.
+    (df.groupby(don_acc_grp)["h_angle"]
+     .transform(lambda grp: [mem == grp.max() for mem in grp])) &
+    # Only include C(N4)-G(O6) atom pairs.
+    (df[["don_resn", "don_name", "acc_resn", "acc_name"]].eq(["C", "N4", "G", "O6"])
+     .all(axis='columns')), "geom"]) = 3
+(df.loc[
+    # For a given donor-acceptor pair, only include the hydrogen with the greater D-H...A angle.
+    (df.groupby(don_acc_grp)["h_angle"]
+     .transform(lambda grp: [mem == grp.max() for mem in grp])) &
+    # Only include G(N2)-C(O2) atom pairs.
+    (df[["don_resn", "don_name", "acc_resn", "acc_name"]].eq(["G", "N2", "C", "O2"])
+     .all(axis='columns')), "geom"]) = 4
+(df.loc[
+    # For a given donor-acceptor pair, only include the hydrogen with the greater D-H...A angle.
+    (df.groupby(don_acc_grp)["h_angle"]
+     .transform(lambda grp: [mem == grp.max() for mem in grp])) &
+    # Only include G(N2)-C(N3) atom pairs.
+    (df[["don_resn", "don_name", "acc_resn", "acc_name"]].eq(["G", "N2", "C", "N3"])
+     .all(axis='columns')), "geom"]) = 5
+
 # Remove columns that do not need to be written to the csv.
 df = df.drop(columns=["don_resn_name", "acc_resn_name"])
 
