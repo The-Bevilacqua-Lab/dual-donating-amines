@@ -49,15 +49,14 @@ pairs <- pairs_df %>% ggplot(aes(x = h_angle, y = h_acc_distance)) +
   scale_x_continuous(breaks = seq(60, 180, 30)) +
   scale_y_continuous(breaks = seq(1.0, 3.0, 0.4)) +
   theme_classic(base_size = 10) +
-  theme(legend.position = "top", legend.key.width = unit(0.25, "in"), legend.key.height = unit(0.125, "in"),
-        legend.margin = margin(t = 0.115, r = 0, b = 0, l = 0, "in"), legend.title = element_text(vjust = 0.9),
+  theme(legend.key.width = unit(0.125, "in"),
         axis.title.x = element_text(hjust = 0.29, color = rgb(0/255, 158/255, 115/255),
                                     margin = margin(t = 0.25, r = 0, b = 0.125, l = 0, unit = "in")),
         axis.title.y = element_text(hjust = 0.26, color = rgb(213/255, 94/255, 0/255),
                                     margin = margin(t = 0, r = 0.25, b = 0, l = 0.125, unit = "in")))
 
 # Write the plot.
-ggsave(snakemake@output[["fig_2_pairs"]], plot = pairs, width = 3.25, height = 3.75, units = "in", scale = 1)
+ggsave(snakemake@output[["fig_2_pairs"]], plot = pairs, width = 3.75, height = 3.25, units = "in", scale = 1)
 
 # Extract the rows from the combined data frame relevant for the other amine-acceptor pair plots.
 other_pairs_df <- combined_df %>% filter(geom > 1 & don_resn %in% c("A", "C", "G")) %>%
