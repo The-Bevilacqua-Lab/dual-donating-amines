@@ -3,25 +3,11 @@
 #################################### Importing libraries ####################################
 import os
 import shutil
-import pandas as pd
 import requests
-import numpy as np
-from Bio.PDB import MMCIFParser, Superimposer, PDBIO
-from optparse import OptionParser
-from scipy.spatial.distance import squareform
-from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
+from Bio.PDB import MMCIFParser, Superimposer
+from scipy.cluster.hierarchy import dendrogram
 from collections import Counter
-from Bio.PDB import MMCIFParser, Superimposer, PDBIO
-from optparse import OptionParser
-from scipy.spatial.distance import squareform
-from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
-from collections import Counter
-import matplotlib.pyplot as plt
-import seaborn as sns
 from math import floor
-from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bouldin_score
-from sklearn.manifold import MDS
-from optparse import OptionParser
 from matplotlib.ticker import FormatStrFormatter
 import time
 
