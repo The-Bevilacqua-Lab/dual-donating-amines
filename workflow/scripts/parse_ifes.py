@@ -65,6 +65,11 @@ def parse_ifes(ifes_file):
     # Report the number of representative IFEs and unique PDB IDs for those IFEs in the provided IFEs file.
     print(f"The provided representative structure file contains {len(np.array(pdb_id_grand_list))} IFEs and "
           f"{len(np.unique(np.array(pdb_id_grand_list)))} unique PDB IDs.")
+    # Write a filtered version of the IFEs file with only certain columns and just the representative IFEs.
+    columns = ['ec_id', 'ife_id', 'pdb_resolution', 'ec_cqs', 'nts_observed', 'rfam_max_nts',
+               'rfam_fraction_observed', 'rfam', 'standardized_name', 'pdb_experimental_technique']
+    ifes_df.loc[(ifes_df['ec_rank'] == 1), columns].to_csv(f"resources/{ifes_file[:-4]}_filtered.csv",
+                                                           index=False, na_rep='NA')
     # Prepare a list of strings where each string includes the equivalence class name, PDB ID, model info, and chain
     # info for the representative member of the corresponding equivalence class.
     eq_class_members = []
