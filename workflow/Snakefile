@@ -1,10 +1,10 @@
-import scripts.parse_nrlist
+import scripts.parse_ifes
 
 configfile: "config/config.yaml"
 
 # Prepare a list of strings where each string includes the equivalence class name, PDB ID, and chain info for the
 # equivalence class members.
-eq_class_members = scripts.parse_nrlist.parse_nrlist(config["rep_set_file"])
+eq_class_members = scripts.parse_ifes.parse_ifes(config["rep_set_file"])
 
 # Define the pseudo-torsion locations for clustering.
 pt_grps = ['location_1', 'location_2']
