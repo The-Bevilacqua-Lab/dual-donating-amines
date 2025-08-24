@@ -12,6 +12,7 @@ pt_grps = ['location_1', 'location_2']
 rule all:
     input:
         "results/combine_data/pdb_versions.csv",
+        "results/fraction_ribosomal_rna/note.txt",
         "results/plots/Fig_2_pairs.png",
         "results/plots/other_pairs.png",
         "results/plots/Fig_7_pt.png",
@@ -100,6 +101,19 @@ rule combine_data:
         "envs/general.yaml"
     script:
         "scripts/combine_data.py"
+
+rule fraction_ribosomal_rna:
+    input:
+        combined = "results/combine_data/combined.csv"
+    output:
+        note = "results/fraction_ribosomal_rna/note.txt"
+    log:
+        stdout = "results/logs/fraction_ribosomal_rna/output.stdout",
+        stderr = "results/logs/fraction_ribosomal_rna/error.stderr"
+    conda:
+        "envs/general.yaml"
+    script:
+        "scripts/fraction_ribosomal_rna.py"
 
 rule create_plots:
     input:
