@@ -172,16 +172,16 @@ don_id_df <- merge(don_id_df, summarise(don_id_df, n_don_type = n(), .by = c(don
 don_id_df <- don_id_df %>% distinct(don_resn, type, .keep_all = TRUE)
 
 # Add a column that specifies the percent occurrence for each category.
-don_id_df <-don_id_df %>% mutate(occurance = n_don_type/sum(n_don_type)*100)
+don_id_df <-don_id_df %>% mutate(occurrence = n_don_type/sum(n_don_type)*100)
 
 # Create a column that contains the donor atom and residue names along with the number of occurrences.
 don_id_df <- don_id_df %>% mutate(don_label = paste(don_resn, "(", don_name, ")", ", n = ",
                                                     prettyNum(n_resn, big.mark = ","), sep = ""))
 
 # Create the plot.
-don_id_plot <- don_id_df %>% ggplot(aes(x=type, y=occurance)) +
+don_id_plot <- don_id_df %>% ggplot(aes(x=type, y=occurrence)) +
   geom_col(width = 0.8, linewidth = 0.3, color = "black", fill = "grey", show.legend = FALSE) +
-  geom_text(aes(x=type, y=occurance+max(occurance)*0.05, label=paste(round(occurance, digits = 1), "%", sep = "")),
+  geom_text(aes(x=type, y=occurrence+max(occurrence)*0.05, label=paste(round(occurrence, digits = 1), "%", sep = "")),
             size = 10, size.unit = "pt", vjust = 0, inherit.aes = FALSE) +
   geom_text(aes(x=type, y=-5, label = paste("n = ", prettyNum(n_don_type, big.mark = ","), sep = "")),
             size = 8, size.unit = "pt", hjust = 0.5, vjust = 0.5, angle = 30) +
