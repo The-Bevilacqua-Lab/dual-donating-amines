@@ -38,10 +38,12 @@ max_value <- max(ggplot_build(h_bond_region)$data[[1]]$value)
 # Create the plot.
 pairs <- pairs_df %>% ggplot(aes(x = h_angle, y = h_acc_distance)) +
   geom_bin_2d(binwidth = c(120/100, 2.0/100)) +
-  geom_segment(x=140, y=1.0, xend=140, yend=2.5, linewidth=0.4, linetype=2, colour="red") +
-  geom_segment(x=140, y=2.5, xend=180, yend=2.5, linewidth=0.4, linetype=2, colour="red") +
-  geom_segment(x=180, y=1.0, xend=180, yend=2.5, linewidth=0.4, linetype=2, colour="red") +
-  geom_segment(x=140, y=1.0, xend=180, yend=1.0, linewidth=0.4, linetype=2, colour="red") +
+  geom_segment(x=snakemake@config[["h_ang_min"]], y=1.0, xend=snakemake@config[["h_ang_min"]], 
+               yend=snakemake@config[["h_dist_max"]], linewidth=0.4, linetype=2, colour="red") +
+  geom_segment(x=snakemake@config[["h_ang_min"]], y=snakemake@config[["h_dist_max"]], xend=180, 
+               yend=snakemake@config[["h_dist_max"]], linewidth=0.4, linetype=2, colour="red") +
+  geom_segment(x=180, y=1.0, xend=180, yend=snakemake@config[["h_dist_max"]], linewidth=0.4, linetype=2, colour="red") +
+  geom_segment(x=snakemake@config[["h_ang_min"]], y=1.0, xend=180, yend=1.0, linewidth=0.4, linetype=2, colour="red") +
   scale_fill_viridis(limits = c(1, max_value), name = "Count") +
   xlab("Angle (\ub0)") +
   ylab("Distance (\uc5)") +
@@ -74,10 +76,12 @@ other_pairs_df$geom <- factor(other_pairs_df$geom,
 other_pairs_A <- other_pairs_df[other_pairs_df["geom"] == "A(N6)-U(O4)",] %>%
   ggplot(aes(x = h_angle, y = h_acc_distance)) +
   geom_bin_2d(binwidth = c(120/100, 2.0/100)) +
-  geom_segment(x=140, y=1.0, xend=140, yend=2.5, linewidth=0.4, linetype=2, colour="red") +
-  geom_segment(x=140, y=2.5, xend=180, yend=2.5, linewidth=0.4, linetype=2, colour="red") +
-  geom_segment(x=180, y=1.0, xend=180, yend=2.5, linewidth=0.4, linetype=2, colour="red") +
-  geom_segment(x=140, y=1.0, xend=180, yend=1.0, linewidth=0.4, linetype=2, colour="red") +
+  geom_segment(x=snakemake@config[["h_ang_min"]], y=1.0, xend=snakemake@config[["h_ang_min"]], 
+               yend=snakemake@config[["h_dist_max"]], linewidth=0.4, linetype=2, colour="red") +
+  geom_segment(x=snakemake@config[["h_ang_min"]], y=snakemake@config[["h_dist_max"]], xend=180, 
+               yend=snakemake@config[["h_dist_max"]], linewidth=0.4, linetype=2, colour="red") +
+  geom_segment(x=180, y=1.0, xend=180, yend=snakemake@config[["h_dist_max"]], linewidth=0.4, linetype=2, colour="red") +
+  geom_segment(x=snakemake@config[["h_ang_min"]], y=1.0, xend=180, yend=1.0, linewidth=0.4, linetype=2, colour="red") +
   ggtitle("A(N6)-U(O4)") +
   scale_fill_viridis(name = "Count") +
   xlab("Angle (\ub0)") +
@@ -90,10 +94,12 @@ other_pairs_A <- other_pairs_df[other_pairs_df["geom"] == "A(N6)-U(O4)",] %>%
 other_pairs_B <- other_pairs_df[other_pairs_df["geom"] == "C(N4)-G(O6)",] %>%
   ggplot(aes(x = h_angle, y = h_acc_distance)) +
   geom_bin_2d(binwidth = c(120/100, 2.0/100)) +
-  geom_segment(x=140, y=1.0, xend=140, yend=2.5, linewidth=0.4, linetype=2, colour="red") +
-  geom_segment(x=140, y=2.5, xend=180, yend=2.5, linewidth=0.4, linetype=2, colour="red") +
-  geom_segment(x=180, y=1.0, xend=180, yend=2.5, linewidth=0.4, linetype=2, colour="red") +
-  geom_segment(x=140, y=1.0, xend=180, yend=1.0, linewidth=0.4, linetype=2, colour="red") +
+  geom_segment(x=snakemake@config[["h_ang_min"]], y=1.0, xend=snakemake@config[["h_ang_min"]], 
+               yend=snakemake@config[["h_dist_max"]], linewidth=0.4, linetype=2, colour="red") +
+  geom_segment(x=snakemake@config[["h_ang_min"]], y=snakemake@config[["h_dist_max"]], xend=180, 
+               yend=snakemake@config[["h_dist_max"]], linewidth=0.4, linetype=2, colour="red") +
+  geom_segment(x=180, y=1.0, xend=180, yend=snakemake@config[["h_dist_max"]], linewidth=0.4, linetype=2, colour="red") +
+  geom_segment(x=snakemake@config[["h_ang_min"]], y=1.0, xend=180, yend=1.0, linewidth=0.4, linetype=2, colour="red") +
   ggtitle("C(N4)-G(O6)") +
   scale_fill_viridis(name = "Count") +
   xlab("Angle (\ub0)") +
@@ -106,10 +112,12 @@ other_pairs_B <- other_pairs_df[other_pairs_df["geom"] == "C(N4)-G(O6)",] %>%
 other_pairs_C <- other_pairs_df[other_pairs_df["geom"] == "G(N2)-C(O2)",] %>%
   ggplot(aes(x = h_angle, y = h_acc_distance)) +
   geom_bin_2d(binwidth = c(120/100, 2.0/100)) +
-  geom_segment(x=140, y=1.0, xend=140, yend=2.5, linewidth=0.4, linetype=2, colour="red") +
-  geom_segment(x=140, y=2.5, xend=180, yend=2.5, linewidth=0.4, linetype=2, colour="red") +
-  geom_segment(x=180, y=1.0, xend=180, yend=2.5, linewidth=0.4, linetype=2, colour="red") +
-  geom_segment(x=140, y=1.0, xend=180, yend=1.0, linewidth=0.4, linetype=2, colour="red") +
+  geom_segment(x=snakemake@config[["h_ang_min"]], y=1.0, xend=snakemake@config[["h_ang_min"]], 
+               yend=snakemake@config[["h_dist_max"]], linewidth=0.4, linetype=2, colour="red") +
+  geom_segment(x=snakemake@config[["h_ang_min"]], y=snakemake@config[["h_dist_max"]], xend=180, 
+               yend=snakemake@config[["h_dist_max"]], linewidth=0.4, linetype=2, colour="red") +
+  geom_segment(x=180, y=1.0, xend=180, yend=snakemake@config[["h_dist_max"]], linewidth=0.4, linetype=2, colour="red") +
+  geom_segment(x=snakemake@config[["h_ang_min"]], y=1.0, xend=180, yend=1.0, linewidth=0.4, linetype=2, colour="red") +
   ggtitle("G(N2)-C(O2)") +
   scale_fill_viridis(name = "Count") +
   xlab("Angle (\ub0)") +
@@ -122,10 +130,12 @@ other_pairs_C <- other_pairs_df[other_pairs_df["geom"] == "G(N2)-C(O2)",] %>%
 other_pairs_D <- other_pairs_df[other_pairs_df["geom"] == "G(N2)-C(N3)",] %>%
   ggplot(aes(x = h_angle, y = h_acc_distance)) +
   geom_bin_2d(binwidth = c(120/100, 2.0/100)) +
-  geom_segment(x=140, y=1.0, xend=140, yend=2.5, linewidth=0.4, linetype=2, colour="red") +
-  geom_segment(x=140, y=2.5, xend=180, yend=2.5, linewidth=0.4, linetype=2, colour="red") +
-  geom_segment(x=180, y=1.0, xend=180, yend=2.5, linewidth=0.4, linetype=2, colour="red") +
-  geom_segment(x=140, y=1.0, xend=180, yend=1.0, linewidth=0.4, linetype=2, colour="red") +
+  geom_segment(x=snakemake@config[["h_ang_min"]], y=1.0, xend=snakemake@config[["h_ang_min"]], 
+               yend=snakemake@config[["h_dist_max"]], linewidth=0.4, linetype=2, colour="red") +
+  geom_segment(x=snakemake@config[["h_ang_min"]], y=snakemake@config[["h_dist_max"]], xend=180, 
+               yend=snakemake@config[["h_dist_max"]], linewidth=0.4, linetype=2, colour="red") +
+  geom_segment(x=180, y=1.0, xend=180, yend=snakemake@config[["h_dist_max"]], linewidth=0.4, linetype=2, colour="red") +
+  geom_segment(x=snakemake@config[["h_ang_min"]], y=1.0, xend=180, yend=1.0, linewidth=0.4, linetype=2, colour="red") +
   ggtitle("G(N2)-C(N3)") +
   scale_fill_viridis(name = "Count") +
   xlab("Angle (\ub0)") +
