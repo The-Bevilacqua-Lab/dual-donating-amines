@@ -250,30 +250,6 @@ df = df.assign(acc_pair_combined=pd.NA)
 df.loc[:, ~df.columns.isin(["don_index"])] = (
     df.groupby("don_index", group_keys=False).apply(combine_acc, include_groups=False))
 
-# Prepare a list of acceptor residue and atom names from canonical amino acids and nucleic acids that have substantially
-# greater negative charge.
-can_neg = []
-can_neut = []
-for residue in residue_library.RESIDUE_LIBRARY:
-    for acceptor in residue['acc']:
-        if acceptor[3] < 0:
-            can_neg.append(f"{residue['res']}.{acceptor[0]}")
-        elif residue['res'] == 'ASP' and acceptor[0] == 'OD1':
-            can_neg.append(f"{residue['res']}.{acceptor[0]}")
-        elif residue['res'] == 'GLU' and acceptor[0] == 'OE1':
-            can_neg.append(f"{residue['res']}.{acceptor[0]}")
-        elif residue['res'] in ['A', 'C', 'G', 'U', 'DA', 'DC', 'DG', 'DT'] and acceptor[0] == 'OP1':
-            can_neg.append(f"{residue['res']}.{acceptor[0]}")
-        else:
-            can_neut.append(f"{residue['res']}.{acceptor[0]}")
-
-# Add a new column to identify acceptors from canonical amino acids and nucleic acids that have substantially greater
-# negative charges.
-df = df.assign(acc_charge=pd.NA)
-df.loc[~df.isna()['acc_index'], "acc_charge"] = "other"
-df.loc[df["acc_resn_name"].isin(can_neg), "acc_charge"] = "can_neg"
-df.loc[df["acc_resn_name"].isin(can_neut), "acc_charge"] = "can_neut"
-
 # Add a new column to identify donor-acceptor pairs that will be used for evaluating H-bonding geometry. Each atom pair
 # involves a donor of interest.
 df = df.assign(geom=0)
