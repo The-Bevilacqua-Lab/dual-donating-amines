@@ -448,7 +448,7 @@ if version_num == "Error":
 # Prepare a master data frame containing heavy atom count, b-factor, H-bonding data, and other relevant information.
 master_df = don_info_df.merge(don_h_bonds_df, how='outer')
 master_df = master_df.merge(na_torsion_df, left_on=['don_resn', 'don_chain', 'don_resi'], right_on=['N', 'c', 'resi'],
-                            how='left', suffixes=(None, '_y')).drop(columns=['N', 'c', 'resi'])
+                            how='left').drop(columns=['N', 'c', 'resi'])
 master_df.loc[:, ['model', 'PDB', 'eq_class_member', 'PDB_version_number', 'PDB_version_date']] = \
     [model, pdb_id, eq_class_mem_id, version_num, version_date]
 
