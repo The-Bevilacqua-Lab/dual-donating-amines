@@ -345,6 +345,9 @@ else:
 # Create a dataframe based on the info dictionary.
 don_info_df = pd.DataFrame(don_info_dict).astype("str")
 
+# Remove segment identifier column because it is not needed.
+don_info_df = don_info_df.loc[:, ~don_info_df.columns.isin(["don_segi"])]
+
 # Store a list of acceptors near the donors of interest within an atom pair dictionary. Also include two keys (the last
 # two in the below dictionary) which have values containing both residue and atom names for donor and acceptor atoms.
 don_atom_pair_dict = {"don_index": [], "don_name": [], "don_resn": [], "don_resi": [], "don_chain": [], "don_segi": [],
@@ -392,6 +395,9 @@ for atom_pair in don_atom_pair_df.itertuples():
 
 # Create a dataframe based on the dictionary.
 don_h_bonds_df = pd.DataFrame(don_h_bonds_dict).astype("str")
+
+# Remove segment identifier columns because they are not needed.
+don_h_bonds_df = don_h_bonds_df.loc[:, ~don_h_bonds_df.columns.isin(["don_segi", "acc_segi"])]
 
 # Record info on the atoms associated with the previously determined 100 atom indices and check whether there are any
 # changes.
