@@ -431,6 +431,7 @@ for idx, chain in enumerate(chain_list):
         additional_df['c'] = chain
         na_torsion_df = pd.concat([na_torsion_df, additional_df])
 na_torsion_df['resi'] = na_torsion_df['resi'].astype('str')
+na_torsion_df = na_torsion_df.loc[:, ['N', 'c', 'resi', 'eta', 'theta']]
 
 # Retrieve the version information specified in the mmCIF file.
 version_num, version_date = retrieve_version(original_mmcif_dir, pdb_id)
@@ -441,7 +442,7 @@ if version_num == "Error":
 # Prepare a master data frame containing heavy atom count, b-factor, H-bonding data, and other relevant information.
 master_df = don_info_df.merge(don_h_bonds_df, how='outer')
 master_df = master_df.merge(na_torsion_df, left_on=['don_resn', 'don_chain', 'don_resi'], right_on=['N', 'c', 'resi'],
-                            how='left', suffixes=(None, '_y')).drop(columns=['N', 'c', 'resi', 'chi_y'])
+                            how='left', suffixes=(None, '_y')).drop(columns=['N', 'c', 'resi'])
 master_df.loc[:, ['model', 'PDB', 'eq_class_member', 'PDB_version_number', 'PDB_version_date']] = \
     [model, pdb_id, eq_class_mem_id, version_num, version_date]
 
