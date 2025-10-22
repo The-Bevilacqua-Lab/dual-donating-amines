@@ -300,7 +300,7 @@ sasa_jitter_plot <- sasa_dual_df %>% ggplot(aes(x=don_label, y=SASA)) +
   geom_point(size = 0.5, alpha = 0.5, stroke = 0, position = position_jitter(seed = 1)) +
   scale_y_continuous(breaks = possible_values[seq(1, length(possible_values), 2)], minor_breaks = possible_values) +
   ggtitle("Dual-Donating Amines") +
-  xlab("Nucleobase") +
+  xlab("Amine") +
   ylab("SASA (\uc5\ub2)") +
   theme_bw(base_size = 10) +
   theme(plot.title = element_text(hjust = 0.5), panel.grid.major.x = element_blank())
@@ -1263,7 +1263,7 @@ write.csv(chi_stats, file = snakemake@output[["chi_stats"]], row.names = FALSE)
 #### CHI WATSON'S TWO-SAMPLE TESTS ####
 
 # Create a new column based on chi_adjusted whose values are class circular.
-chi_df <- chi_df %>% mutate(chi_circ = circular(chi_adjusted, units = "degrees", zero = -180))
+chi_df <- chi_df %>% mutate(chi_circ = circular(chi_adjusted, units = "degrees", zero = -pi))
 
 # Start sinking the output into a text file.
 sink(file = snakemake@output[["chi_pvals"]])
