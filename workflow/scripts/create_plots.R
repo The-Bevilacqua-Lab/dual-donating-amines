@@ -58,7 +58,7 @@ pairs <- pairs_df %>% ggplot(aes(x = h_angle, y = h_acc_distance)) +
                                     margin = margin(t = 0, r = 0.25, b = 0, l = 0.125, unit = "in")))
 
 # Write the plot.
-ggsave(snakemake@output[["fig_2_pairs"]], plot = pairs, width = 3.75, height = 3.25, units = "in", scale = 1)
+ggsave(snakemake@output[["fig_2_pairs"]], plot = pairs, width = 3.75, height = 3.25, units = "in", scale = 1, dpi = 900)
 
 # Extract the rows from the combined data frame relevant for the other amine-acceptor pair plots.
 other_pairs_df <- combined_df %>% filter(geom > 1 & don_resn %in% c("A", "C", "G")) %>%
@@ -192,7 +192,7 @@ don_id_df <- don_id_df %>% mutate(don_label = paste(don_resn, "(", don_name, ")"
 don_id_plot <- don_id_df %>% ggplot(aes(x=type, y=occurrence)) +
   geom_col(width = 0.8, linewidth = 0.3, color = "black", fill = "grey", show.legend = FALSE) +
   geom_text(aes(x=type, y=occurrence+max(occurrence)*0.05, label=paste(round(occurrence, digits = 1), "%", sep = "")),
-            size = 10, size.unit = "pt", vjust = 0, inherit.aes = FALSE) +
+            size = 9, size.unit = "pt", vjust = 0, inherit.aes = FALSE) +
   geom_text(aes(x=type, y=-5, label = paste("n = ", prettyNum(n_don_type, big.mark = ","), sep = "")),
             size = 8, size.unit = "pt", hjust = 0.5, vjust = 0.5, angle = 30) +
   xlab("Type of Donating Amine") +
@@ -204,7 +204,8 @@ don_id_plot <- don_id_df %>% ggplot(aes(x=type, y=occurrence)) +
   facet_wrap( ~ don_label, nrow = 1)
 
 # Write the plots.
-ggsave(snakemake@output[["fig_3_don_id"]], plot = don_id_plot, width = 6, height = 5, units = "in", scale = 1)
+ggsave(snakemake@output[["fig_3_don_id"]], plot = don_id_plot,
+       width = 6, height = 5, units = "in", scale = 1, dpi = 900)
 
 #### ACCEPTOR PAIR IDENTITY PLOT ####
 
@@ -263,7 +264,8 @@ acc_pair_id_plot <- acc_pair_id_df %>%
   facet_wrap( ~ don_label, nrow = 1, scales = "free_x")
 
 # Write the plots.
-ggsave(snakemake@output[["fig_3_acc_pair_id"]], plot = acc_pair_id_plot, width = 6, height = 5, units = "in", scale = 1)
+ggsave(snakemake@output[["fig_3_acc_pair_id"]], plot = acc_pair_id_plot,
+       width = 6, height = 5, units = "in", scale = 1, dpi = 900)
 
 # Write key data to a csv file.
 acc_pair_id_df_csv <- acc_pair_id_df[c("don_label", "acc_pair_combined_reformat", "n_resn_pair", "n_resn_pair_same")]
@@ -325,16 +327,18 @@ ratio <- (3/diff(ylim))*2
 sasa_col_plot <- sasa_stats %>% ggplot(aes(x=type, y=med)) +
   geom_col(width = 0.8, linewidth = 0.3, color = "black", fill = "grey") +
   geom_text(aes(x=type, y=med+max(med)*0.075, label=round(med, digits = 1)),
-            size = 10, size.unit = "pt", inherit.aes = FALSE) +
+            size = 9, size.unit = "pt", inherit.aes = FALSE) +
   coord_fixed(ratio = ratio, ylim = ylim) +
   xlab("Type of Donating Amine") +
   ylab("Median SASA (\uc5\ub2)") +
   theme_bw(base_size = 10) +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1), panel.grid.major.x = element_blank()) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1), panel.grid.major.x = element_blank(),
+        strip.text = element_text(size = 9)) +
   facet_wrap( ~ don_label, nrow = 1)
 
 # Write the plots.
-ggsave(snakemake@output[["fig_5_sasa_col"]], plot = sasa_col_plot, width = 3.5, height = 3, units = "in", scale = 1)
+ggsave(snakemake@output[["fig_5_sasa_col"]], plot = sasa_col_plot,
+       width = 3.5, height = 3, units = "in", scale = 1, dpi = 900)
 
 # Write SASA statistics to a csv file.
 write.csv(sasa_stats, file = snakemake@output[["sasa_stats"]], row.names = FALSE)
@@ -455,13 +459,14 @@ density_no_outiers_plot <- density_pivot_df %>% ggplot(aes(x=type, y=density_val
   xlab("Type of Donating Amine") +
   ylab("Density (heavy-atoms/nm\ub3)") +
   theme_bw(base_size = 10) +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1), panel.grid.major.x = element_blank()) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1), panel.grid.major.x = element_blank(),
+        strip.text = element_text(size = 9)) +
   facet_nested_wrap(vars(density_type, don_label), nrow = 1, scales = "fixed")
 
 # Write the plots.
 ggsave(snakemake@output[["fig_S2_density"]], plot = density_plot, width = 6, height = 3, units = "in", scale = 1)
 ggsave(snakemake@output[["fig_5_density_no_outiers"]],
-       plot = density_no_outiers_plot, width = 6, height = 3, units = "in", scale = 1)
+       plot = density_no_outiers_plot, width = 6, height = 3, units = "in", scale = 1, dpi = 900)
 
 # Calculate quantile values for both densities.
 density_stats <- density_pivot_df %>% summarise(n = n(),
@@ -788,7 +793,8 @@ pt_no_plot_legend <- pt_df[which(pt_df$type == "Non"),] %>%
   scale_y_continuous(breaks = seq(0, 360, 90)) +
   theme_classic(base_size = 10) +
   theme(legend.key.width = unit(0.1, "in"), legend.key.height = unit(0.25, "in"),
-        legend.margin = margin(t = 0, r = 0, b = 0.2, l = 0, "in"), plot.title = element_text(vjust = 1, hjust = 0.5),
+        legend.margin = margin(t = 0, r = 0, b = 0.2, l = 0, "in"),
+        plot.title = element_text(vjust = 1, hjust = 0.5, size = 10),
         plot.margin = margin(t = 0, r = 0, b = 0, l = 0.1, "in"))
 pt_single_plot_legend <- pt_df[which(pt_df$type == "Single"),] %>%
   ggplot(aes(x = eta_translated, y = theta_translated)) +
@@ -808,7 +814,8 @@ pt_single_plot_legend <- pt_df[which(pt_df$type == "Single"),] %>%
   scale_y_continuous(breaks = seq(0, 360, 90)) +
   theme_classic(base_size = 10) +
   theme(legend.key.width = unit(0.1, "in"), legend.key.height = unit(0.25, "in"),
-        legend.margin = margin(t = 0, r = 0, b = 0.2, l = 0, "in"), plot.title = element_text(vjust = 1, hjust = 0.5),
+        legend.margin = margin(t = 0, r = 0, b = 0.2, l = 0, "in"),
+        plot.title = element_text(vjust = 1, hjust = 0.5, size = 10),
         plot.margin = margin(t = 0, r = 0, b = 0, l = 0.1, "in"))
 pt_dual_plot_legend <- pt_df[which(pt_df$type == "Dual"),] %>%
   ggplot(aes(x = eta_translated, y = theta_translated)) +
@@ -828,7 +835,8 @@ pt_dual_plot_legend <- pt_df[which(pt_df$type == "Dual"),] %>%
   scale_y_continuous(breaks = seq(0, 360, 90)) +
   theme_classic(base_size = 10) +
   theme(legend.key.width = unit(0.1, "in"), legend.key.height = unit(0.25, "in"),
-        legend.margin = margin(t = 0, r = 0, b = 0.2, l = 0, "in"), plot.title = element_text(vjust = 1, hjust = 0.5),
+        legend.margin = margin(t = 0, r = 0, b = 0.2, l = 0, "in"),
+        plot.title = element_text(vjust = 1, hjust = 0.5, size = 10),
         plot.margin = margin(t = 0, r = 0, b = 0, l = 0.1, "in"))
 
 # Extract the legends.
@@ -851,7 +859,7 @@ pt_plots <- plot_grid(pt_no_grid, pt_single_grid, pt_dual_grid, combined_locatio
   theme(plot.background = element_rect(fill = "white", color = NA))
 
 # Write the plots.
-ggsave(snakemake@output[["fig_7_pt"]], plot = pt_plots, width = 6.5, height = 5.5, units = "in")
+ggsave(snakemake@output[["fig_7_pt"]], plot = pt_plots, width = 6.5, height = 5.5, units = "in", dpi = 900)
 
 # Write key data to a csv file.
 pt_acc_pairs_df <-
@@ -1074,14 +1082,14 @@ chi_plot_combined <- chi_df %>% ggplot(aes(x = chi_adjusted)) +
   annotate("rect", linetype = "blank", fill = color_palette[6], alpha = 0.3,
            xmin = -90, xmax = 90, ymin = 1, ymax = 10^5) +
   annotate("shadowtext", x = -120, y = 3*10^4,
-           fontface = "bold.italic", label = 'anti', color = "white", bg.color = "black", bg.r = 0.075) +
+           fontface = "bold.italic", label = 'anti', size = 10/.pt, color = "white", bg.color = "black", bg.r = 0.075) +
   annotate("shadowtext", x = 0, y = 3*10^4,
-           fontface = "bold.italic", label = 'syn', color = color_palette[6], bg.color = "white") +
+           fontface = "bold.italic", label = 'syn', size = 10/.pt, color = color_palette[6], bg.color = "white") +
   annotate("shadowtext", x = 135, y = 3*10^4,
-           fontface = "bold.italic", label = 'anti', color = "white", bg.color = "black", bg.r = 0.075) +
+           fontface = "bold.italic", label = 'anti', size = 10/.pt, color = "white", bg.color = "black", bg.r = 0.075) +
   geom_histogram(aes(y=after_stat(count)), fill = chi_bin_colors, binwidth = 10, center = 5, show.legend = FALSE) +
-  annotate("text", x = -105, y = 1*10^1, size = 4, label = 'major', fontface = "bold", color = "white") +
-  annotate("text", x = 60, y = 1*10^1, size = 4, label = 'minor', fontface = "bold", color = "white") +
+  annotate("text", x = -105, y = 1*10^1, size = 10/.pt, label = 'major', fontface = "bold", color = "white") +
+  annotate("text", x = 60, y = 1*10^1, size = 10/.pt, label = 'minor', fontface = "bold", color = "white") +
   scale_x_continuous(limits = c(-180, 180), breaks = seq(-180, 180, 45)) +
   scale_y_continuous(transform = "log10", name = "Count") +
   xlab("\u03c7 (\ub0)") +
@@ -1249,8 +1257,9 @@ partial_plots <- plot_grid(y_title, partial_no_y, nrow = 1, rel_widths = c(0.1, 
 # Create the plots.
 ggsave(snakemake@output[["fig_S3_chi_full"]], plot = full_plots, width = 6.5, height = 7, units = "in", scale = 1)
 ggsave(snakemake@output[["fig_6_chi_combined"]], plot = chi_plot_combined,
-  width = 3.75, height = 1.75, units = "in", scale = 1)
-ggsave(snakemake@output[["fig_6_chi_partial"]], plot = partial_plots, width = 4, height = 6.5, units = "in", scale = 1)
+  width = 3.75, height = 1.75, units = "in", scale = 1, dpi = 900)
+ggsave(snakemake@output[["fig_6_chi_partial"]], plot = partial_plots,
+       width = 4, height = 6.5, units = "in", scale = 1, dpi = 900)
 
 # Calculate the number of residues that belong to the major and minor conformations.
 chi_df[!(chi_df["chi_adjusted"] > -20 & chi_df["chi_adjusted"] <= 130), "conformation"] <- "major"
