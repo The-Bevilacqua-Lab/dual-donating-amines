@@ -58,7 +58,7 @@ pairs <- pairs_df %>% ggplot(aes(x = h_angle, y = h_acc_distance)) +
                                     margin = margin(t = 0, r = 0.25, b = 0, l = 0.125, unit = "in")))
 
 # Write the plot.
-ggsave(snakemake@output[["fig_2_pairs"]], plot = pairs, width = 3.75, height = 3.25, units = "in", scale = 1, dpi = 900)
+ggsave(snakemake@output[["fig_3_pairs"]], plot = pairs, width = 3.75, height = 3.25, units = "in", scale = 1, dpi = 900)
 
 # Extract the rows from the combined data frame relevant for the other amine-acceptor pair plots.
 other_pairs_df <- combined_df %>% filter(geom > 1 & don_resn %in% c("A", "C", "G")) %>%
@@ -204,7 +204,7 @@ don_id_plot <- don_id_df %>% ggplot(aes(x=type, y=occurrence)) +
   facet_wrap( ~ don_label, nrow = 1)
 
 # Write the plots.
-ggsave(snakemake@output[["fig_3_don_id"]], plot = don_id_plot,
+ggsave(snakemake@output[["fig_4_don_id"]], plot = don_id_plot,
        width = 6, height = 5, units = "in", scale = 1, dpi = 900)
 
 #### ACCEPTOR PAIR IDENTITY PLOT ####
@@ -264,7 +264,7 @@ acc_pair_id_plot <- acc_pair_id_df %>%
   facet_wrap( ~ don_label, nrow = 1, scales = "free_x")
 
 # Write the plots.
-ggsave(snakemake@output[["fig_3_acc_pair_id"]], plot = acc_pair_id_plot,
+ggsave(snakemake@output[["fig_4_acc_pair_id"]], plot = acc_pair_id_plot,
        width = 6, height = 5, units = "in", scale = 1, dpi = 900)
 
 # Write key data to a csv file.
@@ -308,8 +308,8 @@ sasa_jitter_plot <- sasa_dual_df %>% ggplot(aes(x=don_label, y=SASA)) +
   theme(plot.title = element_text(hjust = 0.5), panel.grid.major.x = element_blank())
 
 # Write the plots.
-ggsave(snakemake@output[["fig_S2_sasa_box"]], plot = sasa_box_plot, width = 3.5, height = 3, units = "in", scale = 1)
-ggsave(snakemake@output[["fig_S2_sasa_jitter"]], plot = sasa_jitter_plot, width = 2.5, height = 3, units = "in", scale = 1)
+ggsave(snakemake@output[["fig_S3_sasa_box"]], plot = sasa_box_plot, width = 3.5, height = 3, units = "in", scale = 1)
+ggsave(snakemake@output[["fig_S3_sasa_jitter"]], plot = sasa_jitter_plot, width = 2.5, height = 3, units = "in", scale = 1)
 
 # Calculate some statistics.
 sasa_stats <- sasa_df %>% summarise(n = n(),
@@ -337,7 +337,7 @@ sasa_col_plot <- sasa_stats %>% ggplot(aes(x=type, y=med)) +
   facet_wrap( ~ don_label, nrow = 1)
 
 # Write the plots.
-ggsave(snakemake@output[["fig_5_sasa_col"]], plot = sasa_col_plot,
+ggsave(snakemake@output[["fig_6_sasa_col"]], plot = sasa_col_plot,
        width = 3.5, height = 3, units = "in", scale = 1, dpi = 900)
 
 # Write SASA statistics to a csv file.
@@ -464,8 +464,8 @@ density_no_outiers_plot <- density_pivot_df %>% ggplot(aes(x=type, y=density_val
   facet_nested_wrap(vars(density_type, don_label), nrow = 1, scales = "fixed")
 
 # Write the plots.
-ggsave(snakemake@output[["fig_S2_density"]], plot = density_plot, width = 6, height = 3, units = "in", scale = 1)
-ggsave(snakemake@output[["fig_5_density_no_outiers"]],
+ggsave(snakemake@output[["fig_S3_density"]], plot = density_plot, width = 6, height = 3, units = "in", scale = 1)
+ggsave(snakemake@output[["fig_6_density_no_outiers"]],
        plot = density_no_outiers_plot, width = 6, height = 3, units = "in", scale = 1, dpi = 900)
 
 # Calculate quantile values for both densities.
@@ -859,12 +859,12 @@ pt_plots <- plot_grid(pt_no_grid, pt_single_grid, pt_dual_grid, combined_locatio
   theme(plot.background = element_rect(fill = "white", color = NA))
 
 # Write the plots.
-ggsave(snakemake@output[["fig_7_pt"]], plot = pt_plots, width = 6.5, height = 5.5, units = "in", dpi = 900)
+ggsave(snakemake@output[["fig_8_pt"]], plot = pt_plots, width = 6.5, height = 5.5, units = "in", dpi = 900)
 
 # Write key data to a csv file.
 pt_acc_pairs_df <-
   combined_location_df[c("location", "don_label", "acc_pair_combined_reformat", "n_resn_pair", "n_resn_pair_same")]
-write.csv(pt_acc_pairs_df, file = snakemake@output[["fig_7_pt_acc_pairs"]], row.names = FALSE)
+write.csv(pt_acc_pairs_df, file = snakemake@output[["fig_8_pt_acc_pairs"]], row.names = FALSE)
 
 #### CHI PLOTS ####
 
@@ -1255,10 +1255,10 @@ partial_plots <- plot_grid(y_title, partial_no_y, nrow = 1, rel_widths = c(0.1, 
   theme(plot.background = element_rect(fill = "white", color = NA))
 
 # Create the plots.
-ggsave(snakemake@output[["fig_S3_chi_full"]], plot = full_plots, width = 6.5, height = 7, units = "in", scale = 1)
-ggsave(snakemake@output[["fig_6_chi_combined"]], plot = chi_plot_combined,
+ggsave(snakemake@output[["fig_S4_chi_full"]], plot = full_plots, width = 6.5, height = 7, units = "in", scale = 1)
+ggsave(snakemake@output[["fig_7_chi_combined"]], plot = chi_plot_combined,
   width = 3.75, height = 1.75, units = "in", scale = 1, dpi = 900)
-ggsave(snakemake@output[["fig_6_chi_partial"]], plot = partial_plots,
+ggsave(snakemake@output[["fig_7_chi_partial"]], plot = partial_plots,
        width = 4, height = 6.5, units = "in", scale = 1, dpi = 900)
 
 # Calculate the number of residues that belong to the major and minor conformations.
