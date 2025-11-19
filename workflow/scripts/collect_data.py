@@ -458,7 +458,7 @@ with open(snakemake.output.data, "w") as csv_file:
     writer = csv.writer(csv_file)
     if commit_hash:
         writer.writerow([f"# dual-donating-amines repo git commit hash: {commit_hash}"])
-    writer.writerow([f"# representative set file: {snakemake.config['ifes_file']}"])
+    writer.writerow([f"# IFEs file: {snakemake.config['ifes_file']}"])
     writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
 master_df.to_csv(snakemake.output.data, index=False, mode='a', na_rep='NaN')
 
