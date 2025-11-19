@@ -1,7 +1,7 @@
 """
-Create a script that is to be used with PyMOL to review dual H-bonding amines from the combined.csv file that is output
-from combine_data.py. This could also be a different CSV file with the same format as combined.csv. The dual H-bonding
-amines in the data are then filtered based on the supplied arguments.
+Create a Python script that is to be used with PyMOL to review dual H-bonding amines from the combined.csv file that is
+created from combine_data.py. This could also be a different CSV file with a similar format to combined.csv. The dual
+H-bonding amines in the data can then be filtered based on the supplied arguments to the created Python script.
 """
 
 import argparse

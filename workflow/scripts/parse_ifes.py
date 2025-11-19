@@ -1,9 +1,9 @@
 """
-This script provides a function that reads a full integrated functional elements (IFEs) file and collects the
-equivalence class names, PDB IDs, model info, and chain info of the representative IFEs that serve as the
-representative structures of their corresponding equivalence classes. Information for the representative IFEs are
-returned as a single list of strings. The name of the IFEs file must be provided as the argument. Lastly, the function
-also prints the number of representative IFEs and the number of unique PDB IDs among those IFEs.
+This script provides a function that reads an integrated functional elements (IFEs) file and collects the equivalence
+class names, PDB IDs, model info, and chain info of the representative IFEs that serve as the representative
+structures of their corresponding equivalence classes. Information for the representative IFEs are returned as a
+single list of strings. The name of the IFEs file must be provided as the argument. Lastly, the function also prints
+the number of representative IFEs and the number of unique PDB IDs among those IFEs.
 """
 
 import sys

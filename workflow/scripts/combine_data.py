@@ -27,7 +27,7 @@ if snakemake.config["commit_hash"]:
     repo_changes = list(subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"],
                                                 cwd=os.path.dirname(os.path.realpath(__file__)))
                         .decode('ascii').strip().split("\n"))
-    acceptable_changes = ['config/config.yaml', snakemake.config["rep_set_file"]]
+    acceptable_changes = ['config/config.yaml']
     for file in repo_changes:
         if file.split(' ')[-1] in acceptable_changes:
             repo_changes.remove(file)
@@ -64,7 +64,7 @@ with open(snakemake.output.combined, "w") as csv_file:
     writer = csv.writer(csv_file)
     if commit_hash:
         writer.writerow([f"# dual-donating-amines repo git commit hash: {commit_hash}"])
-    writer.writerow([f"# representative set file: {snakemake.config['rep_set_file']}"])
+    writer.writerow([f"# representative set file: {snakemake.config['ifes_file']}"])
     writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
 combined_df.to_csv(snakemake.output.combined, index=False, mode='a', na_rep='NaN')
 
@@ -75,7 +75,7 @@ with open(snakemake.output.pdb_versions, "w") as csv_file:
     writer = csv.writer(csv_file)
     if commit_hash:
         writer.writerow([f"# dual-donating-amines repo git commit hash: {commit_hash}"])
-    writer.writerow([f"# representative set file: {snakemake.config['rep_set_file']}"])
+    writer.writerow([f"# representative set file: {snakemake.config['ifes_file']}"])
     writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
 pdb_versions_df.to_csv(snakemake.output.pdb_versions, index=False, mode='a', na_rep='NaN')
 

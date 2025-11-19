@@ -1,5 +1,5 @@
 """
-This module provides a function that reads the relevant mmCIF file to collect the specified model numbers.
+This module provides functions that read the relevant mmCIF file to collect the model numbers and version information.
 """
 
 from gemmi import cif

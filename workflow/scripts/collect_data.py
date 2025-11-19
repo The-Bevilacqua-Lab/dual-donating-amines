@@ -1,12 +1,13 @@
 """
-This script reads information from an equivalence class member provided by the representative set file. It works with
-PyMOL to save an mmCIF file of the original structure to a location specified in the Snakemake configuration file.
-Alternative conformations are removed, hydrogens are added, and the modified structure is saved to an mmCIF file
-specified by the Snakefile. The script collects data from the modified structure on potential hydrogen bonds involving
-amines of A's, C's, and G's in the equivalence class member RNA chains. Other data is also collected, such as the
-number of heavy atoms around each amine. It writes this data to a csv file specified by the Snakefile. If commit_hash
-is set to true in the Snakemake configuration file, the commit hash of the repo will also be written within a commented
-line to the csv file if no uncommitted changes have been made to the repo.
+This script reads information from an equivalence class member provided by the integrated functional elements (IFEs)
+file. It works with PyMOL to save an mmCIF file of the original structure to a location specified in the Snakemake
+configuration file. Alternative conformations are removed, hydrogens are added, and the modified structure is saved
+to an mmCIF file at a location specified in the configuration file. The script collects data from the modified
+structure on potential hydrogen bonds involving amines of A's, C's, and G's in the equivalence class member RNA
+chains. Other data is also collected, such as the number of heavy atoms around each amine. It writes this data to a
+csv file specified by the Snakefile. If commit_hash is set to true in the configuration file, the commit hash of the
+repo will also be written within a commented line to the csv file if no uncommitted changes have been made to the
+repo, aside from changes to the configuration file.
 """
 
 import sys
@@ -96,7 +97,7 @@ if snakemake.config["commit_hash"]:
     repo_changes = list(subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"],
                                                 cwd=os.path.dirname(os.path.realpath(__file__)))
                         .decode('ascii').strip().split("\n"))
-    acceptable_changes = ['config/config.yaml', snakemake.config["rep_set_file"]]
+    acceptable_changes = ['config/config.yaml']
     for file in repo_changes:
         if file.split(' ')[-1] in acceptable_changes:
             repo_changes.remove(file)
@@ -457,7 +458,7 @@ with open(snakemake.output.data, "w") as csv_file:
     writer = csv.writer(csv_file)
     if commit_hash:
         writer.writerow([f"# dual-donating-amines repo git commit hash: {commit_hash}"])
-    writer.writerow([f"# representative set file: {snakemake.config['rep_set_file']}"])
+    writer.writerow([f"# representative set file: {snakemake.config['ifes_file']}"])
     writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
 master_df.to_csv(snakemake.output.data, index=False, mode='a', na_rep='NaN')
 

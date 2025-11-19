@@ -38,7 +38,7 @@ def find_name(row):
 
 # Read the combined data.
 combined_df = pd.read_csv(snakemake.input.combined, comment="#", keep_default_na=False, na_values="NaN", dtype="string")
-ifes_df = pd.read_csv(f"{snakemake.config['rep_set_file'][:-4]}_filtered.csv",
+ifes_df = pd.read_csv(f"{snakemake.config['ifes_file'][:-4]}_filtered.csv",
                       keep_default_na=False, na_values="NA", dtype="string")
 
 # Create a data frame with unique rows of amines and information from the filtered IFEs file.

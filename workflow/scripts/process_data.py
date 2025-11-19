@@ -1,7 +1,7 @@
 """
 Build on the output from the collect_data.py script, adding columns to identify H-bonding interactions, assign each
-donor of interest as no, single, or dual H-bonding, identify acceptors that bear a substantial negative charge, and
-identify whether any given donor-acceptor pair will be used to inform the selection of H-bond geometry criteria.
+donor of interest as no, single, or dual H-bonding, and identify whether any given donor-acceptor pair will be used
+to inform the selection of H-bond geometry criteria.
 """
 
 import sys
@@ -44,7 +44,7 @@ if snakemake.config["commit_hash"]:
     repo_changes = list(subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"],
                                                 cwd=os.path.dirname(os.path.realpath(__file__)))
                         .decode('ascii').strip().split("\n"))
-    acceptable_changes = ['config/config.yaml', snakemake.config["rep_set_file"]]
+    acceptable_changes = ['config/config.yaml']
     for file in repo_changes:
         if file.split(' ')[-1] in acceptable_changes:
             repo_changes.remove(file)
@@ -306,7 +306,7 @@ with open(snakemake.output.data, "w") as csv_file:
     writer = csv.writer(csv_file)
     if commit_hash:
         writer.writerow([f"# dual-donating-amines repo git commit hash: {commit_hash}"])
-    writer.writerow([f"# representative set file: {snakemake.config['rep_set_file']}"])
+    writer.writerow([f"# representative set file: {snakemake.config['ifes_file']}"])
     writer.writerow([f"# file created on: {datetime.now().strftime('%y-%m-%d %H:%M:%S.%f')}"])
     writer.writerow([f"# H-acc max distance: {H_DIST_MAX}"])
     writer.writerow([f"# don-H-acc min angle: {H_ANG_MIN}"])
