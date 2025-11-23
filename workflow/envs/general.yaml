@@ -9,7 +9,7 @@ dependencies:
   - pandas=2.2.1
   - scipy=1.15.2
   - matplotlib=3.10.3
-  - scikit-learn=1.6.1
+  - scikit-learn=1.7.2
   - r-base=4.4.2
   - r=4.4
   - r-ggplot2=3.5.1
