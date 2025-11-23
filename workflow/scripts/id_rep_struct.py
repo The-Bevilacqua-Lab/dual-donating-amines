@@ -3,13 +3,20 @@
 #################################### Importing libraries ####################################
 import os
 import shutil
+import pandas as pd
 import requests
-from Bio.PDB import MMCIFParser, Superimposer
-from scipy.cluster.hierarchy import dendrogram
+import numpy as np
+from Bio.PDB import MMCIFParser, Superimposer, PDBIO
+from optparse import OptionParser
 from collections import Counter
+from scipy.spatial.distance import squareform
+from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
+import matplotlib.pyplot as plt
+import seaborn as sns
 from math import floor
+from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bouldin_score
+from sklearn.manifold import MDS
 from matplotlib.ticker import FormatStrFormatter
-import time
 
 #################################### Functions ####################################
 
@@ -367,11 +374,11 @@ def plot_validation_scores(cutoffs, sil_scores, ch_scores, db_scores, fstring):
     best_cutoff_ch = cutoffs[np.nanargmax(ch_scores)]
     best_cutoff_db = cutoffs[np.nanargmin(db_scores)]
 
-    plt.axvline(x=best_cutoff_sil, color='royalblue', linestyle='-', linewidth=6, alpha=0.4,
+    plt.axvline(x=best_cutoff_sil, color='royalblue', linestyle='-', linewidth=3, alpha=0.6,
                 label=f'Best Silhouette Cutoff = {best_cutoff_sil:.2f} Å')
-    plt.axvline(x=best_cutoff_ch, color='darkgreen', linestyle='--', linewidth=4, alpha=0.4,
+    plt.axvline(x=best_cutoff_ch, color='darkgreen', linestyle='--', linewidth=2, alpha=0.6,
                 label=f'Best Calinski-Harabasz Cutoff = {best_cutoff_ch:.2f} Å')
-    plt.axvline(x=best_cutoff_db, color='darkorange', linestyle='--', linewidth=2, alpha=0.4,
+    plt.axvline(x=best_cutoff_db, color='darkorange', linestyle='--', linewidth=1, alpha=0.6,
                 label=f'Best Davies-Bouldin Cutoff = {best_cutoff_db:.2f} Å')
 
 
@@ -409,7 +416,7 @@ def plot_validation_scores(cutoffs, sil_scores, ch_scores, db_scores, fstring):
 
 
 
-# functions to calculate teh representative structure for each cluster
+# functions to calculate the representative structure for each cluster
  
 def load_structures_from_directory(directory, f_list):
     parser = MMCIFParser(QUIET=True)
@@ -600,10 +607,25 @@ Z[:, [0, 1]] = Z[:, [1, 0]]
 dend = dendrogram(Z, labels=D1.index, leaf_rotation=0, orientation='left', leaf_font_size=5, no_plot=True)
 
 # calculating the range for the cut-offs within which different cluster validation matrics will be calculated
-min_rmsd = np.min(Z[:, 2]) #min value for the range
+min_rmsd1 = np.min(Z[:, 2]) #min value for the range
+min_rmsd= None
 max_rmsd = np.max(Z[:, 2])
 pre_max = floor(max_rmsd) # max value for the range
 # generating RMSD cut-off range
+cutoffs = np.linspace(min_rmsd1, pre_max, 50)
+
+for cutoff in cutoffs:
+    labels= fcluster(Z, t= cutoff, criterion= 'distance')
+    cluster_sizes= pd.Series(labels).value_counts()
+
+    if (cluster_sizes >= 4).any():
+        min_rmsd =cutoff
+        break
+
+print ('#############################################################################################')
+print ('Minimum RMSD cutoff with at least one cluster ≥ 4 members: '+ str(min_rmsd))
+print ('#############################################################################################')
+
 cutoff_range = np.linspace(min_rmsd, pre_max, 50)
 
 # calculating validation matrics 
@@ -620,7 +642,7 @@ best_cutoff_db = round(cutoffs[np.nanargmax(db_scores)], 2)
 
 
 # generating dendrogram with the RMSD cut-off best by the Slihouette score (default) or other matric defined by the user
-plt.figure()
+plt.figure(figsize=(3.5, 9))
 val_mat= snakemake.config['val_score']
 
 
@@ -686,11 +708,14 @@ for line in plt.gca().get_lines():
     line.set_linewidth(0.5) 
 
 if val_mat == 'sil':
-    plt.axvline(x=best_cutoff_sil, color='green', linestyle='--', alpha= 0.8,  linewidth=2)
+    plt.axvline(x=best_cutoff_sil, color='royalblue', linestyle='-', linewidth=3, alpha=0.6)
 elif val_mat=='ch':
-    plt.axvline(x=best_cutoff_ch, color='green', linestyle='--', alpha= 0.8,  linewidth=2)
+    plt.axvline(x=best_cutoff_ch, color='darkgreen', linestyle='--', linewidth=2, alpha=0.6)
 elif val_mat=='db':
-    plt.axvline(x=best_cutoff_db, color='green', linestyle='--', alpha= 0.8,  linewidth=2)
+    plt.axvline(x=best_cutoff_db, color='darkorange', linestyle='--', linewidth=1, alpha=0.6)
+
+#assigning x-axis label
+plt.xlabel('RMSD (Å)')
 
 plt.savefig(snakemake.output['dendrogram'], format="png", bbox_inches="tight", dpi = 2000)
 #need to turn off the leaves labeling
@@ -708,6 +733,9 @@ for cls1, cls2 in enumerate(dend['leaves_color_list']):
             cl_dict[cls2].append(dend['ivl'][cls1]) 
 cl_dict= {f"{k[:1]}{i+1}": v for i, (k, v) in enumerate(cl_dict.items()) if k != 'lightgray'}
 
+#updating the order of the cluster number from bottom-up to top-down
+total = len(cl_dict)
+cl_dict = {f"C{total - i}": v for i, v in enumerate(cl_dict.values())}
 
 # adding cluster information to the 'MAIN DATAFRAME'
 def get_key(value):
