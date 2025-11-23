@@ -265,7 +265,7 @@ def align_all_against_all(clip_dir):
     clmns=['#']
     filenames=[]
     RMSDs={}
-    for filename in os.listdir(clip_dir):
+    for filename in sorted(os.listdir(clip_dir)):
         if filename.endswith('.cif'):
             clmns.append(filename)
             filenames.append(filename)
@@ -422,7 +422,7 @@ def load_structures_from_directory(directory, f_list):
     parser = MMCIFParser(QUIET=True)
     structures = []
     #file_paths = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith('.cif')]
-    file_paths = [os.path.join(directory, f) for f in os.listdir(directory) if f in(f_list)]
+    file_paths = [os.path.join(directory, f) for f in sorted(os.listdir(directory)) if f in(f_list)]
     print (file_paths)
 
     for file_path in file_paths:
@@ -645,6 +645,9 @@ best_cutoff_db = round(cutoffs[np.nanargmax(db_scores)], 2)
 plt.figure(figsize=(3.5, 9))
 val_mat= snakemake.config['val_score']
 
+#new line
+is_float = lambda s: s.replace('.', '', 1).isdigit() and '.' in s
+#########
 
 if val_mat == 'sil':
     dend = dendrogram(Z, color_threshold= best_cutoff_sil, labels=D1.index, above_threshold_color='lightgray', leaf_rotation=0, orientation='left', leaf_font_size=5, no_plot=True)
@@ -652,6 +655,11 @@ elif val_mat == 'ch':
     dend = dendrogram(Z, color_threshold= best_cutoff_ch, labels=D1.index, above_threshold_color='lightgray', leaf_rotation=0, orientation='left', leaf_font_size=5, no_plot=True)
 elif val_mat == 'db':
     dend = dendrogram(Z, color_threshold= best_cutoff_db, labels=D1.index, above_threshold_color='lightgray', leaf_rotation=0, orientation='left', leaf_font_size=5, no_plot=True)
+#new line
+elif is_float(val_mat):
+    val_mat_float= float(val_mat)
+    dend = dendrogram(Z, color_threshold= val_mat_float, labels=D1.index, above_threshold_color='lightgray', leaf_rotation=0, orientation='left', leaf_font_size=5, no_plot=True)
+#########
 
 ##for line in plt.gca().get_lines():
 ##    line.set_linewidth(3)
@@ -713,7 +721,10 @@ elif val_mat=='ch':
     plt.axvline(x=best_cutoff_ch, color='darkgreen', linestyle='--', linewidth=2, alpha=0.6)
 elif val_mat=='db':
     plt.axvline(x=best_cutoff_db, color='darkorange', linestyle='--', linewidth=1, alpha=0.6)
-
+#new line
+elif is_float(val_mat):
+    plt.axvline(x=val_mat_float, color='black', linestyle='--', linewidth=1, alpha=0.6)
+#########
 #assigning x-axis label
 plt.xlabel('RMSD (Å)')
 
