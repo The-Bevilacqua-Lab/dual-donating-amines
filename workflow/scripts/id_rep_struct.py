@@ -374,11 +374,11 @@ def plot_validation_scores(cutoffs, sil_scores, ch_scores, db_scores, fstring):
     best_cutoff_db = cutoffs[np.nanargmin(db_scores)]
 
     plt.axvline(x=best_cutoff_sil, color='royalblue', linestyle='-', linewidth=3, alpha=0.6,
-                label=f'Best Silhouette Cutoff = {best_cutoff_sil:.2f} Å')
+                label=f'Best Silhouette Cut-off = {best_cutoff_sil:.2f} Å')
     plt.axvline(x=best_cutoff_ch, color='darkgreen', linestyle='--', linewidth=2, alpha=0.6,
-                label=f'Best Calinski-Harabasz Cutoff = {best_cutoff_ch:.2f} Å')
+                label=f'Best Calinski-Harabasz Cut-off = {best_cutoff_ch:.2f} Å')
     plt.axvline(x=best_cutoff_db, color='darkorange', linestyle='--', linewidth=1, alpha=0.6,
-                label=f'Best Davies-Bouldin Cutoff = {best_cutoff_db:.2f} Å')
+                label=f'Best Davies-Bouldin Cut-off = {best_cutoff_db:.2f} Å')
 
 
     #adding labels for axis
