@@ -159,7 +159,7 @@ other_pairs_combined <- plot_grid(row_one, row_two, ncol = 1) +
   theme(plot.background = element_rect(fill = "white", color = NA))
 
 # Write the plot.
-ggsave(snakemake@output[["other_pairs"]], plot = other_pairs_combined,
+ggsave(snakemake@output[["fig_S1_other_pairs"]], plot = other_pairs_combined,
        width = 6, height = 5.25, units = "in", scale = 1)
 
 #### DONOR IDENTITY PLOT ####

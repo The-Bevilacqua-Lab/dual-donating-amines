@@ -86,7 +86,7 @@ adenine_df <- merge(a_minor_df, n2g_n1a_h_bond_df[c('acc_resi', 'acc_chain', 'mo
                     by.y = c('acc_resi', 'acc_chain', 'model', 'PDB'))
 
 # Write the data to a csv.
-write.csv(adenine_df[output_columns], snakemake@output[["supplemental_data_S4"]], na = "NaN")
+write.csv(adenine_df[output_columns], snakemake@output[["supplemental_data_S5"]], na = "NaN")
 
 # Which guanines form a G(N2)-to-A(N7) H-bond, where the A(N7) is from the adenine in the A-minor motif?
 n2g_n7a_h_bond_df <- merge(combined_df, a_minor_df[c('acc_pair_1_resi', 'acc_pair_1_chain', 'don_resi', 'don_chain',
@@ -101,7 +101,7 @@ adenine_df <- merge(a_minor_df, n2g_n7a_h_bond_df[c('acc_resi', 'acc_chain', 'mo
                     by.y = c('acc_resi', 'acc_chain', 'model', 'PDB'))
 
 # Write the data to a csv.
-write.csv(adenine_df[output_columns], snakemake@output[["supplemental_data_S5"]], na = "NaN")
+write.csv(adenine_df[output_columns], snakemake@output[["supplemental_data_S6"]], na = "NaN")
 
 # Which of the guanines also bear a dual-donating G(N2)?
 dual_g_df <- merge(combined_df, n4c_o6g_h_bond_df[c('acc_resi', 'acc_chain', 'model', 'PDB')],
@@ -110,7 +110,7 @@ dual_g_df <- merge(combined_df, n4c_o6g_h_bond_df[c('acc_resi', 'acc_chain', 'mo
   filter(type == 2) %>% distinct(don_index, eq_class_member, .keep_all = TRUE)
 
 # Write the data to a csv.
-write.csv(dual_g_df[output_columns], snakemake@output[["supplemental_data_S6"]], na = "NaN")
+write.csv(dual_g_df[output_columns], snakemake@output[["supplemental_data_S4"]], na = "NaN")
 
 #### 5C - A DUAL-DONATING AMINE TO A HOOGSTEEN ####
 

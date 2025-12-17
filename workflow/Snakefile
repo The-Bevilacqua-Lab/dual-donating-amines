@@ -14,7 +14,7 @@ rule all:
         "results/combine_data/pdb_versions.csv",
         "results/fraction_ribosomal_rna/note.txt",
         "results/plots/Fig_3_pairs.png",
-        "results/plots/other_pairs.png",
+        "results/plots/Fig_S1_other_pairs.png",
         "results/plots/Fig_8_pt.png",
         "results/tables/location_1_residues.csv",
         "results/tables/location_2_residues.csv",
@@ -120,7 +120,7 @@ rule create_plots:
         combined = "results/combine_data/combined.csv"
     output:
         fig_3_pairs = "results/plots/Fig_3_pairs.png",
-        other_pairs = "results/plots/other_pairs.png",
+        fig_S1_other_pairs = "results/plots/Fig_S1_other_pairs.png",
         fig_8_pt = "results/plots/Fig_8_pt.png",
         location_1_residues = "results/tables/location_1_residues.csv",
         location_2_residues = "results/tables/location_2_residues.csv",
