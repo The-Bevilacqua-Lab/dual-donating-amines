@@ -2,7 +2,6 @@
 
 #################################### Importing libraries ####################################
 import os
-import shutil
 import pandas as pd
 import requests
 import numpy as np
@@ -812,11 +811,3 @@ max_key = max(cl_dict, key=lambda k: len(cl_dict[k]))
 DF1['rep_data'] = ((DF1['cluster'] == max_key) & (DF1['rep_cls'] == 1)).astype(int)
 DF1.replace('*', '', inplace=True)
 DF1.to_csv(snakemake.output['align_clust_results'], index= False)
-
-#  storing the data representative structure to the result_path
-data_rep_str= DF1[DF1['rep_data']==1]['str_ID'].to_list()[0]
-
-src = clipped_structures_dir + data_rep_str+'.cif'
-dst = "results/alignment_clustering/" + data_rep_str+ '.cif'
-
-shutil.copy(src, dst)
