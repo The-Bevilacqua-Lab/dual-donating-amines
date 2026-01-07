@@ -15,6 +15,7 @@ from math import floor
 from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bouldin_score
 from sklearn.manifold import MDS
 from matplotlib.ticker import FormatStrFormatter
+import time
 
 #################################### Functions ####################################
 

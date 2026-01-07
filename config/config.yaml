@@ -8,7 +8,6 @@ disordered_mmcif_dir: "results/disordered_mmcif_files/"
 modified_mmcif_dir: "results/modified_mmcif_files/"
 chain_pdb_dir: "results/chain_pdb_files/"
 clipped_structures_dir: "results/clipped_structures/"
-alignment_clustering_dir: "results/alignment_clustering/"
 
 # What are the search radii?
 search_dist: 4.1
