@@ -1,12 +1,10 @@
 #################################### Importing libraries ####################################
 import os
 import json
-import shutil
 import requests
 import numpy as np
 import pandas as pd
 
-from optparse import OptionParser
 from math import floor
 from collections import Counter
 
@@ -21,11 +19,7 @@ from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
 from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bouldin_score
 from sklearn.manifold import MDS
 
-#################################### Making directories ####################################
-
-def _safe_mkdir(p):
-    os.makedirs(p, exist_ok=True)
-    return p
+import time
 
 #################################### Functions ####################################
 
@@ -106,13 +100,14 @@ def extract_cif(p):
         return df
 
 
-def clip(p, r, h, F):
+def clip(p, r, h, F, dr):
     #p= pdb_ID, entries can be case-insensitive
     #r= list of residues 
     #each residue information in the list above will be formatted like: chain_ID.residue_ID
     #h= 'N' or 'Y', if 'N', that means no hydrogen coordinates should be included considering hydrogen coordinates are provided 
     #if 'Y', that means no hydrogen coordinates should be removed if any hydrogen coordinates are provided
     #F= desired output filename (with the extension of '.cif' or '.pdb')
+    #dr= path to the clipped structures
     P = p.upper()
     c_ids = list(set([str(i).split('_')[0] for i in r]))
     print("Chains in motif:", c_ids)
@@ -162,7 +157,7 @@ def clip(p, r, h, F):
                 if col not in p3.columns:
                     p3[col] = ""
             # Open the output PDB file for writing
-            with open(F, "w") as pdb_file:
+            with open(dr + F, "w") as pdb_file:
                 atom_serial_number = 1
                 common_chain_ID = 'A'  #temporary solution
                 #main problem is what should be the solution if residues are from multiple chains?
@@ -212,7 +207,7 @@ def clip(p, r, h, F):
             p4 = pd.DataFrame(columns=c_intrst_1)
             p4['_atom_site.group_PDB'] = c_intrst_2#this p4 dataframe above p3 will be joined in p4. p3 will help pymol to visualize the file
             p5 = pd.concat([p4, p3], axis=0)
-            p5.to_csv(F, header=False, sep=' ', index=False)
+            p5.to_csv(dr + F, header=False, sep=' ', index=False)
 
 # --------- CSV-order-based correspondence for RMSD (NEW CORE) ---------
 
@@ -308,11 +303,11 @@ def matched_atom_lists_from_csv(structure1, structure2, csv_list1, csv_list2,
     atoms2 = [m2[k] for k in common_keys]
     return atoms1, atoms2
 
-def align_by_csv_order(cif1, cif2, csv_list1, csv_list2,
+def align_by_csv_order(cif1, cif2, csv_list1, csv_list2, dr,
                        mode="backbone", min_common_atoms=6):
     parser = MMCIFParser(QUIET=True)
-    s1 = parser.get_structure("S1", cif1)
-    s2 = parser.get_structure("S2", cif2)
+    s1 = parser.get_structure("S1", dr + cif1)
+    s2 = parser.get_structure("S2", dr + cif2)
 
     atoms1, atoms2 = matched_atom_lists_from_csv(
         s1, s2, csv_list1, csv_list2,
@@ -326,44 +321,39 @@ def align_all_against_all(dr, res_order_map,
                           mode="backbone", min_common_atoms=6, decimals=None):
     #Compute all-vs-all RMSD matrix using CSV-defined residue order.
     #Assumes clipped files are named as <str_ID>.cif
-    
-    home = os.getcwd()
-    try:
-        os.chdir(dr)
-        filenames = sorted([f for f in os.listdir('.') if f.endswith('.cif')])
 
-        mat = pd.DataFrame(index=filenames, columns=filenames, dtype=float)
-        for f in filenames:
-            mat.loc[f, f] = 0.0
+    filenames = sorted([f for f in os.listdir(dr) if f.endswith('.cif')])
 
-        n = len(filenames)
-        for i in range(n):
-            f1 = filenames[i]
-            id1 = f1[:-4]
-            for j in range(i + 1, n):
-                f2 = filenames[j]
-                id2 = f2[:-4]
+    mat = pd.DataFrame(index=filenames, columns=filenames, dtype=float)
+    for f in filenames:
+        mat.loc[f, f] = 0.0
 
-                if id1 not in res_order_map or id2 not in res_order_map:
-                    raise KeyError(f"Missing residue list for {id1} or {id2} in res_order_map")
+    n = len(filenames)
+    for i in range(n):
+        f1 = filenames[i]
+        id1 = f1[:-4]
+        for j in range(i + 1, n):
+            f2 = filenames[j]
+            id2 = f2[:-4]
 
-                r = align_by_csv_order(
-                    f1, f2,
-                    res_order_map[id1],
-                    res_order_map[id2],
-                    mode=mode,
-                    min_common_atoms=min_common_atoms
-                )
-                if decimals is not None:
-                    r = round(r, int(decimals))
-                mat.loc[f1, f2] = r
-                mat.loc[f2, f1] = r
+            if id1 not in res_order_map or id2 not in res_order_map:
+                raise KeyError(f"Missing residue list for {id1} or {id2} in res_order_map")
 
-        out = mat.reset_index().rename(columns={"index": "#"})
-        return out
+            r = align_by_csv_order(
+                f1, f2,
+                res_order_map[id1],
+                res_order_map[id2],
+                dr,
+                mode=mode,
+                min_common_atoms=min_common_atoms
+            )
+            if decimals is not None:
+                r = round(r, int(decimals))
+            mat.loc[f1, f2] = r
+            mat.loc[f2, f1] = r
 
-    finally:
-        os.chdir(home)
+    out = mat.reset_index().rename(columns={"index": "#"})
+    return out
 
 
 # functions to calculate and visualize clustering validation scores 
@@ -460,7 +450,7 @@ def plot_validation_scores(cutoffs, sil_scores, ch_scores, db_scores, fstring):
     plt.yticks(rotation=0, fontsize=15)
 
     plt.tight_layout()
-    plt.savefig(fstring + "_val_score_vs_RMSD_cutoff_normalized.png", format="png",
+    plt.savefig(snakemake.output['val_score_plt'], format="png",
                 bbox_inches="tight", dpi=2000)
 
 
@@ -598,22 +588,11 @@ def rmsd_to_average_csv_order_with_refid(avg_structure, ref_id, keys,
 #################################### Analysis steps ####################################
 
 def main():
-    optparser = OptionParser()
-    (options, args) = optparser.parse_args()
 
-    if len(args) < 5:
-        raise SystemExit(
-            "Usage:\n"
-            "  python identify_data_rep_structure.py <csvfile> <FSTRING> <usr_dir> <val_mat> <leaf_lab>\n\n"
-            "val_mat: 0/1 silhouette, 2 calinski, 3 davies\n"
-            "leaf_lab: 0 hide labels, 1 show labels\n"
-        )
-
-    csvfile = args[0]
-    FSTRING = args[1]
-    usr_dir = args[2]
-    val_mat = args[3]
-    leaf_lab = args[4]
+    csvfile = snakemake.input["frag_info"]
+    FSTRING = snakemake.input["frag_info"].split("/")[-1][:-14]
+    val_mat = snakemake.config['val_score']
+    leaf_lab = snakemake.config['leaf_labels']
 
     # ---------------- Step 1: import data ----------------
     DF1 = pd.read_csv(csvfile)
@@ -626,11 +605,17 @@ def main():
     ]
 
     # ---------------- Step 2: generate clipped structures ----------------
-    work_path = _safe_mkdir(os.path.join(usr_dir, FSTRING + '_identifying_data_rep_structures'))
-    clip_path = _safe_mkdir(os.path.join(work_path, FSTRING + '_all_clipped_structures'))
-    result_path = _safe_mkdir(os.path.join(work_path, FSTRING + '_result_rep_structures'))
 
-    os.chdir(clip_path)
+    # Check whether the folder exists to write the clipped structures.
+    # If it does not exist, create the folder.
+    clip_path = snakemake.config['clipped_structures_dir'][:-1] + "_" + FSTRING + "/"
+    if not os.path.isdir(clip_path):
+        try:
+            os.mkdir(clip_path)
+        except FileExistsError:
+            time.sleep(5.0)
+            if not os.path.isdir(clip_path):
+                os.mkdir(clip_path)
 
     # group columns like resi_A_1, resi_A_2
     suffix_groups = {}
@@ -654,13 +639,12 @@ def main():
 
         out_cif = sid + ".cif"
         print("Clipping:", out_cif)
-        clip(pid, list_residue, 'N', out_cif)
+        clip(pid, list_residue, 'N', out_cif, clip_path)
 
-    with open(os.path.join(work_path, f"{FSTRING}_res_order_map.json"), "w") as f:
+    with open(snakemake.output['res_order_map'], "w") as f:
         json.dump(res_order_map, f, indent=2)
 
     # ---------------- Step 3: all-vs-all RMSD ----------------
-    os.chdir(result_path)
 
     # recommended: backbone-only correspondence (robust across sequence differences)
     RMSD_MODE = "backbone"
@@ -675,7 +659,7 @@ def main():
         min_common_atoms=min_common_atoms,
         decimals=None
     )
-    rmsd_df.to_csv(FSTRING + '_all_against_all_RMSD.csv', index=False)
+    rmsd_df.to_csv(snakemake.output['rmsd'], index=False)
 
     # ---------------- Step 4: clustering + validation ----------------
     cl_names = [j.rstrip('.cif').replace('-', '_') for j in list(rmsd_df.columns)[1:]]
@@ -712,7 +696,7 @@ def main():
 
     cutoffs, sil_scores, ch_scores, db_scores, validation_df = compute_validation_scores(D1, Z, cutoff_range)
     plot_validation_scores(cutoffs, sil_scores, ch_scores, db_scores, FSTRING)
-    validation_df.to_csv(FSTRING + '_val_score_vs_RMSD_cutoff.csv', index=False)
+    validation_df.to_csv(snakemake.output['val_score_csv'], index=False)
 
     best_cutoff_sil = round(cutoffs[int(np.nanargmax(sil_scores))], 2)
     best_cutoff_ch = round(cutoffs[int(np.nanargmax(ch_scores))], 2)
@@ -721,20 +705,20 @@ def main():
     # ---------------- Dendrogram figure ----------------
     plt.figure(figsize=(3.5, 9))
 
-    if val_mat in ['0', '1']:
+    if val_mat == 'sil':
         dend = dendrogram(Z, color_threshold=best_cutoff_sil, labels=D1.index,
                           above_threshold_color='lightgray', leaf_rotation=0,
                           orientation='left', leaf_font_size=5, no_plot=True)
-    elif val_mat == '2':
+    elif val_mat == 'ch':
         dend = dendrogram(Z, color_threshold=best_cutoff_ch, labels=D1.index,
                           above_threshold_color='lightgray', leaf_rotation=0,
                           orientation='left', leaf_font_size=5, no_plot=True)
-    elif val_mat == '3':
+    elif val_mat == 'db':
         dend = dendrogram(Z, color_threshold=best_cutoff_db, labels=D1.index,
                           above_threshold_color='lightgray', leaf_rotation=0,
                           orientation='left', leaf_font_size=5, no_plot=True)
     else:
-        raise ValueError("val_mat must be one of: 0/1/2/3")
+        raise ValueError("val_mat must be one of: sil, ch, or db")
 
     color_list_counter = dict(Counter(dend['color_list']))
     lcolor_list_counter = dict(Counter(dend['leaves_color_list']))
@@ -761,16 +745,14 @@ def main():
     dend["color_list"] = color_list_n
     dend["leaves_color_list"] = leaves_color_list_n
 
-    if leaf_lab == '0':
+    if not leaf_lab:
         dend1 = dendrogram(Z, color_threshold=0, labels=D1.index,
                            above_threshold_color='white', leaf_rotation=0,
                            orientation='left', leaf_font_size=5, no_labels=True)
-    elif leaf_lab == '1':
+    else:
         dend1 = dendrogram(Z, color_threshold=0, labels=D1.index,
                            above_threshold_color='white', leaf_rotation=0,
                            orientation='left', leaf_font_size=5)
-    else:
-        raise ValueError("leaf_lab must be 0 or 1")
 
     for i, dcoord in enumerate(dend['dcoord']):
         plt.plot(dcoord, dend['icoord'][i], color=dend['color_list'][i])
@@ -781,15 +763,15 @@ def main():
     for line in plt.gca().get_lines():
         line.set_linewidth(0.5)
 
-    if val_mat in ['0', '1']:
+    if val_mat == 'sil':
         plt.axvline(x=best_cutoff_sil, color='royalblue', linestyle='-', linewidth=3, alpha=0.6)
-    elif val_mat == '2':
+    elif val_mat == 'ch':
         plt.axvline(x=best_cutoff_ch, color='darkgreen', linestyle='--', linewidth=2, alpha=0.6)
-    elif val_mat == '3':
+    elif val_mat == 'db':
         plt.axvline(x=best_cutoff_db, color='darkorange', linestyle='--', linewidth=1, alpha=0.6)
 
     plt.xlabel('RMSD (Å)')
-    plt.savefig(FSTRING + "_all_structure_dendrogram.png", format="png", bbox_inches="tight", dpi=2000)
+    plt.savefig(snakemake.output['dendrogram'], format="png", bbox_inches="tight", dpi=2000)
 
     # ---------------- Build cluster dictionary from dendrogram colors ----------------
     cl_dict = {}
@@ -872,18 +854,7 @@ def main():
         DF1['rep_data'] = ((DF1['cluster'] == max_key) & (DF1['rep_cls'] == 1)).astype(int)
 
     DF1.replace('*', '', inplace=True)
-    DF1.to_csv(FSTRING + '_alignment_n_clustering_results.csv', index=False)
-
-    # copy data rep structure CIF to result_path
-    rep_rows = DF1[DF1['rep_data'] == 1]
-    if len(rep_rows) > 0:
-        data_rep_str = rep_rows['str_ID'].to_list()[0]
-        src = os.path.join(clip_path, data_rep_str + '.cif')
-        dst = os.path.join(result_path, data_rep_str + '.cif')
-        shutil.copy(src, dst)
-        print("Data representative structure copied to:", dst)
-    else:
-        print("No data representative structure found (rep_data==1).")
+    DF1.to_csv(snakemake.output['align_clust_results'], index=False)
 
 if __name__ == "__main__":
     main()

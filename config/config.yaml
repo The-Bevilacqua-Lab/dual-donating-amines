@@ -41,3 +41,6 @@ save_modified_mmcif: true
 
 # Should the commit hash be written to output data files?
 commit_hash: false
+
+# Should the original version of id_rep_struct be used?
+original_clustering: true

@@ -191,16 +191,33 @@ rule list_examples:
     script:
         "scripts/acc_pair_examples.R"
 
-rule id_rep_struct:
-    input:
-        frag_info = "results/tables/{pt_grps}_frag_info.csv"
-    output:
-        val_score_plt = "results/alignment_clustering/{pt_grps}_val_score_vs_RMSD_cutoff_normalized.png",
-        val_score_csv = "results/alignment_clustering/{pt_grps}_val_score_vs_RMSD_cutoff.csv",
-        rmsd = "results/alignment_clustering/{pt_grps}_all_against_all_RMSD.csv",
-        dendrogram = "results/alignment_clustering/{pt_grps}_all_structure_dendrogram.png",
-        align_clust_results = "results/alignment_clustering/{pt_grps}_alignment_n_clustering_results.csv"
-    conda:
-        "envs/general.yaml"
-    script:
-        "scripts/id_rep_struct.py"
+if config["original_clustering"]:
+    rule id_rep_struct:
+        input:
+            frag_info = "results/tables/{pt_grps}_frag_info.csv"
+        output:
+            val_score_plt = "results/alignment_clustering/{pt_grps}_val_score_vs_RMSD_cutoff_normalized.png",
+            val_score_csv = "results/alignment_clustering/{pt_grps}_val_score_vs_RMSD_cutoff.csv",
+            rmsd = "results/alignment_clustering/{pt_grps}_all_against_all_RMSD.csv",
+            dendrogram = "results/alignment_clustering/{pt_grps}_all_structure_dendrogram.png",
+            align_clust_results = "results/alignment_clustering/{pt_grps}_alignment_n_clustering_results.csv"
+        conda:
+            "envs/general.yaml"
+        script:
+            "scripts/id_rep_struct.py"
+
+else:
+    rule id_rep_struct_v2:
+        input:
+            frag_info = "results/tables/{pt_grps}_frag_info.csv"
+        output:
+            val_score_plt = "results/alignment_clustering/{pt_grps}_val_score_vs_RMSD_cutoff_normalized.png",
+            val_score_csv = "results/alignment_clustering/{pt_grps}_val_score_vs_RMSD_cutoff.csv",
+            rmsd = "results/alignment_clustering/{pt_grps}_all_against_all_RMSD.csv",
+            dendrogram = "results/alignment_clustering/{pt_grps}_all_structure_dendrogram.png",
+            align_clust_results = "results/alignment_clustering/{pt_grps}_alignment_n_clustering_results.csv",
+            res_order_map = "results/alignment_clustering/{pt_grps}_res_order_map.json"
+        conda:
+            "envs/general.yaml"
+        script:
+            "scripts/id_rep_struct_v2.py"
