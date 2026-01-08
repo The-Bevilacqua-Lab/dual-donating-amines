@@ -16,6 +16,7 @@ from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bo
 from sklearn.manifold import MDS
 from matplotlib.ticker import FormatStrFormatter
 import time
+from gemmi import cif
 
 #################################### Functions ####################################
 
@@ -49,50 +50,41 @@ def fix_PDB_ID(df):
 
 #function to extract structure file in cif format and convert as a pandas dataframe
 def extract_cif(p):
-    filename= p+'.cif'
-    url= 'https://files.rcsb.org/view/%s' %filename 
-    u = requests.get(url).content
-    u1= str(u).split('#')
-    if len(u1)==1:
-        print ('STRUCTURE IS NOT AVAILABLE!')
-        return '0'
-    
-    else:
-        c_intrst= ['_atom_site.group_PDB', '_atom_site.id', '_atom_site.type_symbol',
-           '_atom_site.label_atom_id', '_atom_site.label_alt_id',
-           '_atom_site.label_comp_id', '_atom_site.label_asym_id',
-           '_atom_site.label_entity_id', '_atom_site.label_seq_id',
-           '_atom_site.pdbx_PDB_ins_code', '_atom_site.Cartn_x',
-           '_atom_site.Cartn_y', '_atom_site.Cartn_z', '_atom_site.occupancy',
-           '_atom_site.B_iso_or_equiv', '_atom_site.pdbx_formal_charge',
-           '_atom_site.auth_seq_id', '_atom_site.auth_comp_id',
-           '_atom_site.auth_asym_id', '_atom_site.auth_atom_id',
-           '_atom_site.pdbx_PDB_model_num', '###']
-        u2=[]
-        for i, j in enumerate(u1):
-            if c_intrst[0] in j:
-                u2.append(j)
 
-        if len(u2)==2:
-            if len(u2[0])> len(u2[1]):
-                u3= u2[0].replace('      ', '$')
+    # Use GEMMI to create a dictionary containing the info in the _atom_site section.
+    filename= p.lower()+'.cif'
+    mm_cif = cif.read_file(f"resources/original_mmCIF_files/{filename}")
+    block = mm_cif.sole_block()
+
+    c_intrst = {'_atom_site.group_PDB': [], '_atom_site.id': [], '_atom_site.type_symbol': [],
+                '_atom_site.label_atom_id': [], '_atom_site.label_alt_id': [],
+                '_atom_site.label_comp_id': [], '_atom_site.label_asym_id': [],
+                '_atom_site.label_entity_id': [], '_atom_site.label_seq_id': [],
+                '_atom_site.pdbx_PDB_ins_code': [], '_atom_site.Cartn_x': [],
+                '_atom_site.Cartn_y': [], '_atom_site.Cartn_z': [], '_atom_site.occupancy': [],
+                '_atom_site.B_iso_or_equiv': [], '_atom_site.pdbx_formal_charge': [],
+                '_atom_site.auth_seq_id': [], '_atom_site.auth_comp_id': [],
+                '_atom_site.auth_asym_id': [], '_atom_site.auth_atom_id': [],
+                '_atom_site.pdbx_PDB_model_num': []}
+
+    table = block.find(list(c_intrst.keys()))
+    for row in table:
+        new_row = []
+        for value in row:
+            if "'" in value:
+                new_row.append(value.replace("'", "\\'"))
             else:
-                u3= u2[1].replace('      ', '$')
-        else:
-            u3= u2[0].replace('      ', '$')
-        u4= u3.replace('     ', '$')
-        u5= u4.replace('    ', '$')
-        u6= u5.replace('   ', '$')
-        u7= u6.replace('  ', '$')
-        u8= u7.replace(' ', '$')
-        u9= u8.replace('$$', '$')
-        u10= u9.replace('\\\\', '').split('\\n')
-        df = pd.DataFrame({'all_col':u10[23:]})
+                new_row.append(value)
+        for key, value in zip(c_intrst, new_row):
+            c_intrst[key].append(value)
 
-        df[c_intrst] = df['all_col'].str.split('$', expand=True)
-        df= df.drop(['all_col', '###'], axis=1)
+    # Append a row to the end to match what was created by the previous code.
+    for key, value in zip(c_intrst, [""] + [None] * 20):
+        c_intrst[key].append(value)
 
-        return df
+    # Create and return a DataFrame based on the dictionary.
+    df = pd.DataFrame(c_intrst)
+    return df
 
 
 def clip(p, r, h, F):
