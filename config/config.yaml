@@ -1,5 +1,5 @@
 # Provide the name and location of the integrated functional elements (IFEs) file.
-ifes_file: "resources/ifes_<id>.csv"
+ifes_file: "resources/ifes_3.386_3.0A_full_Aug_22.csv"
 
 # What are the paths of the directories that will hold structures?
 original_mmcif_dir: "resources/original_mmCIF_files/"
