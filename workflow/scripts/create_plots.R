@@ -627,10 +627,42 @@ pair_1_df[which(pair_1_df$theta < 0), "theta_translated"] <- pair_1_df[which(pai
 pair_1_df <- pair_1_df %>% filter(eta_translated >= 43.2 & eta_translated < 72 &
                                     theta_translated >= 151.2 & theta_translated < 180)
 
-# Filter for the top acceptor pair in location 1, only keep the necessary columns, and then write to a csv file.
+# Filter for the top acceptor pair in location 1, and only keep the necessary columns.
 pair_1_top_df <- pair_1_df %>% filter(don_resn == "A" & acc_pair_combined == "A(N7), N(NPO)")
 pair_1_top_df <- pair_1_top_df[c("PDB", "model", "don_chain", "don_resi", "acc_pair_1_chain", "acc_pair_1_resi",
                                  "acc_pair_1_name", "acc_pair_2_chain", "acc_pair_2_resi", "acc_pair_2_name")]
+
+# If specified in the config file, apply a custom ordering to the data frame rows.
+if (snakemake@config[["custom_order"]]) {
+  reference = c("6ERI_1734", "6ERI_189", "6ERI_226", "6XU8_2246", "6XU8_89", "8OVA_50", "8OVA_87", "8OVA_114",
+                "8OVA_74", "8QYX_47", "8QYX_84", "8QYX_2360", "8QYX_2879", "8QYX_2553", "8GLP_74", "7O7Y_2203",
+                "7O7Y_2396", "7O7Y_2722", "7O7Y_4345", "7O7Y_47", "7O7Y_1171", "8OM4_954", "7P7Q_206", "7P7Q_243",
+                "7P7Q_1301", "7P7Q_1828", "5T5H_74", "6TH6_195", "6TH6_1846", "6TH6_2759", "8RWG_203", "8RWG_240",
+                "8RWG_1251", "8RWG_1687", "7CPU_47", "7CPU_2117", "7CPU_2310", "7CPU_2633", "7QEP_133", "7QEP_1465",
+                "7R81_48", "7R81_1910", "7R81_2980", "7R81_75", "7CPU_1171", "5J7L_204", "5J7L_241", "5J7L_1265",
+                "5J7L_1698", "7JIL_189", "7JIL_226", "7JIL_1732", "3DIL_26", "8QIE_46", "8QIE_114", "7OYB_3869",
+                "7OYC_1132", "8FRU_46", "8FRU_1560", "8CRE_47", "8CRE_1926", "8CRE_2993", "9AXU_48", "9AXU_1985",
+                "9AXU_85", "9E6Q_1392", "9E6Q_1842", "9E6Q_185", "9E6Q_222", "9E6Q_2769", "8FMW_1869", "5J7L_889",
+                "8Q87_2109", "8Q87_2302", "8Q87_2628", "8RDV_238", "8RDV_1249", "8UUA_1747", "8UUA_206", "8QIE_1465",
+                "1Q96_9", "5DM6_176", "5DM6_213", "5DM6_1698", "9C4G_1882", "9CAI_2023", "9CAI_47", "9CAI_84",
+                "9CAI_1072", "8P2G_1303", "8P2G_1567", "8P2G_1742", "8P2G_207", "8P2G_244", "8GLP_1170", "8IP8_1449",
+                "8IP8_1926", "8IP8_3017", "8JIV_74", "7QI4_1142", "8QCQ_899", "8P2G_898", "6AZ3_114", "6AZ3_76",
+                "6AZ1_1465", "5T5H_114", "7SFR_206", "7SFR_1933", "9J1M_882", "6TMF_836", "6UFM_66", "5DDP_25",
+                "7QI4_1741", "8CRE_1098", "6YWS_1538", "6YWS_1935", "6YWS_375", "7QCA_177", "7QGG_47", "7QGG_84",
+                "7QIW_3024", "7QIW_83", "7QIW_1457", "7QIW_1936", "7QIW_74", "7QIZ_1116", "6ZU5_1154", "6ZU5_142",
+                "6ZU5_1567", "6ZU5_806", "7R81_1110", "3D0U_23", "8S1P_244", "8S1P_1305", "8S1P_1743", "8S1P_207",
+                "7UVZ_1518", "7UVZ_1696", "7UVZ_211", "8A57_206", "8A57_243", "8A57_1310", "8A57_1747", "8P9A_48",
+                "8P9A_85", "8P9A_1446", "8P9A_1930", "8PV7_49", "8PV7_1429", "8PV7_1910", "8PV7_2979", "8P8B_208",
+                "7OYB_74", "7OYC_84", "7OYC_2417", "8PV7_75", "7PKT_72", "8FVY_854", "8FRU_74", "9FHL_852", "8VTW_889",
+                "9DFE_1265", "9DFE_1698", "9DFE_204", "9DFE_241", "8HKU_627", "8HKU_183", "8HKU_1855", "9IS7_652",
+                "8OVA_49", "8RDV_933", "8OVJ_78", "4V9F_1776", "4V9F_2691", "8AZW_3023", "8AZW_1457", "8AZW_1936",
+                "8AZW_74", "8CRX_873", "9AXU_74", "4V9F_77")
+  pair_1_top_df <- pair_1_top_df %>% mutate(PDB_don_resi = paste(PDB, "_", don_resi, sep = ""))
+  pair_1_top_df <- pair_1_top_df %>% arrange(match(PDB_don_resi, reference))
+  pair_1_top_df <- pair_1_top_df[, !(names(pair_1_top_df) == "PDB_don_resi")]
+}
+
+# Write to a csv file.
 write.csv(pair_1_top_df, snakemake@output[["location_1_residues"]], quote = FALSE, na = "NaN", row.names = FALSE)
 
 # Create a column that contains the donor atom name along with the donor residue name.
@@ -678,10 +710,58 @@ pair_2_df[which(pair_2_df$theta < 0), "theta_translated"] <- pair_2_df[which(pai
 pair_2_df <- pair_2_df %>% filter(eta_translated >= 295.2 & eta_translated < 324 &
                                     theta_translated >= 14.4 & theta_translated < 43.2)
 
-# Filter for the top two acceptor pairs in location 2, only keep the necessary columns, and then write to a csv file.
+# Filter for the top two acceptor pairs in location 2, and only keep the necessary columns.
 pair_2_top_df <- pair_2_df %>% filter(don_resn == "G" & acc_pair_combined %in% c("N(NPO), U(O4)", "N(O5'), U(O4)"))
 pair_2_top_df <- pair_2_top_df[c("PDB", "model", "don_chain", "don_resi", "acc_pair_1_chain", "acc_pair_1_resi",
                                  "acc_pair_1_name", "acc_pair_2_chain", "acc_pair_2_resi", "acc_pair_2_name")]
+
+# If specified in the config file, apply a custom ordering to the data frame rows.
+if (snakemake@config[["custom_order"]]) {
+  reference = c("6XU8_371", "6XU8_1202", "6XU8_1776", "8OVA_88", "8OVA_423", "8OVA_1618", "8OVA_75", "8QYX_85",
+                "8QYX_4600", "8QYX_364", "8GLP_75", "7O7Y_4346", "7O7Y_364", "7O7Y_1172", "7O7Y_1649", "8OM4_1415",
+                "7P7Q_2668", "7P7Q_207", "7P7Q_244", "7P7Q_411", "7P7Q_1373", "5T5H_75", "6TH6_497", "8RWG_204",
+                "8RWG_241", "8RWG_362", "8RWG_448", "8RWG_1252", "8RWG_2641", "8RWG_1341", "8RWG_884", "7CPU_4253",
+                "7CPU_85", "7CPU_363", "7CPU_2118", "7QCA_75", "7QEP_134", "7QEP_171", "7QEP_309", "7QEP_1093",
+                "7QEP_2396", "7QGG_1174", "6ZU5_75", "7R81_86", "7R81_1430", "7R81_345", "7R81_76", "7CPU_1172",
+                "7CPU_1649", "5J7L_205", "5J7L_242", "5J7L_372", "5J7L_458", "5J7L_2655", "8OLV_300", "7UIN_340",
+                "7JIL_190", "7JIL_227", "7JIL_2653", "3DIL_27", "8QIE_393", "8P9A_1114", "8P9A_1584", "7NHN_1356",
+                "7NHN_901", "7OLC_1111", "7OYB_85", "7OYB_366", "7OYC_1133", "7OYC_75", "7PKT_29", "8FRU_2438",
+                "8FRU_221", "8FRU_303", "8FRU_1133", "6YDP_644", "6YDP_1458", "6YDP_76", "6YDP_117", "8CRE_85",
+                "8CRE_1443", "8CRE_2994", "8CRE_353", "9AXU_361", "9AXU_86", "9E6Q_1393", "9E6Q_186", "9E6Q_223",
+                "9E6Q_2770", "9E6Q_406", "9E71_1313", "8FMW_1343", "8FMW_203", "8FMW_239", "8FMW_534", "5J7L_1347",
+                "5J7L_890", "8Q87_1129", "8Q87_1603", "8Q87_365", "8Q87_75", "8RDV_239", "8RDV_355", "8RDV_441",
+                "8RDV_1250", "8RDV_2638", "8UUA_418", "8UUA_504", "8UUA_1311", "8UUA_2688", "8UUA_244", "8UU5_899",
+                "8UU5_1354", "8QIE_2004", "1Q96_10", "8B2L_1590", "5DM6_177", "5DM6_1266", "9C4G_1343", "9C4G_2837",
+                "9C4G_212", "9C4G_249", "9CAI_1512", "9CAI_85", "9CAI_359", "9CAI_75", "9CAI_1540", "6XU8_75",
+                "8P2G_504", "8P2G_2682", "8P2G_1304", "8P2G_208", "8P2G_245", "8P2G_418", "8GLP_1648", "8GLP_1171",
+                "8IP8_85", "8IP8_351", "8IP8_1450", "8IP8_3018", "8JIV_75", "8IP8_1119", "7O7Y_75", "7QI4_1431",
+                "8QCQ_900", "8QCQ_1356", "8P2G_899", "8P2G_1357", "6AZ3_393", "6AZ3_77", "6AZ1_2004", "5T5H_1672",
+                "5T5H_397", "7SFR_2893", "7SFR_207", "7SFR_244", "7SFR_461", "7SFR_547", "7SFR_1397", "5DDP_26",
+                "7QI4_3123", "7QI4_1742", "7QI4_1782", "7QI4_2310", "8OI5_77", "8CRE_1099", "6YW5_1082", "6YW5_1631",
+                "6YWS_1539", "6YWS_450", "6YWS_531", "7QCA_1115", "7QCA_178", "7QCA_2387", "7QCA_399", "7QCA_1186",
+                "7QEP_75", "7QGG_75", "7QGG_364", "7QGG_85", "7QIW_266", "7QIW_350", "7QIW_1458", "7QIW_75",
+                "7QIZ_1117", "7QIZ_1590", "6ZU5_1155", "6ZU5_180", "6ZU5_2411", "6ZU5_391", "6ZU5_807", "6ZU5_1224",
+                "7R81_1580", "7R81_1111", "3D0U_24", "7JIL_873", "8A22_60", "8A22_237", "8A22_154", "8S1P_245",
+                "8S1P_419", "8S1P_505", "8S1P_1306", "8S1P_2684", "8S1P_208", "7UVZ_371", "7UVZ_457", "7UVZ_1261",
+                "7UVZ_212", "7UVZ_249", "8A57_207", "8A57_244", "8A57_418", "8A57_504", "8A57_1311", "8A57_2688",
+                "8P9A_86", "8P9A_353", "8P9A_3022", "7UW1_1344", "8PV7_1430", "8PV7_87", "8PV7_346", "8P8B_494",
+                "8P8B_1296", "8P8B_2663", "8P8B_209", "7OYB_1238", "7OYB_75", "7OYC_85", "7OYC_363", "7OYC_1862",
+                "7PKT_73", "8FRU_75", "8EUG_125", "9E6Q_82", "9FHL_1311", "8VTW_890", "8VTW_1347", "9DFE_458",
+                "9DFE_205", "9DFE_242", "9DFE_372", "9G6K_45", "8HKU_1409", "8HKU_184", "8HKU_221", "8OVA_50",
+                "8RDV_934", "8RDV_1392", "8OVJ_79", "4V9F_464", "4V9F_588", "4V9F_175", "4V9F_213", "4V9F_2692",
+                "4V9F_358", "8AZW_84", "8AZW_350", "8AZW_1458", "8AZW_75", "8BF9_1823", "8BF9_364", "8CRX_1333",
+                "9AXV_1130", "4V9F_78")
+  pair_2_top_df <- pair_2_top_df %>% mutate(PDB_don_resi = paste(PDB, "_", don_resi, sep = ""))
+  pair_2_top_df <- pair_2_top_df %>% arrange(match(PDB_don_resi, reference))
+  pair_2_top_df <- pair_2_top_df[, !(names(pair_2_top_df) == "PDB_don_resi")]
+}
+
+# If specified in the config file, convert PDB ID 9E71 to scientific notation.
+if (snakemake@config[["9E71_sci_not"]]) {
+  pair_2_top_df[which(pair_2_top_df$PDB == "9E71"), "PDB"] <- "9e+71"
+}
+
+# Write to a csv file.
 write.csv(pair_2_top_df, snakemake@output[["location_2_residues"]], quote = FALSE, na = "NaN", row.names = FALSE)
 
 # Create a column that contains the donor atom name along with the donor residue name.

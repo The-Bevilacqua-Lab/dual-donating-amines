@@ -18,6 +18,12 @@ count_dist_2: 12.5
 h_dist_max: 2.5
 h_ang_min: 140.0
 
+# Should a custom ordering be applied for location_1_residues.csv and location_2_residues.csv?
+custom_order: true
+
+# Should PDB ID 9E71 be expressed in scientific notation (i.e., "9e+71") for location_2_residues.csv?
+9E71_sci_not: true
+
 # What are the residue and atom names of the donors that are to be considered?
 dual_h_donors:
   - 'A.N6'
