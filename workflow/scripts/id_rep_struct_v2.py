@@ -586,6 +586,14 @@ def main():
     DF1 = pd.read_csv(csvfile)
     DF1.replace(" ", "*", inplace=True)
 
+    # fixing '5E54' becoming '5.00E+54' issue
+    DF1 = fix_PDB_ID(DF1)
+    
+    #The following two lines will ensure that the datafrmae is sorted based on pdb, chain_A, resi_A_1 columns before generating unique structure IDs
+    # This will also confirm that the order of the rows remains the same if a different order of the rows is provided in the input csv file
+    sort_cols = ['pdb', 'chain_A', 'resi_A_1']
+    DF1 = DF1.sort_values(sort_cols, kind='mergesort').reset_index(drop=True)
+
     # Make str_ID UNIQUE per row to prevent overwriting clipped CIFs
     DF1['str_ID'] = [
         f"{FSTRING}_{i:05d}_{p}_{c}_{r}"
