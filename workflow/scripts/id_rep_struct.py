@@ -550,6 +550,9 @@ for col in DF1.columns:
 print (suffix_groups)
 
 for ind, pid in enumerate(DF1['pdb']):
+    # Continue the loop if the PDB ID is expressed in scientific notation.
+    if "+" in pid:
+        continue
     print (ind)
     print (pid)
     list_residue=[]
