@@ -26,24 +26,24 @@ from gemmi import cif
 
 # fixing '5E54' becoming '5.00E+54' issue
 def fix_PDB_ID(df):
-    for i, j in enumerate(df['PDB_ID']):
+    for i, j in enumerate(df['pdb']):
         if len(str(j)) > 4:
             if '-' in str(j):
                 X = ''.join(str(j).split('-')).upper()
-                df.loc[i, 'PDB_ID'] = X
+                df.loc[i, 'pdb'] = X
             else:
                 if '.' in str(j):
                     x = str(j)
                     x1 = x.split('.')[0]
                     x2 = x.split('+')[1]
                     X = x1 + 'E' + x2
-                    df.loc[i, 'PDB_ID'] = X
+                    df.loc[i, 'pdb'] = X
                 else:
                     x = str(j)
                     x1 = x.split('+')[0]
                     x2 = x.split('+')[1]
                     X = x1 + x2
-                    df.loc[i, 'PDB_ID'] = X
+                    df.loc[i, 'pdb'] = X
     return df
 
 
