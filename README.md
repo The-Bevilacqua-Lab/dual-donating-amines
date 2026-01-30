@@ -8,12 +8,17 @@ corresponding to this workflow can be found at https://doi.org/10.1261/rna.08062
 
 ## Running this Workflow
 
-1. Install [Miniforge](https://github.com/conda-forge/miniforge) if you do not already have it installed.
+Note: This workflow works best on case-sensitive filesystems. It should still run on case-insensitive filesystems 
+(e.g., APFS), but the results may differ some due to file overwriting.
+
+1. Install NaTorsion, available from [AMIGOSIII](https://github.com/pylelab/AMIGOSIII) (v1.2-alpha). 
+2. Install [Miniforge](https://github.com/conda-forge/miniforge) if you do not already have it installed. Release 
+   25.11.0-1 worked for me, although others will likely work as well.
 2. Create a conda environment (named 'snakemake' in this example) with Snakemake installed by entering `mamba create -n 
-snakemake bioconda::snakemake=9.9.0` into your terminal.
+   snakemake bioconda::snakemake=9.9.0` into your terminal.
 3. Activate the snakemake conda environment by entering `conda activate snakemake`.
 4. If you intend to run this workflow on a cluster (recommended), enter `pip install 
-snakemake-executor-plugin-cluster-generic`. This plugin will facilitate running Snakemake on the cluster.
+   snakemake-executor-plugin-cluster-generic`. This plugin will facilitate running Snakemake on the cluster.
 5. Clone or download the dual-donating-amines repo and move to this folder within your terminal.
 6. Consider whether you want to manually provide any mmCIF files for any specific PDB entry versions. If you do, 
    follow the instructions provided in the "PDB Entry Versions" section below.
@@ -25,9 +30,9 @@ snakemake-executor-plugin-cluster-generic`. This plugin will facilitate running 
       argument depending on how many cores are available. If you reduce this value, you may have to increase the 
       walltime specified on the fifth line. If you are dealing with a different job manager, you will need to modify 
       the run.sh script and how it is submitted to the queue.
-   2. Enter `snakemake --sdm conda --cores 4` into your terminal. You can change the --cores argument depending on 
-      how many cores you have available. I have not run the entire workflow in this way. Doing so with just a few 
-      cores may take a long time to complete, possibly weeks.
+   2. Enter `snakemake --rerun-triggers mtime --sdm conda --cores 4` into your terminal. You can change the --cores 
+      argument depending on how many cores you have available. I have not run the entire workflow in this way. Doing 
+      so with just a few cores may take a long time to finish.
 8. After the run completes, the data will be available in the newly created results folder.
 
 ## PDB Entry Versions
@@ -41,7 +46,8 @@ the older version of this PDB entry.
 1. On the [version webpage](https://www.rcsb.org/versions/7K16) for PDB ID 7K16, download the mmCIF file 
    corresponding to version 1.2.
 2. Decompress the downloaded file in your terminal by entering `gunzip pdb_00007k16_xyz_v1-2.cif.gz`.
-3. Move this file to resources/original_mmCIF_files/ within the dual-donating-amines folder.
+3. Create a folder named "original_mmCIF_files" within dual-donating-amines/resources/, then move the CIF file to 
+   this new folder.
 4. Rename the file to 7k16.cif. On case-sensitive filesystems, it is important to use lowercase letters in the file 
    name.
 
