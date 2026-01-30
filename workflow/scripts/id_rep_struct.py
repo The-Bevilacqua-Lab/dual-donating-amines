@@ -53,7 +53,7 @@ def extract_cif(p):
 
     # Use GEMMI to create a dictionary containing the info in the _atom_site section.
     filename= p.lower()+'.cif'
-    mm_cif = cif.read_file(f"resources/original_mmCIF_files/{filename}")
+    mm_cif = cif.read_file(snakemake.config["original_mmcif_dir"] + filename)
     block = mm_cif.sole_block()
 
     c_intrst = {'_atom_site.group_PDB': [], '_atom_site.id': [], '_atom_site.type_symbol': [],
