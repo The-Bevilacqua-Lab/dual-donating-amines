@@ -29,7 +29,7 @@ def fix_PDB_ID(df):
     for i, j in enumerate(df['pdb']):
         if len(str(j)) > 4:
             if '-' in str(j):
-                X = ''.join(str(j).split('-')).upper()
+                X = ''.join(str(j).split('-'))
                 df.loc[i, 'pdb'] = X
             else:
                 if '.' in str(j):
@@ -585,6 +585,9 @@ def main():
     # ---------------- Step 1: import data ----------------
     DF1 = pd.read_csv(csvfile)
     DF1.replace(" ", "*", inplace=True)
+
+    # make the values in the pdb column uppercase
+    DF1['pdb'] = DF1['pdb'].str.upper()
 
     # fixing '5E54' becoming '5.00E+54' issue
     DF1 = fix_PDB_ID(DF1)
